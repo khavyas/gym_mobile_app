@@ -6,10 +6,78 @@ import {
   StyleSheet, 
   ScrollView,
   KeyboardAvoidingView,
-  Platform 
+  Platform,
+  Animated 
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Toast Component Props Interface
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+}
+
+// Toast Component
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.toastContent}>
+        <Text style={styles.toastIcon}>✓</Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
 
 export default function Register() {
   const router = useRouter();
@@ -19,63 +87,76 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("user");
-
-  // const handleRegister = () => {
-  //   // Add your registration logic here
-  //   console.log({ name, age, phone, email, password, role });
-  //   alert("Registration successful!");
-  //     if (role === 'user') {
-  //   router.push('/questions/user-questions');
-  // } else {
-  //   router.push('/questions/consultant-questions');
-  // }
-  // };
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-  const payload = { name, age, phone, email, password, role };
+    setIsLoading(true);
+    const payload = { name, age, phone, email, password, role };
 
-  try {
-    const response = await fetch(
-      "https://gymbackend-production-ac3b.up.railway.app/api/auth/register",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    try {
+      const response = await fetch(
+        "https://gymbackend-production-ac3b.up.railway.app/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      // Success: user registered
-      console.log("Registration successful:", data);
-      alert(`Registration successful! Welcome ${data.name}`);
+      if (response.ok) {
+        // Success: user registered
+        console.log("Registration successful:", data);
+        setIsLoading(false);
+        
+        // Save token + role in AsyncStorage
+        await AsyncStorage.setItem("userToken", data.token);
+        await AsyncStorage.setItem("userRole", role); 
 
-      // Navigate based on role
-      if (role === "user") {
-        router.push("/questions/user-questions");
+
+        // Show professional toast notification
+        setToastMessage(`Registration successful! Welcome ${data.name} 🎉`);
+        setShowToast(true);
+
+        // Navigate based on role after toast is shown
+        setTimeout(() => {
+          if (role === "user") {
+            router.push("/questions/user-questions");
+          } else {
+            router.push("/questions/consultant-questions");
+          }
+        }, 2000);
+        
       } else {
-        router.push("/questions/consultant-questions");
+        // Backend returned an error
+        setIsLoading(false);
+        console.error("Registration failed:", data);
+        alert(`Error: ${data.message || "Registration failed"}`);
       }
-    } else {
-      // Backend returned an error
-      console.error("Registration failed:", data);
-      alert(`Error: ${data.message || "Registration failed"}`);
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Network error:", error);
+      alert("Network error. Please try again.");
     }
-  } catch (error) {
-    console.error("Network error:", error);
-    alert("Network error. Please try again.");
-  }
-};
-
+  };
 
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* Toast Notification */}
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        onHide={() => setShowToast(false)} 
+      />
+      
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -94,6 +175,7 @@ export default function Register() {
               placeholderTextColor="#9CA3AF"
               value={name}
               onChangeText={setName}
+              editable={!isLoading}
             />
           </View>
 
@@ -106,6 +188,7 @@ export default function Register() {
               value={age}
               onChangeText={setAge}
               keyboardType="numeric"
+              editable={!isLoading}
             />
           </View>
 
@@ -118,6 +201,7 @@ export default function Register() {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
+              editable={!isLoading}
             />
           </View>
 
@@ -131,6 +215,7 @@ export default function Register() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!isLoading}
             />
           </View>
 
@@ -143,6 +228,7 @@ export default function Register() {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+              editable={!isLoading}
             />
           </View>
 
@@ -155,6 +241,7 @@ export default function Register() {
                   role === "user" && styles.activeRoleCard
                 ]}
                 onPress={() => setRole("user")}
+                disabled={isLoading}
               >
                 <View style={styles.roleCardContent}>
                   <View style={[styles.roleIcon, role === "user" && styles.activeRoleIcon]}>
@@ -180,6 +267,7 @@ export default function Register() {
                   role === "consultant" && styles.activeRoleCard
                 ]}
                 onPress={() => setRole("consultant")}
+                disabled={isLoading}
               >
                 <View style={styles.roleCardContent}>
                   <View style={[styles.roleIcon, role === "consultant" && styles.activeRoleIcon]}>
@@ -201,8 +289,21 @@ export default function Register() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-            <Text style={styles.registerButtonText}>Create Account</Text>
+          <TouchableOpacity 
+            style={[
+              styles.registerButton,
+              isLoading && styles.loadingButton
+            ]} 
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Creating Account...</Text>
+              </View>
+            ) : (
+              <Text style={styles.registerButtonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -220,80 +321,6 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
-    roleCardsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleCard: {
-    flex: 1,
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#374151',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    position: 'relative',
-    minHeight: 140,
-  },
-  activeRoleCard: {
-    borderColor: '#10B981',
-    backgroundColor: '#065F46',
-  },
-  roleCardContent: {
-    alignItems: 'center',
-  },
-  roleIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#374151',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  activeRoleIcon: {
-    backgroundColor: '#10B981',
-  },
-  roleIconText: {
-    fontSize: 24,
-  },
-  activeRoleIconText: {
-    fontSize: 24,
-  },
-  roleCardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#E5E7EB',
-    marginBottom: 4,
-  },
-  activeRoleCardTitle: {
-    color: '#FFFFFF',
-  },
-  roleCardSubtitle: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  activeRoleCardSubtitle: {
-    color: '#D1FAE5',
-  },
-  selectedIndicator: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
   container: {
     flex: 1,
     backgroundColor: '#111827', // Dark charcoal background
@@ -367,9 +394,22 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  loadingButton: {
+    backgroundColor: '#6B7280',
+  },
   registerButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   linkContainer: {
@@ -385,38 +425,119 @@ const styles = StyleSheet.create({
     color: '#10B981',
     fontWeight: 'bold',
   },
-  roleToggleContainer: {
+  // Card-based Role Selection Styles
+  roleCardsContainer: {
     flexDirection: 'row',
-    borderWidth: 1.5,
-    borderColor: '#374151',
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#111827',
+    gap: 12,
   },
-  roleToggleButton: {
+  roleCard: {
     flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    position: 'relative',
+    minHeight: 140,
   },
-  roleToggleLeft: {
-    borderRightWidth: 1,
-    borderRightColor: '#374151',
+  activeRoleCard: {
+    borderColor: '#10B981',
+    backgroundColor: '#065F46',
   },
-  roleToggleRight: {
-    // No additional styles needed
+  roleCardContent: {
+    alignItems: 'center',
   },
-  activeRoleButton: {
+  roleIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#374151',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  activeRoleIcon: {
     backgroundColor: '#10B981',
   },
-  roleToggleText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#D1D5DB',
+  roleIconText: {
+    fontSize: 24,
   },
-  activeRoleText: {
+  activeRoleIconText: {
+    fontSize: 24,
+  },
+  roleCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E5E7EB',
+    marginBottom: 4,
+  },
+  activeRoleCardTitle: {
     color: '#FFFFFF',
   },
+  roleCardSubtitle: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  activeRoleCardSubtitle: {
+    color: '#D1FAE5',
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
 });
+
+
+
+
+
 
