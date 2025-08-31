@@ -111,7 +111,7 @@ export default function Login() {
         
          // Save token + role in AsyncStorage
         await AsyncStorage.setItem("userToken", data.token);
-        await AsyncStorage.setItem("userRole", data.role); // <-- Save role here
+        await AsyncStorage.setItem("userRole", data.role);
 
 
         // Show professional toast notification
@@ -120,7 +120,18 @@ export default function Login() {
         
         // Navigate after toast is shown
         setTimeout(() => {
-          router.push("/questions/user-questions");
+          if (data.role === "user") {
+            router.replace("/questions/user-questions");
+          } else if (data.role === "consultant") {
+            router.replace("/questions/consultant-questions");
+          } else if (data.role === "admin") {
+            router.replace("/dashboards/admin");
+          } else if (data.role === "super-admin") {
+            router.replace("/dashboards/super-admin");
+          } else {
+            // fallback
+            router.replace("/login");
+          }
         }, 2000);
         
       } else {
