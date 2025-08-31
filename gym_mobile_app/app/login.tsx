@@ -126,7 +126,7 @@ export default function Login() {
             router.replace("/dashboards/consultant");
           } else if (data.role === "admin") {
             router.replace("/dashboards/admin");
-          } else if (data.role === "super-admin") {
+          } else if (data.role === "superadmin") {
             router.replace("/dashboards/super-admin");
           } else {
             // fallback

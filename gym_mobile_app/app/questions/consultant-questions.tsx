@@ -23,7 +23,7 @@ export default function ConsultantQuestions() {
         router.replace("/dashboards/consultant");
       } else if (role === "admin") {
         router.replace("/dashboards/admin");
-      } else if (role === "super-admin") {
+      } else if (role === "superadmin") {
         router.replace("/dashboards/super-admin");
       } else {
         router.replace("/login"); // fallback
