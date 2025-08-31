@@ -121,16 +121,16 @@ export default function Login() {
         // Navigate after toast is shown
         setTimeout(() => {
           if (data.role === "user") {
-            router.replace("/questions/user-questions");
+            router.replace("/dashboards/user");
           } else if (data.role === "consultant") {
-            router.replace("/questions/consultant-questions");
+            router.replace("/dashboards/consultant");
           } else if (data.role === "admin") {
             router.replace("/dashboards/admin");
           } else if (data.role === "super-admin") {
             router.replace("/dashboards/super-admin");
           } else {
             // fallback
-            router.replace("/login");
+            router.replace("/register");
           }
         }, 2000);
         
