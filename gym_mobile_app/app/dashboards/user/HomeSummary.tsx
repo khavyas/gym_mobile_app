@@ -2,10 +2,33 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack'; 
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
+// Define your navigation types
+type RootStackParamList = {
+  HomeSummary: undefined;
+  EventDetails: { 
+    type: string;
+    title: string;
+    time: string;
+    duration: string;
+    cost: string;
+    benefits: string;
+    instructor: string;
+  };
+  // Add other screens here as needed
+};
+
+type HomeSummaryNavigationProp = StackNavigationProp<RootStackParamList, 'HomeSummary'>;
+
 export default function HomeSummary() {
+  const router = useRouter(); 
+  const navigation = useNavigation<HomeSummaryNavigationProp>();
+  
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -98,6 +121,106 @@ export default function HomeSummary() {
           </View>
         </View>
 
+        {/* Classes Banner */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Upcoming Classes</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.bannerContainer}
+          >
+            <TouchableOpacity 
+              style={styles.bannerCard}
+              onPress={() => router.push({
+                pathname: "/dashboards/user/EventDetails",
+                params: { 
+                  type: 'zumba',
+                  title: 'Zumba Fitness Party',
+                  time: 'Tomorrow at 7:00 PM',
+                  duration: '60 mins',
+                  cost: '$15',
+                  benefits: 'Cardio workout, Fun atmosphere, Full-body movement',
+                  instructor: 'Maria Rodriguez',
+                  locationType: 'online', // Add this
+                  location: 'Zoom Meeting', // Add this
+                  meetingLink: 'https://zoom.us/j/123456789' // Add for online classes
+                }
+              })}
+            >
+              <LinearGradient
+                colors={['#EC4899', '#8B5CF6']}
+                style={styles.bannerGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.bannerTitle}>Zumba Party</Text>
+                <Text style={styles.bannerText}>Tomorrow at 7:00 PM</Text>
+                <Text style={styles.bannerCta}>Tap for details →</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.bannerCard}
+               onPress={() => router.push({
+                pathname: "/dashboards/user/EventDetails",
+                params: { 
+                  type: 'meditation',
+                title: 'Guided Meditation',
+                time: 'Wednesday at 6:30 PM',
+                duration: '45 mins',
+                cost: '$10',
+                benefits: 'Stress reduction, Mental clarity, Improved focus',
+                instructor: 'David Chen',
+                locationType: 'in-person', // Add this
+                location: 'Main Studio - 123 Fitness St', // Add this
+                address: '123 Fitness Street, Health City, HC 12345' 
+                }
+              })}
+            >
+              <LinearGradient
+                colors={['#3B82F6', '#1D4ED8']}
+                style={styles.bannerGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.bannerTitle}>Meditation</Text>
+                <Text style={styles.bannerText}>Wednesday at 6:30 PM</Text>
+                <Text style={styles.bannerCta}>Tap for details →</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.bannerCard}
+              onPress={() => router.push({
+                pathname: "/dashboards/user/EventDetails",
+                params: { 
+                  type: 'yoga',
+                  title: 'Vinyasa Flow Yoga',
+                  time: 'Friday at 5:00 PM',
+                  duration: '75 mins',
+                  cost: '$12',
+                  benefits: 'Flexibility, Strength building, Mind-body connection',
+                  instructor: 'Sarah Johnson',
+                  locationType: 'in-person', // Add this
+                  location: 'Main Studio - 123 Fitness St', // Add this
+                  address: '123 Fitness Street, Health City, HC 12345' // Add for in-person
+                }
+              })}       
+            >
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                style={styles.bannerGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.bannerTitle}>Yoga Flow</Text>
+                <Text style={styles.bannerText}>Friday at 5:00 PM</Text>
+                <Text style={styles.bannerCta}>Tap for details →</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
         {/* Weekly Overview */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>This Week</Text>
@@ -138,6 +261,37 @@ export default function HomeSummary() {
 }
 
 const styles = StyleSheet.create({
+  bannerContainer: {
+  paddingHorizontal: 20,
+},
+bannerCard: {
+  width: width * 0.7,
+  height: 120,
+  borderRadius: 16,
+  marginRight: 16,
+  overflow: 'hidden',
+},
+bannerGradient: {
+  flex: 1,
+  padding: 16,
+  justifyContent: 'center',
+},
+bannerTitle: {
+  fontSize: 18,
+  fontWeight: '700',
+  color: '#FFFFFF',
+  marginBottom: 4,
+},
+bannerText: {
+  fontSize: 12,
+  color: 'rgba(255, 255, 255, 0.9)',
+  marginBottom: 8,
+},
+bannerCta: {
+  fontSize: 12,
+  color: '#FFFFFF',
+  fontWeight: '600',
+},
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
