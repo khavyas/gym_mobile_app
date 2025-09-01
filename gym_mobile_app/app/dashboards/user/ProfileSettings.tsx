@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Picker } from "@react-native-picker/picker";
@@ -85,64 +85,63 @@ export default function ProfileSettings() {
 
   // Function to handle saving changes
   const saveChanges = () => {
-    // In a real app, you would send this data to your backend
-    alert("Your changes have been saved successfully!");
+    Alert.alert("Success", "Your changes have been saved successfully!");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
       {/* Header */}
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900">Profile Settings</Text>
-        <Text className="text-gray-500 mt-1">
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Profile Settings</Text>
+        <Text style={styles.headerSubtitle}>
           Manage your personal information, health metrics, and preferences
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Personal Information Section */}
-        <View className="bg-white mt-6 mx-4 rounded-xl shadow-sm">
-          <View className="flex-row items-center px-5 py-4 border-b border-gray-100">
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <UserIcon size={20} color="#4F46E5" />
-            <Text className="text-lg font-semibold text-gray-900 ml-3">Personal Information</Text>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
           </View>
           
-          <View className="px-5 py-4">
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Full Name</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Full Name</Text>
               <TextInput
-                className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+                style={styles.textInput}
                 value={userInfo.name}
                 onChangeText={(value) => handleInputChange("userInfo", "name", value)}
               />
             </View>
             
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Email Address</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email Address</Text>
               <TextInput
-                className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+                style={styles.textInput}
                 value={userInfo.email}
                 onChangeText={(value) => handleInputChange("userInfo", "email", value)}
                 keyboardType="email-address"
               />
             </View>
             
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-1">Phone Number</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Phone Number</Text>
               <TextInput
-                className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+                style={styles.textInput}
                 value={userInfo.phone}
                 onChangeText={(value) => handleInputChange("userInfo", "phone", value)}
                 keyboardType="phone-pad"
               />
             </View>
             
-            <View>
-              <Text className="text-sm font-medium text-gray-700 mb-1">Bio</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Bio</Text>
               <TextInput
-                className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 h-20"
+                style={[styles.textInput, styles.bioInput]}
                 value={userInfo.bio}
                 onChangeText={(value) => handleInputChange("userInfo", "bio", value)}
                 multiline
@@ -152,28 +151,28 @@ export default function ProfileSettings() {
         </View>
 
         {/* Health Metrics Section */}
-        <View className="bg-white mt-6 mx-4 rounded-xl shadow-sm">
-          <View className="flex-row items-center px-5 py-4 border-b border-gray-100">
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <HeartIcon size={20} color="#4F46E5" />
-            <Text className="text-lg font-semibold text-gray-900 ml-3">Health Metrics</Text>
+            <Text style={styles.sectionTitle}>Health Metrics</Text>
           </View>
           
-          <View className="px-5 py-4">
-            <View className="flex-row mb-4">
-              <View className="flex-1 mr-2">
-                <Text className="text-sm font-medium text-gray-700 mb-1">Weight (kg)</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.row}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>Weight (kg)</Text>
                 <TextInput
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+                  style={styles.textInput}
                   value={healthMetrics.weight}
                   onChangeText={(value) => handleInputChange("healthMetrics", "weight", value)}
                   keyboardType="numeric"
                 />
               </View>
               
-              <View className="flex-1 ml-2">
-                <Text className="text-sm font-medium text-gray-700 mb-1">Height (cm)</Text>
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>Height (cm)</Text>
                 <TextInput
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+                  style={styles.textInput}
                   value={healthMetrics.height}
                   onChangeText={(value) => handleInputChange("healthMetrics", "height", value)}
                   keyboardType="numeric"
@@ -181,24 +180,24 @@ export default function ProfileSettings() {
               </View>
             </View>
             
-            <View className="flex-row mb-4">
-              <View className="flex-1 mr-2">
-                <Text className="text-sm font-medium text-gray-700 mb-1">Age</Text>
+            <View style={styles.row}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>Age</Text>
                 <TextInput
-                  className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+                  style={styles.textInput}
                   value={healthMetrics.age}
                   onChangeText={(value) => handleInputChange("healthMetrics", "age", value)}
                   keyboardType="numeric"
                 />
               </View>
               
-              <View className="flex-1 ml-2">
-                <Text className="text-sm font-medium text-gray-700 mb-1">Gender</Text>
-                <View className="bg-gray-50 border border-gray-300 rounded-lg overflow-hidden">
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>Gender</Text>
+                <View style={styles.pickerContainer}>
                   <Picker
                     selectedValue={healthMetrics.gender}
                     onValueChange={(value: string) => handleInputChange("healthMetrics", "gender", value)}
-                    style={{ height: 50 }}
+                    style={styles.picker}
                   >
                     <Picker.Item label="Male" value="male" />
                     <Picker.Item label="Female" value="female" />
@@ -208,13 +207,13 @@ export default function ProfileSettings() {
               </View>
             </View>
             
-            <View>
-              <Text className="text-sm font-medium text-gray-700 mb-1">Fitness Goal</Text>
-              <View className="bg-gray-50 border border-gray-300 rounded-lg overflow-hidden">
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Fitness Goal</Text>
+              <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={healthMetrics.fitnessGoal}
                   onValueChange={(value: string) => handleInputChange("healthMetrics", "fitnessGoal", value)}
-                  style={{ height: 50 }}
+                  style={styles.picker}
                 >
                   <Picker.Item label="Build Muscle" value="build_muscle" />
                   <Picker.Item label="Lose Weight" value="lose_weight" />
@@ -228,17 +227,17 @@ export default function ProfileSettings() {
         </View>
 
         {/* Notification Settings */}
-        <View className="bg-white mt-6 mx-4 rounded-xl shadow-sm">
-          <View className="flex-row items-center px-5 py-4 border-b border-gray-100">
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <BellIcon size={20} color="#4F46E5" />
-            <Text className="text-lg font-semibold text-gray-900 ml-3">Notification Preferences</Text>
+            <Text style={styles.sectionTitle}>Notification Preferences</Text>
           </View>
           
-          <View className="px-5 py-4">
-            <View className="flex-row justify-between items-center py-3">
-              <View className="flex-1">
-                <Text className="text-gray-900 font-medium">Workout Reminders</Text>
-                <Text className="text-gray-500 text-sm">Get notified about upcoming workouts</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchTextContainer}>
+                <Text style={styles.switchTitle}>Workout Reminders</Text>
+                <Text style={styles.switchSubtitle}>Get notified about upcoming workouts</Text>
               </View>
               <Switch
                 value={notifications.workoutReminders}
@@ -247,10 +246,10 @@ export default function ProfileSettings() {
               />
             </View>
             
-            <View className="flex-row justify-between items-center py-3 border-t border-gray-100">
-              <View className="flex-1">
-                <Text className="text-gray-900 font-medium">New Content</Text>
-                <Text className="text-gray-500 text-sm">Updates about new workouts and articles</Text>
+            <View style={[styles.switchRow, styles.borderTop]}>
+              <View style={styles.switchTextContainer}>
+                <Text style={styles.switchTitle}>New Content</Text>
+                <Text style={styles.switchSubtitle}>Updates about new workouts and articles</Text>
               </View>
               <Switch
                 value={notifications.newContent}
@@ -259,10 +258,10 @@ export default function ProfileSettings() {
               />
             </View>
             
-            <View className="flex-row justify-between items-center py-3 border-t border-gray-100">
-              <View className="flex-1">
-                <Text className="text-gray-900 font-medium">Promotions & Offers</Text>
-                <Text className="text-gray-500 text-sm">Special discounts and offers</Text>
+            <View style={[styles.switchRow, styles.borderTop]}>
+              <View style={styles.switchTextContainer}>
+                <Text style={styles.switchTitle}>Promotions & Offers</Text>
+                <Text style={styles.switchSubtitle}>Special discounts and offers</Text>
               </View>
               <Switch
                 value={notifications.promotionOffers}
@@ -271,10 +270,10 @@ export default function ProfileSettings() {
               />
             </View>
             
-            <View className="flex-row justify-between items-center py-3 border-t border-gray-100">
-              <View className="flex-1">
-                <Text className="text-gray-900 font-medium">Appointment Reminders</Text>
-                <Text className="text-gray-500 text-sm">Notifications for trainer sessions</Text>
+            <View style={[styles.switchRow, styles.borderTop]}>
+              <View style={styles.switchTextContainer}>
+                <Text style={styles.switchTitle}>Appointment Reminders</Text>
+                <Text style={styles.switchSubtitle}>Notifications for trainer sessions</Text>
               </View>
               <Switch
                 value={notifications.appointmentReminders}
@@ -286,17 +285,17 @@ export default function ProfileSettings() {
         </View>
 
         {/* Security Settings */}
-        <View className="bg-white mt-6 mx-4 rounded-xl shadow-sm">
-          <View className="flex-row items-center px-5 py-4 border-b border-gray-100">
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <LockClosedIcon size={20} color="#4F46E5" />
-            <Text className="text-lg font-semibold text-gray-900 ml-3">Security</Text>
+            <Text style={styles.sectionTitle}>Security</Text>
           </View>
           
-          <View className="px-5 py-4">
-            <View className="flex-row justify-between items-center py-3">
-              <View className="flex-1">
-                <Text className="text-gray-900 font-medium">Biometric Login</Text>
-                <Text className="text-gray-500 text-sm">Use fingerprint or face recognition</Text>
+          <View style={styles.sectionContent}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchTextContainer}>
+                <Text style={styles.switchTitle}>Biometric Login</Text>
+                <Text style={styles.switchSubtitle}>Use fingerprint or face recognition</Text>
               </View>
               <Switch
                 value={security.biometricLogin}
@@ -305,10 +304,10 @@ export default function ProfileSettings() {
               />
             </View>
             
-            <View className="flex-row justify-between items-center py-3 border-t border-gray-100">
-              <View className="flex-1">
-                <Text className="text-gray-900 font-medium">Two-Factor Authentication</Text>
-                <Text className="text-gray-500 text-sm">Extra layer of security for your account</Text>
+            <View style={[styles.switchRow, styles.borderTop]}>
+              <View style={styles.switchTextContainer}>
+                <Text style={styles.switchTitle}>Two-Factor Authentication</Text>
+                <Text style={styles.switchSubtitle}>Extra layer of security for your account</Text>
               </View>
               <Switch
                 value={security.twoFactorAuth}
@@ -317,55 +316,227 @@ export default function ProfileSettings() {
               />
             </View>
             
-            <TouchableOpacity className="flex-row justify-between items-center py-4 border-t border-gray-100">
-              <Text className="text-gray-900 font-medium">Change Password</Text>
+            <TouchableOpacity style={[styles.menuItem, styles.borderTop]}>
+              <Text style={styles.menuItemText}>Change Password</Text>
               <ChevronRightIcon size={20} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Additional Settings Options */}
-        <View className="bg-white mt-6 mx-4 rounded-xl shadow-sm mb-8">
-          <TouchableOpacity className="flex-row justify-between items-center px-5 py-4 border-b border-gray-100">
-            <View className="flex-row items-center">
+        <View style={[styles.section, styles.lastSection]}>
+          <TouchableOpacity style={[styles.menuItem, styles.borderBottom]}>
+            <View style={styles.menuItemLeft}>
               <ChartBarIcon size={20} color="#4F46E5" />
-              <Text className="text-gray-900 font-medium ml-3">Workout Preferences</Text>
+              <Text style={styles.menuItemText}>Workout Preferences</Text>
             </View>
             <ChevronRightIcon size={20} color="#9CA3AF" />
           </TouchableOpacity>
           
-          <TouchableOpacity className="flex-row justify-between items-center px-5 py-4 border-b border-gray-100">
-            <View className="flex-row items-center">
+          <TouchableOpacity style={[styles.menuItem, styles.borderBottom]}>
+            <View style={styles.menuItemLeft}>
               <CreditCardIcon size={20} color="#4F46E5" />
-              <Text className="text-gray-900 font-medium ml-3">Payment Methods</Text>
+              <Text style={styles.menuItemText}>Payment Methods</Text>
             </View>
             <ChevronRightIcon size={20} color="#9CA3AF" />
           </TouchableOpacity>
           
-          <TouchableOpacity className="flex-row justify-between items-center px-5 py-4 border-b border-gray-100">
-            <View className="flex-row items-center">
+          <TouchableOpacity style={[styles.menuItem, styles.borderBottom]}>
+            <View style={styles.menuItemLeft}>
               <QuestionMarkCircleIcon size={20} color="#4F46E5" />
-              <Text className="text-gray-900 font-medium ml-3">Help & Support</Text>
+              <Text style={styles.menuItemText}>Help & Support</Text>
             </View>
             <ChevronRightIcon size={20} color="#9CA3AF" />
           </TouchableOpacity>
           
-          <TouchableOpacity className="flex-row justify-between items-center px-5 py-4">
-            <View className="flex-row items-center">
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuItemLeft}>
               <ArrowRightOnRectangleIcon size={20} color="#EF4444" />
-              <Text className="text-red-500 font-medium ml-3">Logout</Text>
+              <Text style={styles.logoutText}>Logout</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Save Button */}
         <TouchableOpacity 
-          className="bg-indigo-600 mx-4 py-4 rounded-xl mb-8 shadow-sm"
+          style={styles.saveButton}
           onPress={saveChanges}
         >
-          <Text className="text-white text-center font-bold text-lg">Save Changes</Text>
+          <Text style={styles.saveButtonText}>Save Changes</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+  },
+  header: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    color: '#94A3B8',
+    marginTop: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  section: {
+    backgroundColor: '#1E293B',
+    marginTop: 24,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  lastSection: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 12,
+  },
+  sectionContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  textInput: {
+    backgroundColor: '#374151',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  bioInput: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  halfWidth: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  pickerContainer: {
+    backgroundColor: '#374151',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  switchTextContainer: {
+    flex: 1,
+  },
+  switchTitle: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  switchSubtitle: {
+    color: '#94A3B8',
+    fontSize: 14,
+  },
+  borderTop: {
+    borderTopWidth: 1,
+    borderTopColor: '#374151',
+  },
+  borderBottom: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+    marginLeft: 12,
+    fontSize: 16,
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontWeight: '500',
+    marginLeft: 12,
+    fontSize: 16,
+  },
+  saveButton: {
+    backgroundColor: '#4F46E5',
+    marginHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  saveButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+});
