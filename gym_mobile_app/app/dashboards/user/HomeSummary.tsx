@@ -51,6 +51,8 @@ export default function HomeSummary() {
   const [error, setError] = useState<string | null>(null);
   const [todayWaterIntake, setTodayWaterIntake] = useState(0);
   const [waterLoading, setWaterLoading] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -62,7 +64,29 @@ export default function HomeSummary() {
   useEffect(() => {
     fetchEvents();
     fetchTodayWaterIntake();
+    fetchUserData();
   }, []);
+
+  const getUserInitials = (name: string) => {
+    if (!name) return 'JD'; // fallback
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('')
+      .substring(0, 2);
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const storedName = await AsyncStorage.getItem('userName');
+      const storedEmail = await AsyncStorage.getItem('userEmail');
+      
+      if (storedName) setUserName(storedName);
+      if (storedEmail) setUserEmail(storedEmail);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -79,51 +103,52 @@ export default function HomeSummary() {
     }
   };
 
-const fetchTodayWaterIntake = async () => {
-  try {
-    setWaterLoading(true);
-    const token = await AsyncStorage.getItem('userToken');
-    
-    if (!token) {
-      console.log('No auth token found');
-      return;
-    }
-
-    // Try fetching without date parameter first
-    const response = await axios.get(`${API_BASE_URL}/water`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
+  const fetchTodayWaterIntake = async () => {
+    try {
+      setWaterLoading(true);
+      const token = await AsyncStorage.getItem('userToken');
+      
+      if (!token) {
+        console.log('No auth token found');
+        return;
       }
-    });
 
-    console.log('Water API Response:', response.data); // Add this for debugging
+      // Try fetching without date parameter first
+      const response = await axios.get(`${API_BASE_URL}/water`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
 
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Filter on client side since API might not support date filtering
-    let totalIntake = 0;
-    
-    if (Array.isArray(response.data)) {
-      totalIntake = response.data.reduce((sum: number, entry: WaterIntake) => {
-        const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
-        return entryDate === today ? sum + entry.amount : sum;
-      }, 0);
+      console.log('Water API Response:', response.data); // Add this for debugging
+
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Filter on client side since API might not support date filtering
+      let totalIntake = 0;
+      
+      if (Array.isArray(response.data)) {
+        totalIntake = response.data.reduce((sum: number, entry: WaterIntake) => {
+          const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
+          return entryDate === today ? sum + entry.amount : sum;
+        }, 0);
+      }
+
+      console.log('Today water intake:', totalIntake); // Add this for debugging
+      setTodayWaterIntake(totalIntake);
+    } catch (error: any) {
+      console.error('Error fetching water intake:', error);
+      // Log more details about the error
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+    } finally {
+      setWaterLoading(false);
     }
+  };
 
-    console.log('Today water intake:', totalIntake); // Add this for debugging
-    setTodayWaterIntake(totalIntake);
-  } catch (error: any) {
-    console.error('Error fetching water intake:', error);
-    // Log more details about the error
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-      console.error('Error status:', error.response.status);
-    }
-  } finally {
-    setWaterLoading(false);
-  }
-};
   const getEventGradientColors = (title: string): [string, string] => {
     const lowercaseTitle = title.toLowerCase();
     
@@ -139,6 +164,18 @@ const fetchTodayWaterIntake = async () => {
       return ['#F59E0B', '#D97706'];
     } else {
       return ['#6366F1', '#4F46E5']; // Default purple gradient
+    }
+  };
+
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    
+    if (hour < 12) {
+      return "Good Morning! 💪";
+    } else if (hour < 17) {
+      return "Good Afternoon! 💪";
+    } else {
+      return "Good Evening! 💪";
     }
   };
 
@@ -202,11 +239,16 @@ const fetchTodayWaterIntake = async () => {
         {/* Header Section */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good Morning! 💪</Text>
+            <Text style={styles.greeting}>{getTimeBasedGreeting()}</Text>
             <Text style={styles.date}>{currentDate}</Text>
           </View>
-          <TouchableOpacity style={styles.profileIcon}>
-            <Text style={styles.profileInitial}>JD</Text>
+          <TouchableOpacity 
+            style={styles.profileIcon}
+            onPress={() => router.push('../dashboards/user/Profile')}
+          >
+            <Text style={styles.profileInitial}>
+              {getUserInitials(userName)}
+            </Text>
           </TouchableOpacity>
         </View>
 
