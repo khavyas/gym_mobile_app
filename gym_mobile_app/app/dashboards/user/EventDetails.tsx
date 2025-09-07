@@ -1,3 +1,4 @@
+
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -10,6 +11,7 @@ const { width, height } = Dimensions.get('window');
 
 // Define the type for route parameters
 interface EventParams {
+  eventId: string;
   type: string;
   title: string;
   time: string;
@@ -17,10 +19,12 @@ interface EventParams {
   cost: string;
   benefits: string;
   instructor: string;
-  locationType: 'online' | 'in-person'; 
+  locationType: 'online' | 'in-person' | 'hybrid'; 
   location: string; 
   meetingLink?: string;
   address?: string; 
+  description: string;
+  gymCenter: string;
 }
 
 export default function EventDetails() {
@@ -56,39 +60,64 @@ export default function EventDetails() {
   
   // Get icon and metadata based on event type
   const getEventData = () => {
-    switch(params.type) {
-      case 'zumba': 
-        return {
-          icon: '💃',
-          gradientColors: ['#EC4899', '#8B5CF6'],
-          difficulty: 'Intermediate',
-          category: 'Dance Fitness',
-          equipment: 'None required'
-        };
-      case 'meditation': 
-        return {
-          icon: '🧘‍♂️',
-          gradientColors: ['#3B82F6', '#1D4ED8'],
-          difficulty: 'Beginner',
-          category: 'Mindfulness',
-          equipment: 'Yoga mat (optional)'
-        };
-      case 'yoga': 
-        return {
-          icon: '🧘‍♀️',
-          gradientColors: ['#10B981', '#059669'],
-          difficulty: 'All levels',
-          category: 'Flexibility',
-          equipment: 'Yoga mat, blocks'
-        };
-      default: 
-        return {
-          icon: '🎯',
-          gradientColors: ['#6B7280', '#374151'],
-          difficulty: 'Mixed',
-          category: 'General',
-          equipment: 'Varies'
-        };
+    const titleLower = params.title.toLowerCase();
+    
+    if (titleLower.includes('zumba') || titleLower.includes('dance')) {
+      return {
+        icon: '💃',
+        gradientColors: ['#EC4899', '#8B5CF6'],
+        difficulty: 'Intermediate',
+        category: 'Dance Fitness',
+        equipment: 'None required'
+      };
+    } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
+      return {
+        icon: '🧘‍♂️',
+        gradientColors: ['#3B82F6', '#1D4ED8'],
+        difficulty: 'Beginner',
+        category: 'Mindfulness',
+        equipment: 'Yoga mat (optional)'
+      };
+    } else if (titleLower.includes('yoga')) {
+      return {
+        icon: '🧘‍♀️',
+        gradientColors: ['#10B981', '#059669'],
+        difficulty: 'All levels',
+        category: 'Flexibility & Strength',
+        equipment: 'Yoga mat, blocks'
+      };
+    } else if (titleLower.includes('cardio') || titleLower.includes('hiit')) {
+      return {
+        icon: '🔥',
+        gradientColors: ['#EF4444', '#DC2626'],
+        difficulty: 'High',
+        category: 'Cardio Training',
+        equipment: 'None required'
+      };
+    } else if (titleLower.includes('strength') || titleLower.includes('weight')) {
+      return {
+        icon: '🏋️‍♂️',
+        gradientColors: ['#F59E0B', '#D97706'],
+        difficulty: 'Intermediate',
+        category: 'Strength Training',
+        equipment: 'Weights, resistance bands'
+      };
+    } else if (titleLower.includes('pilates')) {
+      return {
+        icon: '🤸‍♀️',
+        gradientColors: ['#8B5CF6', '#7C3AED'],
+        difficulty: 'Intermediate',
+        category: 'Core & Flexibility',
+        equipment: 'Pilates mat, props'
+      };
+    } else {
+      return {
+        icon: '🎯',
+        gradientColors: ['#6366F1', '#4F46E5'],
+        difficulty: 'Mixed',
+        category: 'Fitness',
+        equipment: 'Varies'
+      };
     }
   };
 
@@ -109,12 +138,31 @@ export default function EventDetails() {
       }),
     ]).start();
     
-    // In a real app, this would navigate to a booking screen
+    // In a real app, this would navigate to a booking screen or make an API call
     alert(`Booking ${params.title} with ${params.instructor}`);
   };
 
   const toggleBookmark = () => {
     setIsBookmarked(!isBookmarked);
+    // In a real app, you'd save this to backend or local storage
+  };
+
+  const handleJoinOnline = () => {
+    if (params.meetingLink) {
+      // In a real app, this would open the meeting link
+      alert(`Opening meeting: ${params.meetingLink}`);
+    } else {
+      alert('Meeting link will be provided 15 minutes before the session starts.');
+    }
+  };
+
+  const handleGetDirections = () => {
+    if (params.address) {
+      // In a real app, this would open maps with directions
+      alert(`Opening directions to: ${params.address}`);
+    } else {
+      alert('Address details will be provided after booking.');
+    }
   };
 
   return (
@@ -210,7 +258,7 @@ export default function EventDetails() {
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Schedule</Text>
                 <Text style={styles.detailValue}>{params.time}</Text>
-                <Text style={styles.detailSubtext}>Weekly recurring session</Text>
+                <Text style={styles.detailSubtext}>Please arrive 10 minutes early</Text>
               </View>
             </View>
 
@@ -234,40 +282,66 @@ export default function EventDetails() {
             <View style={styles.detailRow}>
               <View style={styles.detailIconContainer}>
                 <View style={styles.iconBackground}>
-                  <Ionicons name="people-outline" size={20} color="#EF4444" />
+                  <Ionicons name="business-outline" size={20} color="#EF4444" />
                 </View>
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Class Size</Text>
-                <Text style={styles.detailValue}>12 spots available</Text>
-                <Text style={styles.detailSubtext}>Maximum 20 participants</Text>
+                <Text style={styles.detailLabel}>Venue</Text>
+                <Text style={styles.detailValue}>{params.gymCenter}</Text>
+                <Text style={styles.detailSubtext}>Certified fitness center</Text>
               </View>
             </View>
           </View>
         </View>
 
-     {/* Location Section */}
+        {/* Location Section */}
         <View style={styles.locationSection}>
           <Text style={styles.sectionTitle}>Location & Access</Text>
           
           <View style={styles.locationCard}>
             <View style={styles.detailRow}>
               <View style={styles.detailIconContainer}>
-                <View style={[styles.iconBackground, { backgroundColor: params.locationType === 'online' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)' }]}>
+                <View style={[styles.iconBackground, { 
+                  backgroundColor: params.locationType === 'online' 
+                    ? 'rgba(59, 130, 246, 0.1)' 
+                    : params.locationType === 'hybrid'
+                    ? 'rgba(139, 92, 246, 0.1)'
+                    : 'rgba(239, 68, 68, 0.1)' 
+                }]}>
                   <Ionicons 
-                    name={params.locationType === 'online' ? "videocam-outline" : "location-outline"} 
+                    name={params.locationType === 'online' 
+                      ? "videocam-outline" 
+                      : params.locationType === 'hybrid'
+                      ? "layers-outline"
+                      : "location-outline"
+                    } 
                     size={20} 
-                    color={params.locationType === 'online' ? "#3B82F6" : "#EF4444"} 
+                    color={params.locationType === 'online' 
+                      ? "#3B82F6" 
+                      : params.locationType === 'hybrid'
+                      ? "#8B5CF6"
+                      : "#EF4444"
+                    } 
                   />
                 </View>
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Session Type</Text>
                 <Text style={styles.detailValue}>
-                  {params.locationType === 'online' ? 'Online Session' : 'In-Person Session'}
+                  {params.locationType === 'online' 
+                    ? 'Online Session' 
+                    : params.locationType === 'hybrid'
+                    ? 'Hybrid Session'
+                    : 'In-Person Session'
+                  }
                 </Text>
                 <Text style={styles.detailSubtext}>
-                  {params.locationType === 'online' ? 'Join from anywhere' : 'Physical attendance required'}
+                  {params.locationType === 'online' 
+                    ? 'Join from anywhere' 
+                    : params.locationType === 'hybrid'
+                    ? 'Choose online or in-person'
+                    : 'Physical attendance required'
+                  }
                 </Text>
               </View>
             </View>
@@ -289,25 +363,25 @@ export default function EventDetails() {
                   {params.locationType === 'online' ? 'Platform' : 'Venue'}
                 </Text>
                 <Text style={styles.detailValue}>{params.location}</Text>
-                {params.locationType === 'online' && params.meetingLink && (
+                
+                {/* Online Meeting Link */}
+                {(params.locationType === 'online' || params.locationType === 'hybrid') && (
                   <TouchableOpacity 
                     style={styles.linkButton}
-                    onPress={() => {
-                      // In a real app, this would open the meeting link
-                      alert(`Opening meeting: ${params.meetingLink}`);
-                    }}
+                    onPress={handleJoinOnline}
                   >
                     <Ionicons name="link-outline" size={14} color="#3B82F6" />
-                    <Text style={styles.linkText}>Join Meeting</Text>
+                    <Text style={styles.linkText}>
+                      {params.meetingLink ? 'Join Meeting' : 'Meeting Link (Available Soon)'}
+                    </Text>
                   </TouchableOpacity>
                 )}
-                {params.locationType === 'in-person' && params.address && (
+                
+                {/* In-Person Directions */}
+                {(params.locationType === 'in-person' || params.locationType === 'hybrid') && params.address && (
                   <TouchableOpacity 
                     style={styles.linkButton}
-                    onPress={() => {
-                      // In a real app, this would open maps
-                      alert(`Opening directions to: ${params.address}`);
-                    }}
+                    onPress={handleGetDirections}
                   >
                     <Ionicons name="navigate-outline" size={14} color="#EF4444" />
                     <Text style={styles.linkText}>Get Directions</Text>
@@ -316,8 +390,8 @@ export default function EventDetails() {
               </View>
             </View>
 
-            {/* Show address for in-person or meeting link for online */}
-            {((params.locationType === 'in-person' && params.address) || 
+            {/* Show address for in-person/hybrid or meeting link for online */}
+            {((params.locationType !== 'online' && params.address) || 
               (params.locationType === 'online' && params.meetingLink)) && (
               <>
                 <View style={styles.detailDivider} />
@@ -355,6 +429,16 @@ export default function EventDetails() {
           </View>
         </View>
 
+        {/* Description Section */}
+        {params.description && (
+          <View style={styles.descriptionSection}>
+            <Text style={styles.sectionTitle}>About This Class</Text>
+            <View style={styles.descriptionCard}>
+              <Text style={styles.descriptionText}>{params.description}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Enhanced Benefits Section */}
         <View style={styles.benefitsSection}>
           <Text style={styles.sectionTitle}>What You'll Gain</Text>
@@ -377,7 +461,7 @@ export default function EventDetails() {
                   style={styles.benefitGradient}
                 >
                   <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                  <Text style={styles.benefitText}>{benefit}</Text>
+                  <Text style={styles.benefitText}>{benefit.trim()}</Text>
                 </LinearGradient>
               </Animated.View>
             ))}
@@ -437,35 +521,6 @@ export default function EventDetails() {
 }
 
 const styles = StyleSheet.create({
-    
-  locationSection: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
-  locationCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    gap: 4,
-  },
-  linkText: {
-    fontSize: 12,
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -661,6 +716,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
   },
+  locationSection: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
+  locationCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    gap: 4,
+  },
+  linkText: {
+    fontSize: 12,
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  descriptionSection: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
+  descriptionCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  descriptionText: {
+    fontSize: 15,
+    color: '#E2E8F0',
+    lineHeight: 24,
+  },
   benefitsSection: {
     marginHorizontal: 20,
     marginBottom: 24,
@@ -778,3 +876,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

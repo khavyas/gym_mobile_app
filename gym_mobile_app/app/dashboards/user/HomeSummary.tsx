@@ -1,40 +1,196 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack'; 
 import { useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
-// Define your navigation types
-type RootStackParamList = {
-  HomeSummary: undefined;
-  EventDetails: { 
-    type: string;
-    title: string;
-    time: string;
-    duration: string;
-    cost: string;
-    benefits: string;
-    instructor: string;
+// Define Event type based on your backend Event model
+interface Event {
+  _id: string;
+  title: string;
+  description: string;
+  instructor: string;
+  cost: number;
+  benefits: string;
+  date: string;
+  location?: string;
+  eventType: 'online' | 'offline' | 'hybrid';
+  onlineLink?: string;
+  gymCenter?: {
+    _id: string;
+    name: string;
   };
-  // Add other screens here as needed
-};
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+}
 
-type HomeSummaryNavigationProp = StackNavigationProp<RootStackParamList, 'HomeSummary'>;
+interface WaterIntake {
+  _id: string;
+  user: string;
+  amount: number;
+  time: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
+const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
 
 export default function HomeSummary() {
   const router = useRouter(); 
-  const navigation = useNavigation<HomeSummaryNavigationProp>();
-  
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [todayWaterIntake, setTodayWaterIntake] = useState(0);
+  const [waterLoading, setWaterLoading] = useState(false);
+
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
+
+  useEffect(() => {
+    fetchEvents();
+    fetchTodayWaterIntake();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axios.get(`${API_BASE_URL}/events`);
+      setEvents(response.data);
+    } catch (err) {
+      console.error('Error fetching events:', err);
+      setError('Failed to load events. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+const fetchTodayWaterIntake = async () => {
+  try {
+    setWaterLoading(true);
+    const token = await AsyncStorage.getItem('userToken');
+    
+    if (!token) {
+      console.log('No auth token found');
+      return;
+    }
+
+    // Try fetching without date parameter first
+    const response = await axios.get(`${API_BASE_URL}/water`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    console.log('Water API Response:', response.data); // Add this for debugging
+
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Filter on client side since API might not support date filtering
+    let totalIntake = 0;
+    
+    if (Array.isArray(response.data)) {
+      totalIntake = response.data.reduce((sum: number, entry: WaterIntake) => {
+        const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
+        return entryDate === today ? sum + entry.amount : sum;
+      }, 0);
+    }
+
+    console.log('Today water intake:', totalIntake); // Add this for debugging
+    setTodayWaterIntake(totalIntake);
+  } catch (error: any) {
+    console.error('Error fetching water intake:', error);
+    // Log more details about the error
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+    }
+  } finally {
+    setWaterLoading(false);
+  }
+};
+  const getEventGradientColors = (title: string): [string, string] => {
+    const lowercaseTitle = title.toLowerCase();
+    
+    if (lowercaseTitle.includes('zumba') || lowercaseTitle.includes('dance')) {
+      return ['#EC4899', '#8B5CF6'];
+    } else if (lowercaseTitle.includes('meditation') || lowercaseTitle.includes('mindfulness')) {
+      return ['#3B82F6', '#1D4ED8'];
+    } else if (lowercaseTitle.includes('yoga')) {
+      return ['#10B981', '#059669'];
+    } else if (lowercaseTitle.includes('cardio') || lowercaseTitle.includes('hiit')) {
+      return ['#EF4444', '#DC2626'];
+    } else if (lowercaseTitle.includes('strength') || lowercaseTitle.includes('weight')) {
+      return ['#F59E0B', '#D97706'];
+    } else {
+      return ['#6366F1', '#4F46E5']; // Default purple gradient
+    }
+  };
+
+  const formatEventDate = (dateString: string) => {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (eventDate.toDateString() === now.toDateString()) {
+      return `Today at ${eventDate.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      })}`;
+    } else if (eventDate.toDateString() === tomorrow.toDateString()) {
+      return `Tomorrow at ${eventDate.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      })}`;
+    } else {
+      return eventDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  };
+
+  const handleEventPress = (event: Event) => {
+    router.push({
+      pathname: "/dashboards/user/EventDetails",
+      params: {
+        eventId: event._id,
+        type: event.title.toLowerCase().replace(/\s+/g, ''),
+        title: event.title,
+        time: formatEventDate(event.date),
+        duration: '60 mins', // Default duration - you might want to add this to your Event model
+        cost: `$${event.cost}`,
+        benefits: event.benefits,
+        instructor: event.instructor,
+        locationType: event.eventType === 'online' ? 'online' : event.eventType === 'hybrid' ? 'hybrid' : 'in-person',
+        location: event.eventType === 'online' ? 'Online Session' : event.location || 'Fitness Center',
+        meetingLink: event.onlineLink || '',
+        address: event.eventType !== 'online' ? event.location || '' : '',
+        description: event.description,
+        gymCenter: event.gymCenter?.name || 'Fitness Center'
+      }
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -72,7 +228,9 @@ export default function HomeSummary() {
               <Text style={styles.statLabel}>Calories</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>1.5L</Text>
+              <Text style={styles.statNumber}>
+                {waterLoading ? '...' : `${(todayWaterIntake / 1000).toFixed(1)}L`}
+              </Text>
               <Text style={styles.statLabel}>Water</Text>
             </View>
           </View>
@@ -86,7 +244,10 @@ export default function HomeSummary() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={[styles.actionButton, styles.waterButton]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.waterButton]}
+              onPress={() => router.push('/dashboards/user/WaterIntake')}
+            >
               <Text style={styles.actionIcon}>💧</Text>
               <Text style={styles.actionText}>Log Water</Text>
             </TouchableOpacity>
@@ -121,104 +282,64 @@ export default function HomeSummary() {
           </View>
         </View>
 
-        {/* Classes Banner */}
+        {/* Classes Banner - Updated with API data */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upcoming Classes</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.bannerContainer}
-          >
-            <TouchableOpacity 
-              style={styles.bannerCard}
-              onPress={() => router.push({
-                pathname: "/dashboards/user/EventDetails",
-                params: { 
-                  type: 'zumba',
-                  title: 'Zumba Fitness Party',
-                  time: 'Tomorrow at 7:00 PM',
-                  duration: '60 mins',
-                  cost: '$15',
-                  benefits: 'Cardio workout, Fun atmosphere, Full-body movement',
-                  instructor: 'Maria Rodriguez',
-                  locationType: 'online', // Add this
-                  location: 'Zoom Meeting', // Add this
-                  meetingLink: 'https://zoom.us/j/123456789' // Add for online classes
-                }
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Upcoming Classes</Text>
+            {error && (
+              <TouchableOpacity onPress={fetchEvents} style={styles.retryButton}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#10B981" />
+              <Text style={styles.loadingText}>Loading events...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : events.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No upcoming events found</Text>
+            </View>
+          ) : (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.bannerContainer}
+            >
+              {events.map((event) => {
+                const gradientColors = getEventGradientColors(event.title);
+                
+                return (
+                  <TouchableOpacity 
+                    key={event._id}
+                    style={styles.bannerCard}
+                    onPress={() => handleEventPress(event)}
+                  >
+                    <LinearGradient
+                      colors={gradientColors}
+                      style={styles.bannerGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.bannerTitle}>{event.title}</Text>
+                      <Text style={styles.bannerText}>{formatEventDate(event.date)}</Text>
+                      <Text style={styles.bannerInstructor}>with {event.instructor}</Text>
+                      <View style={styles.bannerFooter}>
+                        <Text style={styles.bannerCost}>${event.cost}</Text>
+                        <Text style={styles.bannerCta}>Tap for details →</Text>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
               })}
-            >
-              <LinearGradient
-                colors={['#EC4899', '#8B5CF6']}
-                style={styles.bannerGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.bannerTitle}>Zumba Party</Text>
-                <Text style={styles.bannerText}>Tomorrow at 7:00 PM</Text>
-                <Text style={styles.bannerCta}>Tap for details →</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.bannerCard}
-               onPress={() => router.push({
-                pathname: "/dashboards/user/EventDetails",
-                params: { 
-                  type: 'meditation',
-                title: 'Guided Meditation',
-                time: 'Wednesday at 6:30 PM',
-                duration: '45 mins',
-                cost: '$10',
-                benefits: 'Stress reduction, Mental clarity, Improved focus',
-                instructor: 'David Chen',
-                locationType: 'in-person', // Add this
-                location: 'Main Studio - 123 Fitness St', // Add this
-                address: '123 Fitness Street, Health City, HC 12345' 
-                }
-              })}
-            >
-              <LinearGradient
-                colors={['#3B82F6', '#1D4ED8']}
-                style={styles.bannerGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.bannerTitle}>Meditation</Text>
-                <Text style={styles.bannerText}>Wednesday at 6:30 PM</Text>
-                <Text style={styles.bannerCta}>Tap for details →</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.bannerCard}
-              onPress={() => router.push({
-                pathname: "/dashboards/user/EventDetails",
-                params: { 
-                  type: 'yoga',
-                  title: 'Vinyasa Flow Yoga',
-                  time: 'Friday at 5:00 PM',
-                  duration: '75 mins',
-                  cost: '$12',
-                  benefits: 'Flexibility, Strength building, Mind-body connection',
-                  instructor: 'Sarah Johnson',
-                  locationType: 'in-person', // Add this
-                  location: 'Main Studio - 123 Fitness St', // Add this
-                  address: '123 Fitness Street, Health City, HC 12345' // Add for in-person
-                }
-              })}       
-            >
-              <LinearGradient
-                colors={['#10B981', '#059669']}
-                style={styles.bannerGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.bannerTitle}>Yoga Flow</Text>
-                <Text style={styles.bannerText}>Friday at 5:00 PM</Text>
-                <Text style={styles.bannerCta}>Tap for details →</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </ScrollView>
+            </ScrollView>
+          )}
         </View>
 
         {/* Weekly Overview */}
@@ -261,37 +382,6 @@ export default function HomeSummary() {
 }
 
 const styles = StyleSheet.create({
-  bannerContainer: {
-  paddingHorizontal: 20,
-},
-bannerCard: {
-  width: width * 0.7,
-  height: 120,
-  borderRadius: 16,
-  marginRight: 16,
-  overflow: 'hidden',
-},
-bannerGradient: {
-  flex: 1,
-  padding: 16,
-  justifyContent: 'center',
-},
-bannerTitle: {
-  fontSize: 18,
-  fontWeight: '700',
-  color: '#FFFFFF',
-  marginBottom: 4,
-},
-bannerText: {
-  fontSize: 12,
-  color: 'rgba(255, 255, 255, 0.9)',
-  marginBottom: 8,
-},
-bannerCta: {
-  fontSize: 12,
-  color: '#FFFFFF',
-  fontWeight: '600',
-},
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -381,12 +471,28 @@ bannerCta: {
   section: {
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 16,
-    paddingHorizontal: 20,
+  },
+  retryButton: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   quickActions: {
     flexDirection: 'row',
@@ -474,6 +580,81 @@ bannerCta: {
     fontWeight: '500',
     textAlign: 'center',
   },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  bannerContainer: {
+    paddingHorizontal: 20,
+  },
+  bannerCard: {
+    width: width * 0.7,
+    height: 140,
+    borderRadius: 16,
+    marginRight: 16,
+    overflow: 'hidden',
+  },
+  bannerGradient: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'space-between',
+  },
+  bannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  bannerText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 2,
+  },
+  bannerInstructor: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 8,
+  },
+  bannerFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bannerCost: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  bannerCta: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
   weeklyCard: {
     backgroundColor: '#1E293B',
     marginHorizontal: 20,
@@ -543,3 +724,7 @@ bannerCta: {
     color: '#94A3B8',
   },
 });
+
+
+
+
