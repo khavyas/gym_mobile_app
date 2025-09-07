@@ -6,8 +6,22 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+
 
 const { width } = Dimensions.get('window');
+
+type TabParamList = {
+  Home: undefined;
+  Fitness: undefined;
+  Consultants: undefined;
+  Appointments: undefined;
+  Shop: undefined;
+  Challenges: undefined;
+  Health: undefined;
+  Profile: undefined;
+};
 
 // Define Event type based on your backend Event model
 interface Event {
@@ -53,6 +67,8 @@ export default function HomeSummary() {
   const [waterLoading, setWaterLoading] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const navigation = useNavigation<NavigationProp<TabParamList>>();
+
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -244,7 +260,7 @@ export default function HomeSummary() {
           </View>
           <TouchableOpacity 
             style={styles.profileIcon}
-            onPress={() => router.push('../dashboards/user/Profile')}
+            onPress={() => navigation.navigate('Profile')}
           >
             <Text style={styles.profileInitial}>
               {getUserInitials(userName)}
