@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput, StyleSheet, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Picker } from "@react-native-picker/picker";
-import { ChevronRightIcon, UserIcon, LockClosedIcon, BellIcon, HeartIcon, ChartBarIcon, CreditCardIcon, QuestionMarkCircleIcon, ArrowRightOnRectangleIcon } from "react-native-heroicons/outline";
+import * as ImagePicker from 'expo-image-picker';
+import { 
+  ChevronRightIcon, 
+  UserIcon, 
+  LockClosedIcon, 
+  BellIcon, 
+  HeartIcon, 
+  ChartBarIcon, 
+  CreditCardIcon, 
+  QuestionMarkCircleIcon, 
+  ArrowRightOnRectangleIcon,
+  CameraIcon,
+  BriefcaseIcon
+} from "react-native-heroicons/outline";
 
 // Define TypeScript interfaces for our state objects
 interface UserInfo {
@@ -11,6 +24,7 @@ interface UserInfo {
   email: string;
   phone: string;
   bio: string;
+  profileImage: string | null;
 }
 
 interface HealthMetrics {
@@ -19,6 +33,15 @@ interface HealthMetrics {
   age: string;
   gender: string;
   fitnessGoal: string;
+}
+
+interface WorkPreferences {
+  occupation: string;
+  workoutTiming: string;
+  availableDays: string[];
+  workStressLevel: string;
+  sedentaryHours: string;
+  workoutLocation: string;
 }
 
 interface Notifications {
@@ -40,6 +63,7 @@ export default function ProfileSettings() {
     email: "john.doe@example.com",
     phone: "+1 (555) 123-4567",
     bio: "Fitness enthusiast focused on strength training and nutrition",
+    profileImage: null,
   });
 
   // State for health metrics
@@ -49,6 +73,16 @@ export default function ProfileSettings() {
     age: "32",
     gender: "male",
     fitnessGoal: "build_muscle",
+  });
+
+  // State for work preferences
+  const [workPreferences, setWorkPreferences] = useState<WorkPreferences>({
+    occupation: "software_engineer",
+    workoutTiming: "morning",
+    availableDays: ["monday", "wednesday", "friday"],
+    workStressLevel: "medium",
+    sedentaryHours: "6-8",
+    workoutLocation: "gym",
   });
 
   // State for notification preferences
@@ -65,13 +99,78 @@ export default function ProfileSettings() {
     twoFactorAuth: false,
   });
 
+  // Function to handle image picking
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setUserInfo({ ...userInfo, profileImage: result.assets[0].uri });
+    }
+  };
+
+  // Function to take photo with camera
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Sorry, we need camera permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setUserInfo({ ...userInfo, profileImage: result.assets[0].uri });
+    }
+  };
+
+  // Function to show image picker options
+  const showImagePicker = () => {
+    Alert.alert(
+      "Select Profile Picture",
+      "Choose how you'd like to set your profile picture",
+      [
+        { text: "Camera", onPress: takePhoto },
+        { text: "Photo Library", onPress: pickImage },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
+
   // Function to handle input changes with proper typing
-  const handleInputChange = (section: "userInfo" | "healthMetrics", field: string, value: string) => {
+  const handleInputChange = (section: "userInfo" | "healthMetrics" | "workPreferences", field: string, value: string) => {
     if (section === "userInfo") {
       setUserInfo({ ...userInfo, [field]: value });
     } else if (section === "healthMetrics") {
       setHealthMetrics({ ...healthMetrics, [field]: value });
+    } else if (section === "workPreferences") {
+      setWorkPreferences({ ...workPreferences, [field]: value });
     }
+  };
+
+  // Function to toggle work days
+  const toggleWorkDay = (day: string) => {
+    const updatedDays = workPreferences.availableDays.includes(day)
+      ? workPreferences.availableDays.filter(d => d !== day)
+      : [...workPreferences.availableDays, day];
+    
+    setWorkPreferences({ ...workPreferences, availableDays: updatedDays });
   };
 
   // Function to toggle switches with proper typing
@@ -109,6 +208,28 @@ export default function ProfileSettings() {
           </View>
           
           <View style={styles.sectionContent}>
+            {/* Profile Picture Upload */}
+            <View style={styles.profileImageSection}>
+              <Text style={styles.inputLabel}>Profile Picture</Text>
+              <View style={styles.profileImageContainer}>
+                <TouchableOpacity style={styles.profileImageButton} onPress={showImagePicker}>
+                  {userInfo.profileImage ? (
+                    <Image source={{ uri: userInfo.profileImage }} style={styles.profileImage} />
+                  ) : (
+                    <View style={styles.profileImagePlaceholder}>
+                      <CameraIcon size={32} color="#94A3B8" />
+                      <Text style={styles.profileImageText}>Add Photo</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                {userInfo.profileImage && (
+                  <TouchableOpacity style={styles.changePhotoButton} onPress={showImagePicker}>
+                    <Text style={styles.changePhotoText}>Change Photo</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Full Name</Text>
               <TextInput
@@ -146,6 +267,126 @@ export default function ProfileSettings() {
                 onChangeText={(value) => handleInputChange("userInfo", "bio", value)}
                 multiline
               />
+            </View>
+          </View>
+        </View>
+
+        {/* Work Preferences Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <BriefcaseIcon size={20} color="#4F46E5" />
+            <Text style={styles.sectionTitle}>Work Preferences</Text>
+          </View>
+          
+          <View style={styles.sectionContent}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Occupation</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={workPreferences.occupation}
+                  onValueChange={(value: string) => handleInputChange("workPreferences", "occupation", value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Software Engineer" value="software_engineer" />
+                  <Picker.Item label="Teacher" value="teacher" />
+                  <Picker.Item label="Healthcare Worker" value="healthcare" />
+                  <Picker.Item label="Manager" value="manager" />
+                  <Picker.Item label="Sales" value="sales" />
+                  <Picker.Item label="Student" value="student" />
+                  <Picker.Item label="Entrepreneur" value="entrepreneur" />
+                  <Picker.Item label="Other" value="other" />
+                </Picker>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Preferred Workout Time</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={workPreferences.workoutTiming}
+                  onValueChange={(value: string) => handleInputChange("workPreferences", "workoutTiming", value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Early Morning (5-7 AM)" value="early_morning" />
+                  <Picker.Item label="Morning (7-9 AM)" value="morning" />
+                  <Picker.Item label="Lunch Time (12-2 PM)" value="lunch" />
+                  <Picker.Item label="Evening (6-8 PM)" value="evening" />
+                  <Picker.Item label="Night (8-10 PM)" value="night" />
+                </Picker>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Available Days</Text>
+              <View style={styles.daysContainer}>
+                {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    style={[
+                      styles.dayButton,
+                      workPreferences.availableDays.includes(day) && styles.dayButtonSelected
+                    ]}
+                    onPress={() => toggleWorkDay(day)}
+                  >
+                    <Text style={[
+                      styles.dayButtonText,
+                      workPreferences.availableDays.includes(day) && styles.dayButtonTextSelected
+                    ]}>
+                      {day.charAt(0).toUpperCase() + day.slice(1, 3)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.row}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>Work Stress Level</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={workPreferences.workStressLevel}
+                    onValueChange={(value: string) => handleInputChange("workPreferences", "workStressLevel", value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Low" value="low" />
+                    <Picker.Item label="Medium" value="medium" />
+                    <Picker.Item label="High" value="high" />
+                  </Picker>
+                </View>
+              </View>
+              
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>Daily Sedentary Hours</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={workPreferences.sedentaryHours}
+                    onValueChange={(value: string) => handleInputChange("workPreferences", "sedentaryHours", value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Less than 4" value="0-4" />
+                    <Picker.Item label="4-6 hours" value="4-6" />
+                    <Picker.Item label="6-8 hours" value="6-8" />
+                    <Picker.Item label="8+ hours" value="8+" />
+                  </Picker>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Preferred Workout Location</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={workPreferences.workoutLocation}
+                  onValueChange={(value: string) => handleInputChange("workPreferences", "workoutLocation", value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Gym" value="gym" />
+                  <Picker.Item label="Home" value="home" />
+                  <Picker.Item label="Outdoors" value="outdoors" />
+                  <Picker.Item label="Office Gym" value="office_gym" />
+                  <Picker.Item label="Mixed" value="mixed" />
+                </Picker>
+              </View>
             </View>
           </View>
         </View>
@@ -428,6 +669,79 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  // Profile Image Styles
+  profileImageSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+  },
+  profileImageButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  profileImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#374151',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4B5563',
+    borderStyle: 'dashed',
+  },
+  profileImageText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  changePhotoButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+  },
+  changePhotoText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  // Days Selection Styles
+  daysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  dayButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#374151',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  dayButtonSelected: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  dayButtonText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dayButtonTextSelected: {
+    color: '#FFFFFF',
+  },
   inputGroup: {
     marginBottom: 16,
   },
@@ -540,3 +854,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
+
+
