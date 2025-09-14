@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -45,16 +45,6 @@ interface DashboardStats {
   pendingApprovals: number;
 }
 
-interface CreateGymForm {
-  gymName: string;
-  address: string;
-  phone: string;
-  email: string;
-  adminName: string;
-  adminEmail: string;
-  adminPassword: string;
-}
-
 const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
 
 export default function SuperAdminDashboard() {
@@ -72,22 +62,9 @@ export default function SuperAdminDashboard() {
     pendingApprovals: 0
   });
   const [loading, setLoading] = useState(true);
-  const [createGymLoading, setCreateGymLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adminName, setAdminName] = useState('Super Admin');
   const [adminEmail, setAdminEmail] = useState('');
-  
-  // Modal and form state
-  const [showCreateGymModal, setShowCreateGymModal] = useState(false);
-  const [createGymForm, setCreateGymForm] = useState<CreateGymForm>({
-    gymName: '',
-    address: '',
-    phone: '',
-    email: '',
-    adminName: '',
-    adminEmail: '',
-    adminPassword: ''
-  });
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -95,44 +72,6 @@ export default function SuperAdminDashboard() {
     month: 'long',
     day: 'numeric'
   });
-
-  // Optimized form update function
-  const updateGymForm = useCallback((field: keyof CreateGymForm, value: string) => {
-    setCreateGymForm(current => {
-      if (current[field] === value) return current; // Prevent unnecessary updates
-      return { ...current, [field]: value };
-    });
-  }, []);
-
-  // Memoized input handlers
-const handleGymNameChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, gymName: text}));
-}, []);
-
-const handleAddressChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, address: text}));
-}, []);
-
-const handlePhoneChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, phone: text}));
-}, []);
-
-const handleEmailChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, gymName: text}));
-}, []);
-
-const handleAdminNameChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, address: text}));
-}, []);
-
-const handleAdminEmailChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, address: text}));
-}, []);
-
-const handleAdminPasswordChange = useCallback((text: string) => {
-  setCreateGymForm(prev => ({...prev, phone: text}));
-}, []);
-
 
   useEffect(() => {
     fetchDashboardData();
@@ -169,7 +108,7 @@ const handleAdminPasswordChange = useCallback((text: string) => {
         }
       });
 
-      // Fetch dashboard stats (you'll need to create these endpoints)
+      // Fetch dashboard stats
       const statsResponse = await axios.get(`${API_BASE_URL}/admin/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -192,90 +131,8 @@ const handleAdminPasswordChange = useCallback((text: string) => {
         pendingApprovals: 3
       });
       
-      // Mock gym centers
-      // setGymCenters([
-      //   {
-      //     _id: '1',
-      //     gymId: 'GYM-001',
-      //     name: 'FitZone Central',
-      //     address: '123 Main St, Downtown',
-      //     phone: '+1234567890',
-      //     email: 'contact@fitzone.com',
-      //     admin: { _id: '1', name: 'John Smith', email: 'john@fitzone.com' },
-      //     createdAt: new Date().toISOString(),
-      //     updatedAt: new Date().toISOString()
-      //   },
-      //   {
-      //     _id: '2',
-      //     gymId: 'GYM-002',
-      //     name: 'PowerLift Gym',
-      //     address: '456 Oak Ave, Uptown',
-      //     phone: '+1234567891',
-      //     email: 'info@powerlift.com',
-      //     admin: { _id: '2', name: 'Sarah Johnson', email: 'sarah@powerlift.com' },
-      //     createdAt: new Date().toISOString(),
-      //     updatedAt: new Date().toISOString()
-      //   }
-      // ]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCreateGym = async () => {
-    try {
-      setCreateGymLoading(true);
-      const token = await AsyncStorage.getItem('userToken');
-      
-      if (!token) {
-        Alert.alert('Error', 'Authentication token not found');
-        return;
-      }
-
-      // Validate form
-      if (!createGymForm.gymName || !createGymForm.address || !createGymForm.adminName || !createGymForm.adminEmail) {
-        Alert.alert('Error', 'Please fill in all required fields');
-        return;
-      }
-
-      const gymData = {
-        name: createGymForm.gymName,
-        address: createGymForm.address,
-        phone: createGymForm.phone,
-        email: createGymForm.email,
-        adminDetails: {
-          name: createGymForm.adminName,
-          email: createGymForm.adminEmail,
-          password: createGymForm.adminPassword || 'DefaultPass123!'
-        }
-      };
-
-      const response = await axios.post(`${API_BASE_URL}/admin/create-gym`, gymData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      Alert.alert('Success', 'Gym center created successfully!');
-      setShowCreateGymModal(false);
-      setCreateGymForm({
-        gymName: '',
-        address: '',
-        phone: '',
-        email: '',
-        adminName: '',
-        adminEmail: '',
-        adminPassword: ''
-      });
-      
-      // Refresh data
-      fetchDashboardData();
-    } catch (error: any) {
-      console.error('Error creating gym:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create gym center');
-    } finally {
-      setCreateGymLoading(false);
     }
   };
 
@@ -309,113 +166,9 @@ const handleAdminPasswordChange = useCallback((text: string) => {
     return `$${amount}`;
   };
 
-  // Optimized Modal Component - moved outside of render to prevent recreation
-  const CreateGymModal = useCallback(() => (
-    <Modal
-      visible={showCreateGymModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowCreateGymModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <ScrollView 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Text style={styles.modalTitle}>Create New Gym Center</Text>
-            
-            <Text style={styles.sectionLabel}>Gym Information</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Gym Name"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.gymName}
-              onChangeText={handleGymNameChange}
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Address"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.address}
-              onChangeText={handleAddressChange}
-              multiline
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Phone (Optional)"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.phone}
-              onChangeText={handlePhoneChange}
-              keyboardType="phone-pad"
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Email (Optional)"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.email}
-              onChangeText={handleEmailChange}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            
-            <Text style={styles.sectionLabel}>Admin Details</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Admin Name"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.adminName}
-              onChangeText={handleAdminNameChange}
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Admin Email"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.adminEmail}
-              onChangeText={handleAdminEmailChange}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Password (Optional - Default will be used)"
-              placeholderTextColor="#94A3B8"
-              value={createGymForm.adminPassword}
-              onChangeText={handleAdminPasswordChange}
-              secureTextEntry
-            />
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowCreateGymModal(false)}
-                disabled={createGymLoading}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.createButton}
-                onPress={handleCreateGym}
-                disabled={createGymLoading}
-              >
-                {createGymLoading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.createButtonText}>Create Gym</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  ), [showCreateGymModal, createGymForm, createGymLoading, handleGymNameChange, handleAddressChange, handlePhoneChange, handleEmailChange, handleAdminNameChange, handleAdminEmailChange, handleAdminPasswordChange, handleCreateGym]);
+  const navigateToCreateGym = () => {
+    router.push('/dashboards/super-admin/CreateGym');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -474,16 +227,22 @@ const handleAdminPasswordChange = useCallback((text: string) => {
           <View style={styles.quickActions}>
             <TouchableOpacity 
               style={[styles.actionButton, styles.createGymButton]}
-              onPress={() => setShowCreateGymModal(true)}
+              onPress={navigateToCreateGym}
             >
               <Text style={styles.actionIcon}>🏢</Text>
               <Text style={styles.actionText}>Create Gym</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.usersButton]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.usersButton]}
+              onPress={() => navigation.navigate('Users')}
+            >
               <Text style={styles.actionIcon}>👥</Text>
               <Text style={styles.actionText}>Manage Users</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.analyticsButton]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.analyticsButton]}
+              onPress={() => navigation.navigate('Analytics')}
+            >
               <Text style={styles.actionIcon}>📊</Text>
               <Text style={styles.actionText}>Analytics</Text>
             </TouchableOpacity>
@@ -538,7 +297,7 @@ const handleAdminPasswordChange = useCallback((text: string) => {
               <Text style={styles.emptyText}>No gym centers found</Text>
               <TouchableOpacity 
                 style={styles.createFirstGymButton}
-                onPress={() => setShowCreateGymModal(true)}
+                onPress={navigateToCreateGym}
               >
                 <Text style={styles.createFirstGymText}>Create First Gym</Text>
               </TouchableOpacity>
@@ -569,21 +328,21 @@ const handleAdminPasswordChange = useCallback((text: string) => {
                     </View>
                     <Text style={styles.gymName}>{gym.name}</Text>
                     <Text style={styles.gymAddress}>{gym.address}</Text>
-                      <View style={styles.gymFooter}>
-                        <Text style={styles.adminName}>
-                          {(() => {
-                            const admin = gym.admin as any;
-                            if (typeof admin === 'string') {
-                              return `Admin ID: ${admin.slice(-6)}`;
-                            } else if (admin?.name) {
-                              return admin.name;
-                            } else {
-                              return 'Admin';
-                            }
-                          })()}
-                        </Text>
-                        <Text style={styles.gymCta}>View Details →</Text>
-                      </View>
+                    <View style={styles.gymFooter}>
+                      <Text style={styles.adminName}>
+                        {(() => {
+                          const admin = gym.admin as any;
+                          if (typeof admin === 'string') {
+                            return `Admin ID: ${admin.slice(-6)}`;
+                          } else if (admin?.name) {
+                            return admin.name;
+                          } else {
+                            return 'Admin';
+                          }
+                        })()}
+                      </Text>
+                      <Text style={styles.gymCta}>View Details →</Text>
+                    </View>
                   </LinearGradient>
                 </TouchableOpacity>
               ))}
@@ -613,8 +372,6 @@ const handleAdminPasswordChange = useCallback((text: string) => {
           </View>
         </View>
       </ScrollView>
-
-      <CreateGymModal />
     </SafeAreaView>
   );
 }
@@ -933,76 +690,6 @@ const styles = StyleSheet.create({
   statusValue: {
     fontSize: 14,
     color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 12,
-    marginTop: 16,
-  },
-  input: {
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#475569',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#374151',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  createButton: {
-    flex: 1,
-    backgroundColor: '#7C3AED',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '600',
   },
 });
