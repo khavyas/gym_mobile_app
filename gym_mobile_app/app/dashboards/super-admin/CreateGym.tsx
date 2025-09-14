@@ -22,6 +22,14 @@ const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
 export default function CreateGym() {
   const router = useRouter();
   
+  const handleBack = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace("/dashboards/super-admin"); 
+  }
+};
+
   const [createGymLoading, setCreateGymLoading] = useState(false);
   const [createGymForm, setCreateGymForm] = useState<CreateGymForm>({
     gymName: '',
@@ -94,19 +102,17 @@ export default function CreateGym() {
   { headers: { Authorization: `Bearer ${token}` } }
 );
 
-      Alert.alert(
-        'Success', 
-        'Gym center created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Navigate back to dashboard
-              router.back();
-            }
-          }
-        ]
-      );
+Alert.alert(
+  'Success',
+  'Gym center created successfully!',
+  [
+    {
+      text: 'OK',
+      onPress: handleBack,   
+    },
+  ]
+);
+
       
       // Reset form
       setCreateGymForm({
