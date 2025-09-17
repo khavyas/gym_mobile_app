@@ -114,6 +114,7 @@ export default function Login() {
         await AsyncStorage.setItem("userRole", data.role);
         await AsyncStorage.setItem("userName", data.name);
         await AsyncStorage.setItem("userEmail", data.email);
+        await AsyncStorage.setItem("userId", data.userId);  
 
         // Show professional toast notification
         setToastMessage(`Welcome back, ${data.name}! 🎉`);
@@ -194,18 +195,21 @@ export default function Login() {
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPasswordContainer}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+       <TouchableOpacity 
+          style={styles.forgotPasswordContainer}
+          onPress={() => router.push("/forgot-password")}
+        >
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[
-              styles.loginButton,
-              isLoading && styles.loadingButton
-            ]} 
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
+        <TouchableOpacity 
+          style={[
+            styles.loginButton,
+            isLoading && styles.loadingButton
+          ]} 
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <Text style={styles.loadingText}>Signing in...</Text>
