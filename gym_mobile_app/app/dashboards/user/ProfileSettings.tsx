@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput, StyleSheet, Alert, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   ChevronRightIcon, 
   UserIcon, 
@@ -17,6 +18,9 @@ import {
   CameraIcon,
   BriefcaseIcon
 } from "react-native-heroicons/outline";
+
+// API Configuration
+const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
 
 // Define TypeScript interfaces for our state objects
 interface UserInfo {
@@ -56,30 +60,49 @@ interface Security {
   twoFactorAuth: boolean;
 }
 
+interface ProfileData {
+  _id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  bio?: string;
+  profileImage?: string;
+  healthMetrics?: HealthMetrics;
+  workPreferences: WorkPreferences;
+  notifications: Notifications;
+  security: Security;
+}
+
 export default function ProfileSettings() {
-  // State for user information with explicit types
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
+  // State for user information
   const [userInfo, setUserInfo] = useState<UserInfo>({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    bio: "Fitness enthusiast focused on strength training and nutrition",
+    name: "",
+    email: "",
+    phone: "",
+    bio: "",
     profileImage: null,
   });
 
   // State for health metrics
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>({
-    weight: "82",
-    height: "183",
-    age: "32",
+    weight: "",
+    height: "",
+    age: "",
     gender: "male",
-    fitnessGoal: "build_muscle",
+    fitnessGoal: "general_fitness",
   });
 
   // State for work preferences
   const [workPreferences, setWorkPreferences] = useState<WorkPreferences>({
-    occupation: "software_engineer",
+    occupation: "other",
     workoutTiming: "morning",
-    availableDays: ["monday", "wednesday", "friday"],
+    availableDays: [],
     workStressLevel: "medium",
     sedentaryHours: "6-8",
     workoutLocation: "gym",
@@ -95,9 +118,120 @@ export default function ProfileSettings() {
 
   // State for security settings
   const [security, setSecurity] = useState<Security>({
-    biometricLogin: true,
+    biometricLogin: false,
     twoFactorAuth: false,
   });
+
+  // Load user data and profile on component mount
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  // Load user data from AsyncStorage
+  const loadUserData = async () => {
+    try {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      const storedToken = await AsyncStorage.getItem('token');
+      
+      if (storedUserId && storedToken) {
+        setUserId(storedUserId);
+        setToken(storedToken);
+        await fetchProfile(storedUserId, storedToken);
+      } else {
+        Alert.alert('Error', 'User not logged in');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      Alert.alert('Error', 'Failed to load user data');
+      setLoading(false);
+    }
+  };
+
+  // Fetch profile data from API
+  const fetchProfile = async (userId: string, token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const profileData: ProfileData = await response.json();
+        
+        // Update state with fetched data
+        setUserInfo({
+          name: profileData.fullName || "",
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+          bio: profileData.bio || "",
+          profileImage: profileData.profileImage || null,
+        });
+
+        if (profileData.healthMetrics) {
+          setHealthMetrics(profileData.healthMetrics);
+        }
+
+        if (profileData.workPreferences) {
+          setWorkPreferences(profileData.workPreferences);
+        }
+
+        if (profileData.notifications) {
+          setNotifications(profileData.notifications);
+        }
+
+        if (profileData.security) {
+          setSecurity(profileData.security);
+        }
+
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to fetch profile');
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      Alert.alert('Error', 'Network error while fetching profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update profile data via API
+  const updateProfile = async (profileData: Partial<ProfileData>) => {
+    if (!userId || !token) {
+      Alert.alert('Error', 'User not authenticated');
+      return false;
+    }
+
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (response.ok) {
+        return true;
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to update profile');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Network error while updating profile');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Function to handle image picking
   const pickImage = async () => {
@@ -183,9 +317,35 @@ export default function ProfileSettings() {
   };
 
   // Function to handle saving changes
-  const saveChanges = () => {
-    Alert.alert("Success", "Your changes have been saved successfully!");
+ const saveChanges = async () => {
+  const profileUpdateData = {
+    fullName: userInfo.name,
+    email: userInfo.email,
+    phone: userInfo.phone,
+    bio: userInfo.bio,
+    profileImage: userInfo.profileImage || undefined,
+    healthMetrics,
+    workPreferences,
+    notifications,
+    security,
   };
+
+  const success = await updateProfile(profileUpdateData);
+  if (success) {
+    Alert.alert("Success", "Your changes have been saved successfully!");
+  }
+};
+
+  // Show loading indicator while fetching data
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -600,15 +760,19 @@ export default function ProfileSettings() {
 
         {/* Save Button */}
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
           onPress={saveChanges}
+          disabled={saving}
         >
-          <Text style={styles.saveButtonText}>Save Changes</Text>
+          <Text style={styles.saveButtonText}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -622,6 +786,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#374151',
   },
+  loadingContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: '#0F172A',
+},
+loadingText: {
+  color: '#94A3B8',
+  fontSize: 16,
+  marginTop: 12,
+},
+saveButtonDisabled: {
+  backgroundColor: '#374151',
+  opacity: 0.6,
+},
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
