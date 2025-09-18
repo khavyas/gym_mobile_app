@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from "expo-router";
 import { 
   ChevronRightIcon, 
   UserIcon, 
@@ -18,6 +19,9 @@ import {
   CameraIcon,
   BriefcaseIcon
 } from "react-native-heroicons/outline";
+import { useFocusEffect } from '@react-navigation/native';
+import React from "react";
+import { useNavigation } from '@react-navigation/native';
 
 // API Configuration
 const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
@@ -69,17 +73,23 @@ interface ProfileData {
   bio?: string;
   profileImage?: string;
   healthMetrics?: HealthMetrics;
-  workPreferences: WorkPreferences;
-  notifications: Notifications;
-  security: Security;
+  workPreferences?: WorkPreferences;
+  notifications?: Notifications;     
+  security?: Security;              
 }
+
+interface ProfileSettingsProps {
+  navigation: any;
+}
+
 
 export default function ProfileSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-
+  const navigation = useNavigation();
+  
   // State for user information
   const [userInfo, setUserInfo] = useState<UserInfo>({
     name: "",
@@ -127,30 +137,54 @@ export default function ProfileSettings() {
     loadUserData();
   }, []);
 
-  // Load user data from AsyncStorage
-  const loadUserData = async () => {
+const loadUserData = async () => {
+    console.log('Starting loadUserData...');
     try {
-      const storedUserId = await AsyncStorage.getItem('userId');
-      const storedToken = await AsyncStorage.getItem('token');
+      const storedUserId = await AsyncStorage.getItem("userId");
+      const storedToken = await AsyncStorage.getItem("userToken");
+     
+      console.log('Stored userId:', storedUserId);
+      console.log('Stored token exists:', !!storedToken);
       
       if (storedUserId && storedToken) {
         setUserId(storedUserId);
         setToken(storedToken);
+        console.log('Calling fetchProfile...');
         await fetchProfile(storedUserId, storedToken);
       } else {
-        Alert.alert('Error', 'User not logged in');
+        console.error('Missing authentication data:', { storedUserId, hasToken: !!storedToken });
+        Alert.alert('Error', 'User not logged in. Please log in again.');
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('Error in loadUserData:', error);
       Alert.alert('Error', 'Failed to load user data');
       setLoading(false);
     }
   };
 
+const refreshProfile = async () => {
+  if (userId && token) {
+    setLoading(true);
+    await fetchProfile(userId, token);
+  }
+};
+
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Profile Settings screen focused - loading data');
+      loadUserData();
+    }, [])
+  );
+
+
   // Fetch profile data from API
-  const fetchProfile = async (userId: string, token: string) => {
+ const fetchProfile = async (userId: string, token: string) => {
+    console.log('fetchProfile called with:', { userId, hasToken: !!token });
+    console.log('API URL:', `${API_BASE_URL}/profile/${userId}`);
+    
     try {
+      setLoading(true);
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         method: 'GET',
         headers: {
@@ -159,8 +193,12 @@ export default function ProfileSettings() {
         },
       });
 
+      console.log('API Response status:', response.status);
+      console.log('API Response ok:', response.ok);
+
       if (response.ok) {
         const profileData: ProfileData = await response.json();
+        console.log('Profile data received:', profileData);
         
         // Update state with fetched data
         setUserInfo({
@@ -171,6 +209,7 @@ export default function ProfileSettings() {
           profileImage: profileData.profileImage || null,
         });
 
+        // Handle optional nested objects
         if (profileData.healthMetrics) {
           setHealthMetrics(profileData.healthMetrics);
         }
@@ -188,16 +227,19 @@ export default function ProfileSettings() {
         }
 
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('API Error:', errorData);
         Alert.alert('Error', errorData.message || 'Failed to fetch profile');
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Network error in fetchProfile:', error);
       Alert.alert('Error', 'Network error while fetching profile');
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
+
 
   // Update profile data via API
   const updateProfile = async (profileData: Partial<ProfileData>) => {
@@ -382,11 +424,14 @@ export default function ProfileSettings() {
                     </View>
                   )}
                 </TouchableOpacity>
-                {userInfo.profileImage && (
-                  <TouchableOpacity style={styles.changePhotoButton} onPress={showImagePicker}>
-                    <Text style={styles.changePhotoText}>Change Photo</Text>
-                  </TouchableOpacity>
-                )}
+                {/* <TouchableOpacity 
+                    style={[styles.menuItem, styles.borderTop]}
+                   onPress={() => router.push("/dashboards/user/ChangePassword")}
+                  >
+                    <Text style={styles.menuItemText}>Change Password</Text>
+                    <ChevronRightIcon size={20} color="#9CA3AF" />
+                </TouchableOpacity> */}
+                
               </View>
             </View>
 
@@ -717,10 +762,13 @@ export default function ProfileSettings() {
               />
             </View>
             
-            <TouchableOpacity style={[styles.menuItem, styles.borderTop]}>
-              <Text style={styles.menuItemText}>Change Password</Text>
-              <ChevronRightIcon size={20} color="#9CA3AF" />
-            </TouchableOpacity>
+                <TouchableOpacity 
+                    style={[styles.menuItem, styles.borderTop]}
+                   onPress={() => router.push("/dashboards/user/ChangePassword")}
+                  >
+                    <Text style={styles.menuItemText}>Change Password</Text>
+                    <ChevronRightIcon size={20} color="#9CA3AF" />
+                </TouchableOpacity>
           </View>
         </View>
 
@@ -808,6 +856,7 @@ saveButtonDisabled: {
   },
   headerSubtitle: {
     color: '#94A3B8',
+    fontSize: 14,
     marginTop: 4,
   },
   scrollView: {
