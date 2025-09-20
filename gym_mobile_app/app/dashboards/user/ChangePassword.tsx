@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -15,52 +15,109 @@ import {
   ChevronLeftIcon, 
   LockClosedIcon, 
   EyeIcon, 
-  EyeSlashIcon 
+  EyeSlashIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from "react-native-heroicons/outline";
+import { useNavigation } from '@react-navigation/native';
+import { router } from "expo-router";
 
 // API Configuration
 const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
 
-interface ChangePasswordProps {
-  navigation: any;
+
+interface PasswordValidationResult {
+  isValid: boolean;
+  message: string;
+  criteria: {
+    length: boolean;
+    upperCase: boolean;
+    lowerCase: boolean;
+    number: boolean;
+    specialChar: boolean;
+  };
 }
 
-export default function ChangePassword({ navigation }: ChangePasswordProps) {
+export default function ChangePassword() {
+  const navigation = useNavigation();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Validation states
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult>({
+    isValid: false,
+    message: "",
+    criteria: {
+      length: false,
+      upperCase: false,
+      lowerCase: false,
+      number: false,
+      specialChar: false
+    }
+  });
+  const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
 
-  // Password validation function
-  const validatePassword = (password: string): { isValid: boolean; message: string } => {
-    if (password.length < 8) {
-      return { isValid: false, message: "Password must be at least 8 characters long" };
+  // Enhanced password validation function
+  const validatePassword = (password: string): PasswordValidationResult => {
+    const criteria = {
+      length: password.length >= 8,
+      upperCase: /[A-Z]/.test(password),
+      lowerCase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+
+    const isValid = Object.values(criteria).every(criterion => criterion);
+    
+    let message = "";
+    if (!isValid) {
+      const failedCriteria = [];
+      if (!criteria.length) failedCriteria.push("at least 8 characters");
+      if (!criteria.upperCase) failedCriteria.push("uppercase letter");
+      if (!criteria.lowerCase) failedCriteria.push("lowercase letter");
+      if (!criteria.number) failedCriteria.push("number");
+      if (!criteria.specialChar) failedCriteria.push("special character");
+      
+      message = `Password must contain: ${failedCriteria.join(", ")}`;
     }
-    
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    if (!hasUpperCase) {
-      return { isValid: false, message: "Password must contain at least one uppercase letter" };
-    }
-    
-    if (!hasLowerCase) {
-      return { isValid: false, message: "Password must contain at least one lowercase letter" };
-    }
-    
-    if (!hasNumbers) {
-      return { isValid: false, message: "Password must contain at least one number" };
-    }
-    
-    if (!hasSpecialChar) {
-      return { isValid: false, message: "Password must contain at least one special character" };
-    }
-    
-    return { isValid: true, message: "" };
+
+    return { isValid, message, criteria };
   };
+
+  // Real-time validation when password changes
+  useEffect(() => {
+    if (newPassword.length > 0) {
+      const validation = validatePassword(newPassword);
+      setPasswordValidation(validation);
+      setShowValidation(true);
+    } else {
+      setShowValidation(false);
+      setPasswordValidation({
+        isValid: false,
+        message: "",
+        criteria: {
+          length: false,
+          upperCase: false,
+          lowerCase: false,
+          number: false,
+          specialChar: false
+        }
+      });
+    }
+  }, [newPassword]);
+
+  // Check password match when confirm password changes
+  useEffect(() => {
+    if (confirmPassword.length > 0) {
+      setPasswordsMatch(newPassword === confirmPassword);
+    } else {
+      setPasswordsMatch(null);
+    }
+  }, [newPassword, confirmPassword]);
 
   // Form validation function
   const validateForm = (): { isValid: boolean; message: string } => {
@@ -72,9 +129,8 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
       return { isValid: false, message: "Confirm password is required" };
     }
 
-    const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.isValid) {
-      return passwordValidation;
+      return { isValid: false, message: passwordValidation.message };
     }
 
     if (newPassword !== confirmPassword) {
@@ -117,20 +173,20 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
 
       const data = await response.json();
 
-      if (response.ok) {
-        Alert.alert(
-          "Success", 
-          "Password changed successfully!",
-          [
-            {
-              text: "OK",
-              onPress: () => navigation.goBack()
-            }
-          ]
-        );
-        // Clear form
-        setNewPassword("");
-        setConfirmPassword("");
+    if (response.ok) {
+      Alert.alert(
+        "Success",
+        "Password changed successfully!",
+        [
+          {
+            text: "OK",
+            onPress: () => router.push("/dashboards/user/ProfileSettings"),
+          },
+        ]
+      );
+      // Clear form
+      setNewPassword("");
+      setConfirmPassword("");
       } else {
         Alert.alert("Error", data.message || "Failed to change password");
       }
@@ -143,7 +199,7 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
     }
   };
 
-  // Handle forgot password (you can implement this later)
+  // Handle forgot password
   const handleForgotPassword = () => {
     Alert.alert(
       "Forgot Password",
@@ -152,18 +208,33 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
     );
   };
 
+  // Render password criteria item
+  const renderCriteriaItem = (label: string, isMet: boolean) => (
+    <View style={styles.criteriaItem}>
+      {isMet ? (
+        <CheckCircleIcon size={16} color="#10B981" />
+      ) : (
+        <XCircleIcon size={16} color="#EF4444" />
+      )}
+      <Text style={[styles.criteriaText, { color: isMet ? "#10B981" : "#EF4444" }]}>
+        {label}
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <ChevronLeftIcon size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+<TouchableOpacity 
+  style={styles.backButton} 
+  onPress={() => router.back()}
+>
+  <ChevronLeftIcon size={24} color="#FFFFFF" />
+</TouchableOpacity>
+
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Change Password</Text>
           <Text style={styles.headerSubtitle}>
@@ -194,7 +265,11 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
             {/* New Password Input */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>New Password</Text>
-              <View style={styles.passwordInputContainer}>
+              <View style={[
+                styles.passwordInputContainer,
+                showValidation && !passwordValidation.isValid && newPassword.length > 0 && styles.inputError,
+                showValidation && passwordValidation.isValid && styles.inputSuccess
+              ]}>
                 <TextInput
                   style={styles.passwordInput}
                   value={newPassword}
@@ -214,12 +289,27 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
                   )}
                 </TouchableOpacity>
               </View>
+              
+              {/* Real-time Password Validation */}
+              {showValidation && (
+                <View style={styles.validationContainer}>
+                  {renderCriteriaItem("At least 8 characters", passwordValidation.criteria.length)}
+                  {renderCriteriaItem("Uppercase letter (A-Z)", passwordValidation.criteria.upperCase)}
+                  {renderCriteriaItem("Lowercase letter (a-z)", passwordValidation.criteria.lowerCase)}
+                  {renderCriteriaItem("Number (0-9)", passwordValidation.criteria.number)}
+                  {renderCriteriaItem("Special character", passwordValidation.criteria.specialChar)}
+                </View>
+              )}
             </View>
 
             {/* Confirm Password Input */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Confirm New Password</Text>
-              <View style={styles.passwordInputContainer}>
+              <View style={[
+                styles.passwordInputContainer,
+                passwordsMatch === false && styles.inputError,
+                passwordsMatch === true && styles.inputSuccess
+              ]}>
                 <TextInput
                   style={styles.passwordInput}
                   value={confirmPassword}
@@ -239,6 +329,23 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
                   )}
                 </TouchableOpacity>
               </View>
+              
+              {/* Password Match Validation */}
+              {passwordsMatch !== null && confirmPassword.length > 0 && (
+                <View style={styles.matchValidation}>
+                  {passwordsMatch ? (
+                    <View style={styles.matchSuccess}>
+                      <CheckCircleIcon size={16} color="#10B981" />
+                      <Text style={styles.matchSuccessText}>Passwords match</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.matchError}>
+                      <XCircleIcon size={16} color="#EF4444" />
+                      <Text style={styles.matchErrorText}>Password mismatch happened</Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
 
             {/* Forgot Password Link */}
@@ -255,9 +362,12 @@ export default function ChangePassword({ navigation }: ChangePasswordProps) {
 
         {/* Save Button */}
         <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+          style={[
+            styles.saveButton, 
+            (loading || !passwordValidation.isValid || passwordsMatch !== true) && styles.saveButtonDisabled
+          ]}
           onPress={handleChangePassword}
-          disabled={loading}
+          disabled={loading || !passwordValidation.isValid || passwordsMatch !== true}
         >
           <Text style={styles.saveButtonText}>
             {loading ? 'Changing Password...' : 'Save New Password'}
@@ -372,6 +482,12 @@ const styles = StyleSheet.create({
     borderColor: '#4B5563',
     borderRadius: 8,
   },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  inputSuccess: {
+    borderColor: '#10B981',
+  },
   passwordInput: {
     flex: 1,
     paddingHorizontal: 16,
@@ -381,6 +497,44 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     padding: 12,
+  },
+  validationContainer: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  criteriaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  criteriaText: {
+    fontSize: 13,
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  matchValidation: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  matchSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchSuccessText: {
+    color: '#10B981',
+    fontSize: 13,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  matchError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchErrorText: {
+    color: '#EF4444',
+    fontSize: 13,
+    fontWeight: '500',
+    marginLeft: 8,
   },
   forgotPasswordButton: {
     alignSelf: 'flex-end',

@@ -17,66 +17,8 @@ interface ToastProps {
   visible: boolean;
   message: string;
   onHide: () => void;
+  type?: 'success' | 'error'; 
 }
-
-// Toast Component
-const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(-100));
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      const timer = setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: -100,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(() => onHide());
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <Animated.View
-      style={[
-        styles.toastContainer,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
-    >
-      <View style={styles.toastContent}>
-        <Text style={styles.toastIcon}>✓</Text>
-        <Text style={styles.toastMessage}>{message}</Text>
-      </View>
-    </Animated.View>
-  );
-};
 
 export default function Login() {
   const router = useRouter();
@@ -84,7 +26,76 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success'); // Add this line
   const [isLoading, setIsLoading] = useState(false);
+
+  // Toast Component
+  const Toast: React.FC<ToastProps> = ({ visible, message, onHide, type = 'success' }) => {
+    const [fadeAnim] = useState(new Animated.Value(0));
+    const [slideAnim] = useState(new Animated.Value(-100));
+    const isError = type === 'error';
+    
+    useEffect(() => {
+      if (visible) {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        const timer = setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+              toValue: -100,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => onHide());
+        }, 3000);
+
+        return () => clearTimeout(timer);
+      }
+    }, [visible]);
+
+    if (!visible) return null;
+
+    return (
+      <Animated.View
+        style={[
+          styles.toastContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <View style={[
+          styles.toastContent,
+          isError && styles.toastError
+        ]}>
+          <Text style={[
+            styles.toastIcon,
+            isError && styles.toastErrorIcon
+          ]}>
+            {isError ? '✗' : '✓'}
+          </Text>
+          <Text style={styles.toastMessage}>{message}</Text>
+        </View>
+      </Animated.View>
+    );
+  };
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -109,14 +120,15 @@ export default function Login() {
         console.log("Login successful:", data);
         setIsLoading(false);
         
-         // Save token + role in AsyncStorage
+        // Save token + role in AsyncStorage
         await AsyncStorage.setItem("userToken", data.token);
         await AsyncStorage.setItem("userRole", data.role);
         await AsyncStorage.setItem("userName", data.name);
         await AsyncStorage.setItem("userEmail", data.email);
         await AsyncStorage.setItem("userId", data.userId);  
 
-        // Show professional toast notification
+        // Show success toast
+        setToastType('success');
         setToastMessage(`Welcome back, ${data.name}! 🎉`);
         setShowToast(true);
         
@@ -131,7 +143,6 @@ export default function Login() {
           } else if (data.role === "superadmin") {
             router.replace("/dashboards/super-admin");
           } else {
-            // fallback
             router.replace("/register");
           }
         }, 2000);
@@ -140,12 +151,20 @@ export default function Login() {
         // Backend returned an error
         setIsLoading(false);
         console.error("Login failed:", data);
-        alert(`Error: ${data.message || "Login failed"}`);
+        
+        // Show error toast
+        setToastType('error');
+        setToastMessage(data.message || "Login failed. Please check your credentials.");
+        setShowToast(true);
       }
     } catch (error) {
       setIsLoading(false);
       console.error("Network error:", error);
-      alert("Network error. Please try again.");
+      
+      // Show error toast
+      setToastType('error');
+      setToastMessage("Network error. Please check your connection and try again.");
+      setShowToast(true);
     }
   };
 
@@ -154,13 +173,13 @@ export default function Login() {
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Toast Notification */}
       <Toast 
         visible={showToast} 
         message={toastMessage} 
+        type={toastType}
         onHide={() => setShowToast(false)} 
       />
-      
+
       <View style={styles.content}>
         <View style={styles.headerContainer}>
           <Text style={styles.title}>Welcome Back</Text>
@@ -195,21 +214,21 @@ export default function Login() {
             />
           </View>
 
-       <TouchableOpacity 
-          style={styles.forgotPasswordContainer}
-          onPress={() => router.push("/forgot-password")}
-        >
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.forgotPasswordContainer}
+            onPress={() => router.push("/forgot-password")}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[
-            styles.loginButton,
-            isLoading && styles.loadingButton
-          ]} 
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
+          <TouchableOpacity 
+            style={[
+              styles.loginButton,
+              isLoading && styles.loadingButton
+            ]} 
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <Text style={styles.loadingText}>Signing in...</Text>
@@ -238,9 +257,16 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  toastError: {
+    backgroundColor: '#7F1D1D',
+    borderLeftColor: '#EF4444',
+  },
+  toastErrorIcon: {
+    color: '#EF4444',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Dark charcoal background
+    backgroundColor: '#111827',
   },
   content: {
     flex: 1,
@@ -254,7 +280,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#10B981', // Vibrant green
+    color: '#10B981',
     marginBottom: 8,
   },
   subtitle: {
@@ -263,7 +289,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   formContainer: {
-    backgroundColor: '#1F2937', // Dark gray
+    backgroundColor: '#1F2937',
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
@@ -306,7 +332,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   loginButton: {
-    backgroundColor: '#10B981', // Professional green
+    backgroundColor: '#10B981',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -394,5 +420,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-
