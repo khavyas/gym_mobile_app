@@ -11,7 +11,7 @@
     "web": "expo start --web",
     "build:web": "expo export --platform web",
     "predeploy": "npm run build:web",
-    "deploy": "gh-pages -d dist",
+    "deploy": "gh-pages -d web-build",
     "lint": "expo lint"
   },
   "dependencies": {
