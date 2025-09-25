@@ -22,6 +22,8 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
     specialty: consultant?.specialty || '',
     modeOfTraining: consultant?.modeOfTraining || 'online',
     certifications: consultant?.certifications || [],
+    badges: consultant?.badges || [],
+    availability: consultant?.availability || '', // Added availability property
   });
 
   const [isEditing, setIsEditing] = useState(editable);
@@ -46,7 +48,14 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
 
   const handleSave = async () => {
     try {
-      await onSave(formData);
+      await onSave({
+  specialty: formData.specialty,
+  certifications: formData.certifications,
+  badges: formData.badges,
+  modeOfTraining: formData.modeOfTraining,
+  availability: formData.availability,
+});
+
       setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to save changes');

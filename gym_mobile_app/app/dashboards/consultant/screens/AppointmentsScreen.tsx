@@ -141,7 +141,7 @@ export const AppointmentsScreen: React.FC = () => {
 const appointmentStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#111827',
   },
   listContainer: {
     padding: 16,

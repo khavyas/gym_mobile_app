@@ -30,7 +30,15 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
 
   const handleSave = async () => {
     try {
-      await onSave(formData);
+      await onSave({
+  contact: {
+    phone: formData.contact.phone,
+    email: formData.contact.email,
+    website: formData.contact.website,
+    location: formData.contact.location,
+  }
+});
+
       setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to save contact information');

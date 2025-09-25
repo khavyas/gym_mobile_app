@@ -22,6 +22,7 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
     name: consultant?.name || '',
     description: consultant?.description || '',
     yearsOfExperience: consultant?.yearsOfExperience?.toString() || '0',
+    image: consultant?.image || '', // Add image property
   });
 
   const [isEditing, setIsEditing] = useState(editable);
@@ -29,8 +30,10 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
   const handleSave = async () => {
     try {
       await onSave({
-        ...formData,
-        yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
+        name: formData.name,
+        description: formData.description,
+        yearsOfExperience: formData.yearsOfExperience,
+        image: formData.image,
       });
       setIsEditing(false);
     } catch (error) {

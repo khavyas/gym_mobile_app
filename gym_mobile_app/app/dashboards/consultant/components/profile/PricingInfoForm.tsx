@@ -68,7 +68,15 @@ export const PricingInfoForm: React.FC<PricingInfoFormProps> = ({
           packages: formData.pricing.packages,
         },
       };
-      await onSave(pricingData);
+await onSave({
+  pricing: {
+    perSession: parseFloat(formData.pricing.perSession) || undefined,
+    perWeek: parseFloat(formData.pricing.perWeek) || undefined,
+    perMonth: parseFloat(formData.pricing.perMonth) || undefined,
+    packages: formData.pricing.packages,
+  }
+});
+
       setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to save pricing information');

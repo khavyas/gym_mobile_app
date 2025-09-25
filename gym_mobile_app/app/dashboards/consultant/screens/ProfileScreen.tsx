@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,13 +7,13 @@ import {
   Alert,
   ActivityIndicator 
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TabNavigation } from '../components/common/TabNavigation';
 import { PersonalInfoForm } from '../components/profile/PersonalInfoForm';
 import { ProfessionalInfoForm } from '../components/profile/ProfessionalInfoForm';
 import { PricingInfoForm } from '../components/profile/PricingInfoForm';
 import { ContactInfoForm } from '../components/profile/ContactInfoForm';
 import { useConsultant } from '../hooks/useConsultant';
-// Removed constants import - using inline values instead
 
 const tabs = [
   { id: 'personal', label: 'Personal' },
@@ -59,14 +59,36 @@ interface ProfileData {
 export const ProfileScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState('personal');
   const [isLoading, setIsLoading] = useState(false);
-  const { consultant, updateProfile, createProfile, loading } = useConsultant('user-id-here');
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const handleSave = async (formData: ProfileData) => {
+  // 🔑 Load userId from AsyncStorage on mount
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(storedUserId);
+        } else {
+          Alert.alert('Error', 'No user ID found. Please log in again.');
+        }
+      } catch (err) {
+        console.error('Failed to load userId from storage:', err);
+      }
+    };
+    loadUserId();
+  }, []);
+
+  // Hook call with userId
+  const { consultant, updateProfile, createProfile, loading } = useConsultant(userId || '');
+
+  const handleSave = async (formData: Partial<ProfileData>) => {
     try {
       setIsLoading(true);
-      
+
       if (consultant) {
-        await updateProfile(formData);
+        // Merge with existing consultant profile (optional)
+        const updatedData = { ...consultant, ...formData };
+        await updateProfile(updatedData);
         Alert.alert('Success', 'Profile updated successfully!');
       } else {
         await createProfile(formData);
@@ -78,7 +100,6 @@ export const ProfileScreen: React.FC = () => {
         'Error', 
         error instanceof Error ? error.message : 'Failed to save profile. Please try again.'
       );
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +121,7 @@ export const ProfileScreen: React.FC = () => {
           <PersonalInfoForm
             consultant={consultant || undefined}
             onSave={handleSave}
-            editable={true} // Always allow editing
+            editable={true}
           />
         );
       case 'professional':
@@ -159,7 +180,7 @@ export const ProfileScreen: React.FC = () => {
 const profileStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#111827',
   },
   content: {
     flex: 1,
@@ -196,18 +217,3 @@ const profileStyles = StyleSheet.create({
     marginTop: 8,
   },
 });
-
-// Alternative ContactInfoForm placeholder if you haven't created it yet
-const ContactInfoFormPlaceholder: React.FC<{
-  consultant: any;
-  onSave: (data: any) => Promise<void>;
-  editable: boolean;
-  isLoading: boolean;
-}> = () => (
-  <View style={profileStyles.comingSoonContainer}>
-    <Text style={profileStyles.comingSoonText}>Contact Form</Text>
-    <Text style={profileStyles.comingSoonSubtext}>
-      Contact information form will be available soon.
-    </Text>
-  </View>
-);

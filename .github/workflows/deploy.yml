@@ -1,0 +1,34 @@
+name: Deploy Expo Web to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]   # or your default branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        working-directory: ./gym_mobile_app
+        run: npm install
+
+      - name: Build web
+        working-directory: ./gym_mobile_app
+        run: npm run build:web
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gym_mobile_app/dist
