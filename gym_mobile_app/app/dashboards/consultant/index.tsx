@@ -10,6 +10,8 @@ import {
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { AppointmentsScreen } from './screens/AppointmentsScreen';
+import ScheduleScreen from './screens/ScheduleScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
 type TabType = 'dashboard' | 'profile' | 'appointments' | 'schedule' | 'settings';
 
@@ -39,19 +41,9 @@ export default function ConsultantHome() {
       case 'appointments':
         return <AppointmentsScreen />;
       case 'schedule':
-        return (
-          <View style={styles.comingSoon}>
-            <Text style={styles.comingSoonText}>📅 Schedule Management</Text>
-            <Text style={styles.comingSoonSubText}>Coming Soon!</Text>
-          </View>
-        );
+        return <ScheduleScreen />;
       case 'settings':
-        return (
-          <View style={styles.comingSoon}>
-            <Text style={styles.comingSoonText}>⚙️ Settings</Text>
-            <Text style={styles.comingSoonSubText}>Coming Soon!</Text>
-          </View>
-        );
+        return <SettingsScreen />;
       default:
         return <DashboardScreen />;
     }

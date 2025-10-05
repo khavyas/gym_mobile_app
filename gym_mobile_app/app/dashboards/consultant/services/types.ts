@@ -51,6 +51,8 @@ export interface Appointment {
   date: string;
   time: string;
   type: string;
+  avatar: string;
+  duration: string;
   status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
 }
 

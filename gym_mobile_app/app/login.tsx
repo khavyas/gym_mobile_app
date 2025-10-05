@@ -97,76 +97,44 @@ export default function Login() {
     );
   };
 
-  const handleLogin = async () => {
-    setIsLoading(true);
-    const payload = { email, password };
+ const handleLogin = async () => {
+  setIsLoading(true);
 
-    try {
-      const response = await fetch(
-        "https://gymbackend-production-ac3b.up.railway.app/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+  // 🔹 TEMP BYPASS: always login as "user"
+  try {
+    const fakeData = {
+      token: "dummy-token",
+      role: "consultant",
+      name: "Demo User",
+      email: email || "demo@example.com",
+      userId: "demo-123",
+    };
 
-      const data = await response.json();
+    // Save token + role in AsyncStorage
+    await AsyncStorage.setItem("userToken", fakeData.token);
+    await AsyncStorage.setItem("userRole", fakeData.role);
+    await AsyncStorage.setItem("userName", fakeData.name);
+    await AsyncStorage.setItem("userEmail", fakeData.email);
+    await AsyncStorage.setItem("userId", fakeData.userId);
 
-      if (response.ok) {
-        // Login successful
-        console.log("Login successful:", data);
-        setIsLoading(false);
-        
-        // Save token + role in AsyncStorage
-        await AsyncStorage.setItem("userToken", data.token);
-        await AsyncStorage.setItem("userRole", data.role);
-        await AsyncStorage.setItem("userName", data.name);
-        await AsyncStorage.setItem("userEmail", data.email);
-        await AsyncStorage.setItem("userId", data.userId);  
+    setToastType("success");
+    setToastMessage(`Welcome back, ${fakeData.name}! 🎉`);
+    setShowToast(true);
 
-        // Show success toast
-        setToastType('success');
-        setToastMessage(`Welcome back, ${data.name}! 🎉`);
-        setShowToast(true);
-        
-        // Navigate after toast is shown
-        setTimeout(() => {
-          if (data.role === "user") {
-            router.replace("/dashboards/user");
-          } else if (data.role === "consultant") {
-            router.replace("/dashboards/consultant");
-          } else if (data.role === "admin") {
-            router.replace("/dashboards/admin");
-          } else if (data.role === "superadmin") {
-            router.replace("/dashboards/super-admin");
-          } else {
-            router.replace("/register");
-          }
-        }, 2000);
-        
-      } else {
-        // Backend returned an error
-        setIsLoading(false);
-        console.error("Login failed:", data);
-        
-        // Show error toast
-        setToastType('error');
-        setToastMessage(data.message || "Login failed. Please check your credentials.");
-        setShowToast(true);
-      }
-    } catch (error) {
-      setIsLoading(false);
-      console.error("Network error:", error);
-      
-      // Show error toast
-      setToastType('error');
-      setToastMessage("Network error. Please check your connection and try again.");
-      setShowToast(true);
-    }
-  };
+    setIsLoading(false);
+
+    setTimeout(() => {
+      router.replace("/dashboards/consultant");
+    }, 1500);
+  } catch (error) {
+    setIsLoading(false);
+    console.error("Bypass login error:", error);
+    setToastType("error");
+    setToastMessage("Bypass login failed.");
+    setShowToast(true);
+  }
+};
+
 
   return (
     <KeyboardAvoidingView 
