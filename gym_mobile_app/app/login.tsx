@@ -6,7 +6,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Animated 
+  Animated,
+  ScrollView 
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
@@ -26,7 +27,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error'>('success'); // Add this line
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isLoading, setIsLoading] = useState(false);
 
   // Toast Component
@@ -97,44 +98,41 @@ export default function Login() {
     );
   };
 
- const handleLogin = async () => {
-  setIsLoading(true);
+  const handleLogin = async () => {
+    setIsLoading(true);
 
-  // 🔹 TEMP BYPASS: always login as "user"
-  try {
-    const fakeData = {
-      token: "dummy-token",
-      role: "consultant",
-      name: "Demo User",
-      email: email || "demo@example.com",
-      userId: "demo-123",
-    };
+    try {
+      const fakeData = {
+        token: "dummy-token",
+        role: "consultant",
+        name: "Demo User",
+        email: email || "demo@example.com",
+        userId: "demo-123",
+      };
 
-    // Save token + role in AsyncStorage
-    await AsyncStorage.setItem("userToken", fakeData.token);
-    await AsyncStorage.setItem("userRole", fakeData.role);
-    await AsyncStorage.setItem("userName", fakeData.name);
-    await AsyncStorage.setItem("userEmail", fakeData.email);
-    await AsyncStorage.setItem("userId", fakeData.userId);
+      await AsyncStorage.setItem("userToken", fakeData.token);
+      await AsyncStorage.setItem("userRole", fakeData.role);
+      await AsyncStorage.setItem("userName", fakeData.name);
+      await AsyncStorage.setItem("userEmail", fakeData.email);
+      await AsyncStorage.setItem("userId", fakeData.userId);
 
-    setToastType("success");
-    setToastMessage(`Welcome back, ${fakeData.name}! 🎉`);
-    setShowToast(true);
+      setToastType("success");
+      setToastMessage(`Welcome back, ${fakeData.name}! 🎉`);
+      setShowToast(true);
 
-    setIsLoading(false);
+      setIsLoading(false);
 
-    setTimeout(() => {
-      router.replace("/dashboards/consultant");
-    }, 1500);
-  } catch (error) {
-    setIsLoading(false);
-    console.error("Bypass login error:", error);
-    setToastType("error");
-    setToastMessage("Bypass login failed.");
-    setShowToast(true);
-  }
-};
-
+      setTimeout(() => {
+        router.replace("/dashboards/consultant");
+      }, 1500);
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Bypass login error:", error);
+      setToastType("error");
+      setToastMessage("Bypass login failed.");
+      setShowToast(true);
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -148,13 +146,26 @@ export default function Login() {
         onHide={() => setShowToast(false)} 
       />
 
-      <View style={styles.content}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your wellness account</Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo and Brand Section */}
+        <View style={styles.brandContainer}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.heartIcon}>♡</Text>
+          </View>
+          <Text style={styles.brandName}>HealthHub</Text>
+          <Text style={styles.brandTagline}>Your wellness companion</Text>
         </View>
 
         <View style={styles.formContainer}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Sign in to your wellness account</Text>
+          </View>
+
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <TextInput
@@ -219,7 +230,7 @@ export default function Login() {
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Your wellness journey starts here</Text>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -236,25 +247,51 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#111827',
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  scrollContent: {
+    flexGrow: 1,
     padding: 24,
+    paddingTop: 60,
   },
-  headerContainer: {
+  // Brand Section Styles
+  brandContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  title: {
+  logoContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#10B981',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  heartIcon: {
+    fontSize: 36,
+    color: '#FFFFFF',
+  },
+  brandName: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#10B981',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  brandTagline: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  headerContainer: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#D1D5DB',
-    textAlign: 'center',
+    fontSize: 15,
+    color: '#9CA3AF',
   },
   formContainer: {
     backgroundColor: '#1F2937',

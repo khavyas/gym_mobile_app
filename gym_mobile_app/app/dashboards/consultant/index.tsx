@@ -7,6 +7,9 @@ import {
   StatusBar,
   TouchableOpacity 
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons'; // Import the Icon component
+
+// Import your screens
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { AppointmentsScreen } from './screens/AppointmentsScreen';
@@ -18,15 +21,15 @@ type TabType = 'dashboard' | 'profile' | 'appointments' | 'schedule' | 'settings
 interface TabItem {
   id: TabType;
   label: string;
-  icon: string;
+  iconName: string; // Use iconName for the vector icon
 }
 
 const tabs: TabItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-  { id: 'profile', label: 'Profile', icon: '👤' },
-  { id: 'appointments', label: 'Appointments', icon: '📅' },
-  { id: 'schedule', label: 'Schedule', icon: '🕐' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+  { id: 'dashboard', label: 'Dashboard', iconName: 'home-outline' },
+  { id: 'profile', label: 'Profile', iconName: 'person-outline' },
+  { id: 'appointments', label: 'Appointments', iconName: 'calendar-outline' },
+  { id: 'schedule', label: 'Schedule', iconName: 'time-outline' },
+  { id: 'settings', label: 'Settings', iconName: 'settings-outline' },
 ];
 
 export default function ConsultantHome() {
@@ -51,11 +54,11 @@ export default function ConsultantHome() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111827" />
+      <StatusBar barStyle="light-content" backgroundColor="#111111" />
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>👩‍⚕️ Consultant Panel</Text>
+        <Text style={styles.headerTitle}>Consultant Panel</Text>
         <View style={styles.headerRight}>
           <View style={styles.profileCircle}>
             <Text style={styles.profileInitial}>S</Text>
@@ -63,7 +66,7 @@ export default function ConsultantHome() {
         </View>
       </View>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <View style={styles.mainContent}>
         {renderScreen()}
       </View>
@@ -80,14 +83,13 @@ export default function ConsultantHome() {
             onPress={() => setActiveTab(tab.id)}
             activeOpacity={0.7}
           >
-            <Text
+            <Icon
+              name={tab.iconName}
               style={[
                 styles.tabIcon,
                 activeTab === tab.id && styles.activeTabIcon,
               ]}
-            >
-              {tab.icon}
-            </Text>
+            />
             <Text
               style={[
                 styles.tabLabel,
@@ -103,10 +105,11 @@ export default function ConsultantHome() {
   );
 }
 
+// --- Updated Styles for a Professional Dark Theme ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: '#0A0A0A', // Main dark background
   },
   header: {
     flexDirection: 'row',
@@ -114,12 +117,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#111827',
+    backgroundColor: '#111111', // Slightly lighter for the header
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F2937',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#10B981',
+    color: '#F4F4F5', // Off-white text
   },
   headerRight: {
     flexDirection: 'row',
@@ -129,7 +134,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#10B981',
+    backgroundColor: '#3B82F6', // Blue accent
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -140,86 +145,42 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  comingSoon: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-  },
-  comingSoonText: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  comingSoonSubText: {
-    fontSize: 18,
-    color: '#6B7280',
-    fontWeight: '500',
+    backgroundColor: '#0A0A0A', // CRITICAL: Match the container background
   },
   bottomTabs: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111111', // Dark tab bar
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#1F2937', // Dark border
     paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingBottom: 8, // Add extra padding for notched screens
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-    marginHorizontal: 2,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   activeTabButton: {
-    backgroundColor: '#DBEAFE',
+    // A subtle highlight for the active tab
+    backgroundColor: '#1F2937',
   },
   tabIcon: {
-    fontSize: 20,
+    fontSize: 24,
+    color: '#6B7280', // Muted gray for inactive icons
     marginBottom: 4,
   },
   activeTabIcon: {
-    transform: [{ scale: 1.1 }],
+    color: '#3B82F6', // Blue accent for active icon
   },
   tabLabel: {
-    fontSize: 10,
-    color: '#6B7280',
+    fontSize: 11,
+    color: '#6B7280', // Muted gray for inactive text
     textAlign: 'center',
     fontWeight: '500',
   },
   activeTabLabel: {
-    color: '#1D4ED8',
+    color: '#F4F4F5', // Off-white for active text
     fontWeight: '600',
   },
 });
-
-
-
-
-
-
-
-// import { View, Text, StyleSheet } from 'react-native';
-
-// export default function ConsultantHome() {
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.text}>👩‍⚕️ Welcome Consultant!</Text>
-//       <Text style={styles.subText}>This is your consultant dashboard.</Text>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111827'
-//   },
-//   text: {
-//     fontSize: 24, fontWeight: 'bold', color: '#10B981'
-//   },
-//   subText: {
-//     fontSize: 16, marginTop: 8, color: '#9CA3AF'
-//   }
-// });
