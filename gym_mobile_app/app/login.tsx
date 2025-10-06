@@ -104,7 +104,7 @@ export default function Login() {
     try {
       const fakeData = {
         token: "dummy-token",
-        role: "consultant",
+        role: "user",
         name: "Demo User",
         email: email || "demo@example.com",
         userId: "demo-123",
@@ -123,7 +123,7 @@ export default function Login() {
       setIsLoading(false);
 
       setTimeout(() => {
-        router.replace("/dashboards/consultant");
+        router.replace("/dashboards/user");
       }, 1500);
     } catch (error) {
       setIsLoading(false);
