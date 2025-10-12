@@ -120,8 +120,9 @@ export default function ForgotPassword() {
     const payload = { email: email.toLowerCase().trim() };
 
     try {
+      // Call new API endpoint to check if email is registered
       const response = await fetch(
-        "https://gymbackend-production-ac3b.up.railway.app/api/auth/forgot-password",
+        "https://gymbackend-production-ac3b.up.railway.app/api/auth/check-email",
         {
           method: "POST",
           headers: {
@@ -134,23 +135,24 @@ export default function ForgotPassword() {
       const data = await response.json();
       setIsLoading(false);
 
-      if (response.ok) {
-        // Email sent successfully
-        console.log("Reset email sent:", data);
+      // Expecting backend to return { exists: true } or { exists: false }
+      if (response.ok && data.exists === true) {
         setEmailSent(true);
         setToastMessage("Password reset email has been sent! Please check your inbox.");
         setToastType('success');
         setShowToast(true);
+        // Optionally, you can trigger the actual reset email here if needed
+      } else if (response.ok && data.exists === false) {
+        setToastMessage("Email ID not registered.");
+        setToastType('error');
+        setShowToast(true);
       } else {
-        // Backend returned an error
-        console.error("Reset email failed:", data);
-        setToastMessage(data.message || "Failed to send reset email. Please try again.");
+        setToastMessage(data.message || "Failed to check email. Please try again.");
         setToastType('error');
         setShowToast(true);
       }
     } catch (error) {
       setIsLoading(false);
-      console.error("Network error:", error);
       setToastMessage("Network error. Please check your connection and try again.");
       setToastType('error');
       setShowToast(true);
