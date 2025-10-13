@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const { width, height } = Dimensions.get('window');
 
 interface WaterEntry {

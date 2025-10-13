@@ -23,7 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 import { router } from "expo-router";
 
 // API Configuration
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 
 interface PasswordValidationResult {

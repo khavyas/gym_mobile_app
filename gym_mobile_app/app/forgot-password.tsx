@@ -122,7 +122,7 @@ export default function ForgotPassword() {
     try {
       // Call new API endpoint to check if email is registered
       const response = await fetch(
-        "https://gymbackend-production-ac3b.up.railway.app/api/auth/check-email",
+        "https://gym-backend-20dr.onrender.com/api/auth/check-email",
         {
           method: "POST",
           headers: {

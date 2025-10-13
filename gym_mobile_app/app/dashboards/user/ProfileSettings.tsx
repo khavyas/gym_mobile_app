@@ -24,7 +24,7 @@ import React from "react";
 import { useNavigation } from '@react-navigation/native';
 
 // API Configuration
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 // Define TypeScript interfaces for our state objects
 interface UserInfo {

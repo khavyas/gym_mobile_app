@@ -1,6 +1,6 @@
 import { apiService } from './api';
 import { Consultant, DashboardStats } from './types';
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 export class ConsultantService {
   async createProfile(profileData: Partial<Consultant>): Promise<Consultant | null> {

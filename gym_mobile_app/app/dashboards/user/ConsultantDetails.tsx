@@ -9,7 +9,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 interface ConsultantDetails {
   _id: string;

@@ -97,7 +97,7 @@ export default function Register() {
 
     try {
       const response = await fetch(
-        "https://gymbackend-production-ac3b.up.railway.app/api/auth/register",
+        "https://gym-backend-20dr.onrender.com/api/auth/register",
         {
           method: "POST",
           headers: {

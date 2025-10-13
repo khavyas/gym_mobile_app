@@ -8,7 +8,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 interface Consultant {
   _id: string;
@@ -830,7 +830,7 @@ const styles = StyleSheet.create({
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { useRouter } from 'expo-router';
 
-// const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+// const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 // interface Consultant {
 //   _id: string;

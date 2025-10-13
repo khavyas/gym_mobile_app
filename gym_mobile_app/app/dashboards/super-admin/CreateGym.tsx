@@ -17,7 +17,7 @@ interface CreateGymForm {
   adminPassword: string;
 }
 
-const API_BASE_URL = 'https://gymbackend-production-ac3b.up.railway.app/api';
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 export default function CreateGym() {
   const router = useRouter();
