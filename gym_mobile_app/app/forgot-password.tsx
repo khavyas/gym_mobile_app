@@ -138,7 +138,7 @@ export default function ForgotPassword() {
       // Expecting backend to return { exists: true } or { exists: false }
       if (response.ok && data.exists === true) {
         setEmailSent(true);
-        setToastMessage("Password reset email has been sent! Please check your inbox.");
+        setToastMessage("A 6-digit OTP has been sent to your email. Please check your inbox and enter the OTP to reset your password.");
         setToastType('success');
         setShowToast(true);
         // Optionally, you can trigger the actual reset email here if needed
@@ -223,14 +223,14 @@ export default function ForgotPassword() {
             </>
           ) : (
             <View style={styles.successContainer}>
-              <Text style={styles.successIcon}>📧</Text>
-              <Text style={styles.successTitle}>Email Sent!</Text>
+            <Text style={styles.successIcon}>🛡️✅</Text>
+              <Text style={styles.successTitle}>OTP Sent!</Text>
               <Text style={styles.successMessage}>
-                We've sent password reset instructions to:
+                We've sent a 6-digit OTP to:
               </Text>
               <Text style={styles.emailDisplay}>{email}</Text>
               <Text style={styles.instructionText}>
-                Please check your inbox and follow the instructions to reset your password. 
+                Please check your inbox and enter the OTP to reset your password.
                 Don't forget to check your spam folder if you don't see the email.
               </Text>
               
