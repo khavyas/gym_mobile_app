@@ -95,6 +95,13 @@ export default function ForgotPassword() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [otpInput, setOtpInput] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [passwordReset, setPasswordReset] = useState(false); 
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -179,8 +186,160 @@ export default function ForgotPassword() {
     }
   };
 
+  const handleVerifyOtp = async () => {
+  if (!otpInput.trim() || otpInput.length !== 6) {
+    setToastMessage("Please enter a valid 6-digit OTP");
+    setToastType('error');
+    setShowToast(true);
+    return;
+  }
+
+  setIsVerifyingOtp(true);
+  const payload = { 
+    email: email.toLowerCase().trim(), 
+    otp: otpInput.trim() 
+  };
+
+  try {
+    const response = await fetch(
+      "https://gym-backend-20dr.onrender.com/api/auth/verify-otp",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+    setIsVerifyingOtp(false);
+
+    if (response.ok && data.success) {
+      setOtpVerified(true);
+      setToastMessage("OTP Verified Successfully!");
+      setToastType('success');
+      setShowToast(true);
+    } else {
+      setToastMessage(data.message || "Invalid OTP. Please try again.");
+      setToastType('error');
+      setShowToast(true);
+    }
+  } catch (error) {
+    setIsVerifyingOtp(false);
+    setToastMessage("Network error. Please try again.");
+    setToastType('error');
+    setShowToast(true);
+  }
+  };
+
+  const handleResendOtp = async () => {
+  setIsLoading(true);
+  const payload = { email: email.toLowerCase().trim() };
+
+  try {
+    const response = await fetch(
+      "https://gym-backend-20dr.onrender.com/api/auth/send-reset-email",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    if (response.ok && data.success) {
+      setOtpInput(""); // Clear previous OTP input
+      setToastMessage("OTP resent to your email!");
+      setToastType('success');
+      setShowToast(true);
+    } else {
+      setToastMessage(data.message || "Failed to resend OTP. Please try again.");
+      setToastType('error');
+      setShowToast(true);
+    }
+  } catch (error) {
+    setIsLoading(false);
+    setToastMessage("Network error. Please try again.");
+    setToastType('error');
+    setShowToast(true);
+  }
+  };
+
   const handleBackToLogin = () => {
     router.back();
+  };
+
+  const handleResetPassword = async () => {
+  // Validation
+  if (!newPassword.trim() || !confirmPassword.trim()) {
+    setToastMessage("Please enter both password fields");
+    setToastType('error');
+    setShowToast(true);
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    setToastMessage("Password must be at least 6 characters long");
+    setToastType('error');
+    setShowToast(true);
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setToastMessage("Passwords do not match");
+    setToastType('error');
+    setShowToast(true);
+    return;
+  }
+
+  setIsResettingPassword(true);
+  const payload = { 
+    email: email.toLowerCase().trim(),
+    newPassword: newPassword.trim(),
+    confirmPassword: confirmPassword.trim()
+  };
+
+  try {
+    const response = await fetch(
+      "https://gym-backend-20dr.onrender.com/api/auth/reset-password",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+    setIsResettingPassword(false);
+
+    if (response.ok && data.success) {
+      setPasswordReset(true);
+      setToastMessage("Password reset successfully! Redirecting to login...");
+      setToastType('success');
+      setShowToast(true);
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+    } else {
+      setToastMessage(data.message || "Failed to reset password. Please try again.");
+      setToastType('error');
+      setShowToast(true);
+    }
+  } catch (error) {
+    setIsResettingPassword(false);
+    setToastMessage("Network error. Please try again.");
+    setToastType('error');
+    setShowToast(true);
+  }
   };
 
   return (
@@ -208,7 +367,7 @@ export default function ForgotPassword() {
         </View>
 
         <View style={styles.formContainer}>
-          {!emailSent ? (
+   {!emailSent ? (
             <>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email Address</Text>
@@ -241,31 +400,140 @@ export default function ForgotPassword() {
                 )}
               </TouchableOpacity>
             </>
-          ) : (
-            <View style={styles.successContainer}>
-            <Text style={styles.successIcon}>🛡️✅</Text>
-              <Text style={styles.successTitle}>OTP Sent!</Text>
-              <Text style={styles.successMessage}>
-                We've sent a 6-digit OTP to:
-              </Text>
-              <Text style={styles.emailDisplay}>{email}</Text>
-              <Text style={styles.instructionText}>
-                Please check your inbox and enter the OTP to reset your password.
-                Don't forget to check your spam folder if you don't see the email.
-              </Text>
-              
+// REPLACE THIS ENTIRE SECTION in your return JSX (around line 335):
+
+          ) : !otpVerified ? (
+            <>
+              <View style={styles.successContainer}>
+                <Text style={styles.successIcon}>🛡️✅</Text>
+                <Text style={styles.successTitle}>OTP Sent!</Text>
+                <Text style={styles.successMessage}>
+                  We've sent a 6-digit OTP to:
+                </Text>
+                <Text style={styles.emailDisplay}>{email}</Text>
+                <Text style={styles.instructionText}>
+                  Please check your inbox and enter the OTP to reset your password.
+                  Don't forget to check your spam folder if you don't see the email.
+                </Text>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Enter 6-Digit OTP</Text>
+                <TextInput
+                  style={styles.otpInput}
+                  placeholder="000000"
+                  placeholderTextColor="#9CA3AF"
+                  value={otpInput}
+                  onChangeText={setOtpInput}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  editable={!isVerifyingOtp}
+                  textAlign="center"
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={[
+                  styles.resetButton,
+                  isVerifyingOtp && styles.loadingButton
+                ]} 
+                onPress={handleVerifyOtp}
+                disabled={isVerifyingOtp}
+              >
+                {isVerifyingOtp ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Verifying...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.resetButtonText}>Verify OTP</Text>
+                )}
+              </TouchableOpacity>
+
               <TouchableOpacity 
                 style={styles.resendButton} 
+                onPress={handleResendOtp}
+                disabled={isLoading}
+              >
+                <Text style={styles.resendButtonText}>Didn't receive OTP? Resend</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.tryDifferentEmailButton} 
                 onPress={() => {
                   setEmailSent(false);
                   setEmail("");
+                  setOtpInput("");
                 }}
               >
-                <Text style={styles.resendButtonText}>Try Different Email</Text>
+                <Text style={styles.tryDifferentEmailText}>Use Different Email</Text>
               </TouchableOpacity>
+            </>
+          ) : !passwordReset ? (
+            <>
+              <View style={styles.successContainer}>
+                <Text style={styles.successIcon}>🔐</Text>
+                <Text style={styles.successTitle}>Set New Password</Text>
+                <Text style={styles.successMessage}>
+                  Create a strong password for your account
+                </Text>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>New Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter new password"
+                  placeholderTextColor="#9CA3AF"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry
+                  editable={!isResettingPassword}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Confirm Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm password"
+                  placeholderTextColor="#9CA3AF"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  editable={!isResettingPassword}
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={[
+                  styles.resetButton,
+                  isResettingPassword && styles.loadingButton
+                ]} 
+                onPress={handleResetPassword}
+                disabled={isResettingPassword}
+              >
+                {isResettingPassword ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Resetting...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.resetButtonText}>Reset Password</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.successContainer}>
+              <Text style={styles.successIcon}>✅</Text>
+              <Text style={styles.successTitle}>Password Reset Successfully!</Text>
+              <Text style={styles.successMessage}>
+                Your password has been reset successfully.
+              </Text>
+              <Text style={styles.instructionText}>
+                You will be redirected to login in a moment...
+              </Text>
             </View>
           )}
-
+          
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={handleBackToLogin}
@@ -290,6 +558,29 @@ export default function ForgotPassword() {
 }
 
 const styles = StyleSheet.create({
+  otpInput: {
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    backgroundColor: '#111827',
+    padding: 16,
+    borderRadius: 12,
+    fontSize: 24,
+    color: '#F9FAFB',
+    fontWeight: 'bold',
+    letterSpacing: 8,
+    marginBottom: 16,
+  },
+  tryDifferentEmailButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  tryDifferentEmailText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
   container: {
     flex: 1,
     backgroundColor: '#111827', // Dark charcoal background
