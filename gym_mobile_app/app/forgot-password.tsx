@@ -136,13 +136,33 @@ export default function ForgotPassword() {
       setIsLoading(false);
 
       // Expecting backend to return { exists: true } or { exists: false }
-      if (response.ok && data.exists === true) {
+    if (response.ok && data.exists === true) {
+      // Step 2: Trigger reset email
+      const sendEmailResponse = await fetch(
+        "https://gym-backend-20dr.onrender.com/api/auth/send-reset-email",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload), // { email }
+        }
+      );
+
+      const sendEmailData = await sendEmailResponse.json();
+
+      if (sendEmailResponse.ok && sendEmailData.success) {
         setEmailSent(true);
         setToastMessage("A 6-digit OTP has been sent to your email. Please check your inbox and enter the OTP to reset your password.");
         setToastType('success');
         setShowToast(true);
-        // Optionally, you can trigger the actual reset email here if needed
-      } else if (response.ok && data.exists === false) {
+      } else {
+        setToastMessage(sendEmailData.message || "Failed to send reset email. Please try again.");
+        setToastType('error');
+        setShowToast(true);
+      }
+    }
+      else if (response.ok && data.exists === false) {
         setToastMessage("Email ID not registered.");
         setToastType('error');
         setShowToast(true);
