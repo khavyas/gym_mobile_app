@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { getRandomQuote, type Quote } from './motivationalQuotes';
-
+import { Lightbulb, Share2 } from 'lucide-react-native';
 const { width } = Dimensions.get('window');
 
 type TabParamList = {
@@ -277,22 +277,27 @@ export default function HomeSummary() {
 {/* Thought for the Day */}
 {dailyQuote && (
   <View style={styles.thoughtCard}>
-    <View style={styles.thoughtHeader}>
+    <View style={styles.thoughtContent}>
       <View style={styles.bulbContainer}>
-        <Text style={styles.bulbIcon}>💡</Text>
+        <Lightbulb size={20} color="#FFFFFF" />
       </View>
-      <View style={styles.thoughtHeaderText}>
-        <Text style={styles.thoughtLabel}>Thought for the Day</Text>
-        <Text style={styles.thoughtCategory}>Motivation</Text>
+      <View style={styles.thoughtTextContainer}>
+        <View style={styles.thoughtHeader}>
+          <Text style={styles.thoughtLabel}>Thought for the Day</Text>
+          <View style={styles.motivationBadge}>
+            <Text style={styles.motivationText}>{"Motivation"}</Text>
+          </View>
+        </View>
+        <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
+        <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
       </View>
       <TouchableOpacity style={styles.shareButton}>
-        <Text style={styles.shareIcon}>↗</Text>
+        <Share2 size={16} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
-    <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
-    <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
   </View>
 )}
+
 
         {/* Today's Progress Card */}
         <LinearGradient
@@ -466,69 +471,77 @@ export default function HomeSummary() {
 }
 
 const styles = StyleSheet.create({
-  thoughtCard: {
-    backgroundColor: '#1E293B',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
-  },
-  thoughtHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  bulbContainer: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#10B981',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  bulbIcon: {
-    fontSize: 20,
-  },
-  thoughtHeaderText: {
-    flex: 1,
-  },
-  thoughtLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  thoughtCategory: {
-    fontSize: 12,
-    color: '#10B981',
-    marginTop: 2,
-  },
-  shareButton: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#334155',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareIcon: {
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  quoteText: {
-    fontSize: 14,
-    color: '#E2E8F0',
-    lineHeight: 22,
-    fontStyle: 'italic',
-    marginBottom: 12,
-  },
-  quoteAuthor: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'right',
-  },
+thoughtCard: {
+  backgroundColor: '#0e292e',
+  marginHorizontal: 20,
+  borderRadius: 16,
+  padding: 16,
+  marginBottom: 24,
+  borderWidth: 2,
+  borderColor: '#2a3441',
+},
+thoughtContent: {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  gap: 12,
+},
+bulbContainer: {
+  width: 40,
+  height: 40,
+  backgroundColor: '#0F3D3E',  // Same as card background
+  borderRadius: 12,              // Rounded square corners
+  justifyContent: 'center',
+  alignItems: 'center',
+  flexShrink: 0,
+},
+thoughtTextContainer: {
+  flex: 1,
+},
+thoughtHeader: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  marginBottom: 8,
+},
+thoughtLabel: {
+  fontSize: 15,
+  fontWeight: '600',
+  color: '#FFFFFF',
+},
+motivationBadge: {
+  paddingHorizontal: 8,
+  paddingVertical: 2,
+  borderRadius: 6,
+  borderWidth: 1,
+  borderColor: '#2a3441',
+},
+motivationText: {
+  fontSize: 11,
+  color: '#FFFFFF',
+  fontWeight: '500',
+},
+shareButton: {
+  width: 32,
+  height: 32,
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  borderRadius: 16,
+  justifyContent: 'center',
+  alignItems: 'center',
+  flexShrink: 0,
+},
+quoteText: {
+  fontSize: 14,
+  color: '#94A3B8',
+  lineHeight: 22,
+  fontStyle: 'italic',
+  marginBottom: 8,
+},
+quoteAuthor: {
+  fontSize: 12,
+  color: '#94A3B8',
+  textAlign: 'right',
+},
+
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
