@@ -8,7 +8,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-
+import { getRandomQuote, type Quote } from './motivationalQuotes';
 
 const { width } = Dimensions.get('window');
 
@@ -68,7 +68,7 @@ export default function HomeSummary() {
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const navigation = useNavigation<NavigationProp<TabParamList>>();
-
+  const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -82,6 +82,12 @@ export default function HomeSummary() {
     fetchTodayWaterIntake();
     fetchUserData();
   }, []);
+
+  useEffect(() => {
+  // Get a new quote daily
+  const quote = getRandomQuote();
+  setDailyQuote(quote);
+}, []);
 
   const getUserInitials = (name: string) => {
     if (!name) return 'JD'; // fallback
@@ -268,6 +274,26 @@ export default function HomeSummary() {
           </TouchableOpacity>
         </View>
 
+{/* Thought for the Day */}
+{dailyQuote && (
+  <View style={styles.thoughtCard}>
+    <View style={styles.thoughtHeader}>
+      <View style={styles.bulbContainer}>
+        <Text style={styles.bulbIcon}>💡</Text>
+      </View>
+      <View style={styles.thoughtHeaderText}>
+        <Text style={styles.thoughtLabel}>Thought for the Day</Text>
+        <Text style={styles.thoughtCategory}>Motivation</Text>
+      </View>
+      <TouchableOpacity style={styles.shareButton}>
+        <Text style={styles.shareIcon}>↗</Text>
+      </TouchableOpacity>
+    </View>
+    <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
+    <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
+  </View>
+)}
+
         {/* Today's Progress Card */}
         <LinearGradient
           colors={['#10B981', '#059669']}
@@ -440,6 +466,69 @@ export default function HomeSummary() {
 }
 
 const styles = StyleSheet.create({
+  thoughtCard: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  thoughtHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  bulbContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#10B981',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  bulbIcon: {
+    fontSize: 20,
+  },
+  thoughtHeaderText: {
+    flex: 1,
+  },
+  thoughtLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  thoughtCategory: {
+    fontSize: 12,
+    color: '#10B981',
+    marginTop: 2,
+  },
+  shareButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#334155',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareIcon: {
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  quoteText: {
+    fontSize: 14,
+    color: '#E2E8F0',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  quoteAuthor: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'right',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
