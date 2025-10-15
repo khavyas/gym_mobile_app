@@ -259,44 +259,39 @@ export default function HomeSummary() {
         contentContainerStyle={styles.scrollContainer}
       >
         {/* Header Section */}
+
+
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getTimeBasedGreeting()}</Text>
-            <Text style={styles.date}>{currentDate}</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.profileIcon}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Text style={styles.profileInitial}>
-              {getUserInitials(userName)}
-            </Text>
-          </TouchableOpacity>
+             <Text style={styles.date}>{currentDate}</Text>
+            <Text style={styles.date}>Ready to crush your wellness goals today?</Text>
+          </View>         
         </View>
 
-{/* Thought for the Day */}
-{dailyQuote && (
-  <View style={styles.thoughtCard}>
-    <View style={styles.thoughtContent}>
-      <View style={styles.bulbContainer}>
-        <Lightbulb size={20} color="#FFFFFF" />
-      </View>
-      <View style={styles.thoughtTextContainer}>
-        <View style={styles.thoughtHeader}>
-          <Text style={styles.thoughtLabel}>Thought for the Day</Text>
-          <View style={styles.motivationBadge}>
-            <Text style={styles.motivationText}>{"Motivation"}</Text>
+        {/* Thought for the Day */}
+        {dailyQuote && (
+          <View style={styles.thoughtCard}>
+            <View style={styles.thoughtContent}>
+              <View style={styles.bulbContainer}>
+                <Lightbulb size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.thoughtTextContainer}>
+                <View style={styles.thoughtHeader}>
+                  <Text style={styles.thoughtLabel}>Thought for the Day</Text>
+                  <View style={styles.motivationBadge}>
+                    <Text style={styles.motivationText}>{"Motivation"}</Text>
+                  </View>
+                </View>
+                <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
+                <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
+              </View>
+              <TouchableOpacity style={styles.shareButton}>
+                <Share2 size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-        <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
-        <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
-      </View>
-      <TouchableOpacity style={styles.shareButton}>
-        <Share2 size={16} color="#FFFFFF" />
-      </TouchableOpacity>
-    </View>
-  </View>
-)}
+        )}
 
 
         {/* Today's Progress Card */}
@@ -559,7 +554,7 @@ quoteAuthor: {
   },
   greeting: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '400',
     color: '#FFFFFF',
   },
   date: {
