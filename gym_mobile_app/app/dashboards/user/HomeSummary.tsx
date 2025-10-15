@@ -472,7 +472,7 @@ thoughtCard: {
   borderRadius: 16,
   padding: 16,
   marginBottom: 24,
-  borderWidth: 2,
+  borderWidth: 1,
   borderColor: '#2a3441',
 },
 thoughtContent: {
