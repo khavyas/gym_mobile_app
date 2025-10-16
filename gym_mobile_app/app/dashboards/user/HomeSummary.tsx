@@ -10,6 +10,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { getRandomQuote, type Quote } from './motivationalQuotes';
 import { Lightbulb, Share2 } from 'lucide-react-native';
+import { Video, Play, Star, Eye } from 'lucide-react-native';
+import { getRandomVideo, getYouTubeThumbnail, getYouTubeUrl, type VideoRecommendation } from './videoRecommendations';
+import { Linking, Image } from 'react-native';
+
 const { width } = Dimensions.get('window');
 
 type TabParamList = {
@@ -69,6 +73,7 @@ export default function HomeSummary() {
   const [userEmail, setUserEmail] = useState('');
   const navigation = useNavigation<NavigationProp<TabParamList>>();
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
+  const [recommendedVideo, setRecommendedVideo] = useState<VideoRecommendation | null>(null);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -84,10 +89,15 @@ export default function HomeSummary() {
   }, []);
 
   useEffect(() => {
-  // Get a new quote daily
-  const quote = getRandomQuote();
-  setDailyQuote(quote);
-}, []);
+    // Get a new quote daily
+    const quote = getRandomQuote();
+    setDailyQuote(quote);
+  }, []);
+
+  useEffect(() => {
+    const video = getRandomVideo();
+    setRecommendedVideo(video);
+  }, []);
 
   const getUserInitials = (name: string) => {
     if (!name) return 'JD'; // fallback
@@ -109,6 +119,18 @@ export default function HomeSummary() {
       console.error('Error fetching user data:', error);
     }
   };
+
+  const handleVideoPress = async (youtubeId: string) => {
+    const url = getYouTubeUrl(youtubeId);
+    const supported = await Linking.canOpenURL(url);
+    
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      console.error("Don't know how to open this URL: " + url);
+    }
+  };
+
 
   const fetchEvents = async () => {
     try {
@@ -294,6 +316,80 @@ export default function HomeSummary() {
         )}
 
 
+{/* Recommended Video Section */}
+{recommendedVideo && (
+  <View style={styles.section}>
+    <View style={styles.videoSectionHeader}>
+      <Video size={20} color="#10B981" />
+      <Text style={styles.sectionTitle}>Recommended for You</Text>
+    </View>
+    
+    <TouchableOpacity 
+      style={styles.videoCard}
+      onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+      activeOpacity={0.9}
+    >
+      <View style={styles.videoThumbnailContainer}>
+        <Image 
+          source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId) }}
+          style={styles.videoThumbnail}
+          resizeMode="cover"
+        />
+        <View style={styles.playButtonOverlay}>
+          <View style={styles.playButton}>
+            <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+          </View>
+        </View>
+        <View style={styles.videoDurationBadge}>
+          <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.videoInfo}>
+        <Text style={styles.videoTitle} numberOfLines={2}>
+          {recommendedVideo.title}
+        </Text>
+        <Text style={styles.videoDescription} numberOfLines={2}>
+          {recommendedVideo.description}
+        </Text>
+        
+        <View style={styles.videoMetaContainer}>
+          <View style={styles.videoInstructorInfo}>
+            <Text style={styles.videoInstructor}>
+              {recommendedVideo.instructor}
+              {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
+            </Text>
+          </View>
+          
+          <View style={styles.videoStats}>
+            {recommendedVideo.rating && (
+              <View style={styles.videoStatItem}>
+                <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
+                <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
+              </View>
+            )}
+            {recommendedVideo.views && (
+              <View style={styles.videoStatItem}>
+                <Eye size={12} color="#94A3B8" />
+                <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.watchNowButton}
+          onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+        >
+          <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
+          <Text style={styles.watchNowText}>Watch Now</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  </View>
+)}
+
         {/* Today's Progress Card */}
         <LinearGradient
           colors={['#10B981', '#059669']}
@@ -466,6 +562,130 @@ export default function HomeSummary() {
 }
 
 const styles = StyleSheet.create({
+   videoSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  videoCard: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#2a3441',
+  },
+  videoThumbnailContainer: {
+    width: '100%',
+    height: 200,
+    position: 'relative',
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  playButtonOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  playButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  videoDurationBadge: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  videoDurationText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  videoInfo: {
+    padding: 16,
+  },
+  videoTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  videoDescription: {
+    fontSize: 14,
+    color: '#94A3B8',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  videoMetaContainer: {
+    marginBottom: 16,
+  },
+  videoInstructorInfo: {
+    marginBottom: 8,
+  },
+  videoInstructor: {
+    fontSize: 13,
+    color: '#CBD5E1',
+    fontWeight: '500',
+  },
+  videoStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  videoStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  videoCategoryBadge: {
+    fontSize: 12,
+    color: '#10B981',
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  videoStatText: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  watchNowButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  watchNowText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  
 thoughtCard: {
   backgroundColor: '#0e292e',
   marginHorizontal: 20,
