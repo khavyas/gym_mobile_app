@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Droplet, Coffee, Wine } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -31,15 +32,15 @@ interface APIWaterEntry {
 export default function WaterIntake() {
   const router = useRouter();
   const [currentIntake, setCurrentIntake] = useState(0);
-  const [dailyGoal, setDailyuseState ] = useState(2500); // 2.5L default
+  const [dailyGoal, setDailyGoal] = useState(2500);
   const [waterHistory, setWaterHistory] = useState<WaterEntry[]>([]);
   const [selectedAmount, setSelectedAmount] = useState(250);
   const [apiWaterData, setApiWaterData] = useState<APIWaterEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  fetchTodayWaterData();
-}, []);
+    fetchTodayWaterData();
+  }, []);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -47,12 +48,32 @@ export default function WaterIntake() {
     day: 'numeric'
   });
 
-  // Quick add amounts in ml
+  // Updated quick amounts with Lucide icons
   const quickAmounts = [
-    { label: 'Glass', amount: 250, icon: '🥃', color: '#3B82F6' },
-    { label: 'Bottle', amount: 500, icon: '🍼', color: '#10B981' },
-    { label: 'Cup', amount: 200, icon: '☕', color: '#F59E0B' },
-    { label: 'Large', amount: 750, icon: '🧴', color: '#8B5CF6' },
+    { 
+      label: 'Glass', 
+      amount: 250, 
+      icon: Wine,
+      color: '#3B82F6' 
+    },
+    { 
+      label: 'Bottle', 
+      amount: 500, 
+      icon: Droplet, 
+      color: '#10B981' 
+    },
+    { 
+      label: 'Cup', 
+      amount: 200, 
+      icon: Coffee, 
+      color: '#F59E0B' 
+    },
+    { 
+      label: 'Large', 
+      amount: 750, 
+      icon: Droplet, 
+      color: '#8B5CF6' 
+    },
   ];
 
   const progressPercentage = Math.min((currentIntake / dailyGoal) * 100, 100);
@@ -94,79 +115,71 @@ export default function WaterIntake() {
   };
 
   const fetchTodayWaterData = async () => {
-  try {
-    setIsLoading(true);
-    const token = await getAuthToken();
-    if (!token) {
-      console.log('No auth token found');
+    try {
+      setIsLoading(true);
+      const token = await getAuthToken();
+      if (!token) {
+        console.log('No auth token found');
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/water`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      const today = new Date().toISOString().split('T')[0];
+      const todayEntries = response.data.filter((entry: APIWaterEntry) => {
+        const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
+        return entryDate === today;
+      });
+
+      setApiWaterData(todayEntries);
+      
+      const totalFromAPI = todayEntries.reduce((sum: number, entry: APIWaterEntry) => sum + entry.amount, 0);
+      setCurrentIntake(totalFromAPI);
+
+      const localEntries: WaterEntry[] = todayEntries.map((entry: APIWaterEntry) => ({
+        id: entry._id,
+        amount: entry.amount,
+        time: new Date(entry.createdAt).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        type: 'custom'
+      }));
+
+      setWaterHistory(localEntries);
+
+    } catch (error: any) {
+      console.error('Error fetching water data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'custom') => {
+    const success = await logWaterToAPI(amount);
+    
+    if (!success) {
+      Alert.alert(
+        'Connection Error',
+        'Failed to sync with server. Do you want to track locally?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Track Locally', 
+            onPress: () => addWaterLocally(amount, type)
+          }
+        ]
+      );
       return;
     }
 
-    const response = await axios.get(`${API_BASE_URL}/water`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    console.log('Fetched water data:', response.data);
-
-    // Filter today's entries
-    const today = new Date().toISOString().split('T')[0];
-    const todayEntries = response.data.filter((entry: APIWaterEntry) => {
-      const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
-      return entryDate === today;
-    });
-
-    setApiWaterData(todayEntries);
-    
-    // Update current intake based on API data
-    const totalFromAPI = todayEntries.reduce((sum: number, entry: APIWaterEntry) => sum + entry.amount, 0);
-    setCurrentIntake(totalFromAPI);
-
-    // Convert API data to local format for display
-    const localEntries: WaterEntry[] = todayEntries.map((entry: APIWaterEntry) => ({
-      id: entry._id,
-      amount: entry.amount,
-      time: new Date(entry.createdAt).toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-      }),
-      type: 'custom' // Default type since API doesn't store this
-    }));
-
-    setWaterHistory(localEntries);
-
-  } catch (error: any) {
-    console.error('Error fetching water data:', error);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'custom') => {
-  // First, try to log to API
-  const success = await logWaterToAPI(amount);
-  
-  if (!success) {
-    // If API call fails, ask user if they want to continue with local tracking
-    Alert.alert(
-      'Connection Error',
-      'Failed to sync with server. Do you want to track locally?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Track Locally', 
-          onPress: () => addWaterLocally(amount, type)
-        }
-      ]
-    );
-    return;
-  }
-
-  // If API call succeeds, add to local state
-  addWaterLocally(amount, type);
-};
+    addWaterLocally(amount, type);
+  };
 
   const addWaterLocally = (amount: number, type: 'glass' | 'bottle' | 'cup' | 'custom') => {
     const newEntry: WaterEntry = {
@@ -180,11 +193,9 @@ const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'cust
       type
     };
 
-    // Only add to local state, don't double-add since API data will be fetched
     setWaterHistory(prev => [newEntry, ...prev]);
     setCurrentIntake(prev => prev + amount);
 
-    // Celebration for reaching goal
     if (currentIntake + amount >= dailyGoal && currentIntake < dailyGoal) {
       Alert.alert(
         "🎉 Goal Achieved!",
@@ -215,8 +226,6 @@ const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'cust
     return "Goal achieved! You're well hydrated! 🎉";
   };
 
-
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -239,62 +248,69 @@ const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'cust
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
-        {/* Water Progress Visualization */}
+        {/* Water Progress Visualization with Background Image */}
         <View style={styles.progressSection}>
-          <LinearGradient
-            colors={['#0EA5E9', '#06B6D4']}
-            style={styles.waterCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {/* Animated Water Wave Effect */}
-            <View style={styles.waterContainer}>
-              <View style={[styles.waterWave, { height: getWaveHeight() }]} />
-              <View style={styles.waterOverlay}>
-                <Text style={styles.currentAmount}>
-                  {(currentIntake / 1000).toFixed(1)}L
-                </Text>
-                <Text style={styles.goalAmount}>
-                  of {(dailyGoal / 1000).toFixed(1)}L goal
-                </Text>
-                <Text style={styles.percentageText}>
-                  {progressPercentage.toFixed(0)}%
-                </Text>
+          <View style={styles.waterCard}>
+            <Image 
+              source={{ uri: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80' }}
+              style={styles.waterCardBackground}
+              blurRadius={2}
+            />
+            <View style={styles.waterCardOverlay} />
+            
+            <View style={styles.waterCardContent}>
+              <View style={styles.waterContainer}>
+                <View style={[styles.waterWave, { height: getWaveHeight() }]} />
+                <View style={styles.waterOverlay}>
+                  <Text style={styles.currentAmount}>
+                    {(currentIntake / 1000).toFixed(1)}L
+                  </Text>
+                  <Text style={styles.goalAmount}>
+                    of {(dailyGoal / 1000).toFixed(1)}L goal
+                  </Text>
+                  <Text style={styles.percentageText}>
+                    {progressPercentage.toFixed(0)}%
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Progress Indicators */}
-            <View style={styles.progressIndicators}>
-              <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill, 
-                    { width: `${progressPercentage}%` }
-                  ]} 
-                />
+              <View style={styles.progressIndicators}>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { width: `${progressPercentage}%` }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.encouragementText}>
+                  {getEncouragementMessage()}
+                </Text>
               </View>
-              <Text style={styles.encouragementText}>
-                {getEncouragementMessage()}
-              </Text>
             </View>
-          </LinearGradient>
+          </View>
         </View>
 
-        {/* Quick Add Buttons */}
+        {/* Quick Add Buttons with Icons */}
         <View style={styles.quickAddSection}>
           <Text style={styles.sectionTitle}>Quick Add</Text>
           <View style={styles.quickAddGrid}>
-            {quickAmounts.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.quickAddButton, { backgroundColor: item.color }]}
-                onPress={() => addWater(item.amount, item.label.toLowerCase() as any)}
-              >
-                <Text style={styles.quickAddIcon}>{item.icon}</Text>
-                <Text style={styles.quickAddLabel}>{item.label}</Text>
-                <Text style={styles.quickAddAmount}>{item.amount}ml</Text>
-              </TouchableOpacity>
-            ))}
+            {quickAmounts.map((item, index) => {
+              const IconComponent = item.icon;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.quickAddButton}
+                  onPress={() => addWater(item.amount, item.label.toLowerCase() as any)}
+                >
+                  <View style={[styles.quickAddIconContainer, { backgroundColor: item.color }]}>
+                    <IconComponent size={24} color="#FFFFFF" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.quickAddLabel}>{item.label}</Text>
+                  <Text style={styles.quickAddAmount}>{item.amount}ml</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -338,6 +354,25 @@ const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'cust
           </View>
         </View>
 
+        {/* Hydration Benefits Card with Stock Image */}
+        <View style={styles.benefitsSection}>
+          <View style={styles.benefitsCard}>
+            <Image 
+              source={{ uri: 'https://images.unsplash.com/photo-1550572017-4a6a44fdc0e0?w=800&q=80' }}
+              style={styles.benefitsImage}
+            />
+            <View style={styles.benefitsOverlay}>
+              <View style={styles.benefitsContent}>
+                <Droplet size={32} color="#FFFFFF" strokeWidth={2} />
+                <Text style={styles.benefitsTitle}>Stay Hydrated</Text>
+                <Text style={styles.benefitsText}>
+                  Drinking enough water helps boost energy, improve skin health, and support overall wellness.
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Today's History */}
         <View style={styles.historySection}>
           <View style={styles.historyHeader}>
@@ -349,8 +384,10 @@ const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'cust
           
           {waterHistory.length === 0 ? (
             <View style={styles.emptyHistory}>
-             <Ionicons name="water-outline" size={48} color="#475569" />
-             <Text style={styles.emptyHistoryText}>No water logged yet</Text>
+              <View style={styles.emptyHistoryIconContainer}>
+                <Droplet size={40} color="#64748B" strokeWidth={2} />
+              </View>
+              <Text style={styles.emptyHistoryText}>No water logged yet</Text>
               <Text style={styles.emptyHistorySubtext}>Start tracking your hydration!</Text>
             </View>
           ) : (
@@ -407,7 +444,6 @@ const addWater = async (amount: number, type: 'glass' | 'bottle' | 'cup' | 'cust
           </View>
         </View>
 
-        {/* Bottom spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -459,10 +495,33 @@ const styles = StyleSheet.create({
   },
   waterCard: {
     borderRadius: 24,
-    padding: 24,
     minHeight: 220,
     position: 'relative',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  waterCardBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  waterCardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(14, 165, 233, 0.85)',
+  },
+  waterCardContent: {
+    padding: 24,
+    position: 'relative',
+    zIndex: 1,
   },
   waterContainer: {
     position: 'relative',
@@ -534,24 +593,32 @@ const styles = StyleSheet.create({
   },
   quickAddButton: {
     flex: 1,
+    backgroundColor: '#1E293B',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
   },
-  quickAddIcon: {
-    fontSize: 24,
+  quickAddIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8,
   },
   quickAddLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   quickAddAmount: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
   },
   customSection: {
     marginBottom: 32,
@@ -628,16 +695,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#374151',
   },
+  emptyHistoryIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(100, 116, 139, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyHistoryText: {
     fontSize: 16,
-    color: '#94A3B8',
-    marginTop: 12,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginBottom: 4,
   },
   emptyHistorySubtext: {
     fontSize: 14,
-    color: '#64748B',
-    marginTop: 4,
+    color: '#94A3B8',
   },
   historyList: {
     gap: 12,
@@ -683,6 +758,71 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     marginBottom: 32,
+  },
+  // Benefits Section Styles
+  benefitsSection: {
+    marginBottom: 32,
+    marginTop: 8,
+  },
+  benefitsCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: 220,
+    position: 'relative',
+    borderWidth: 2,
+    borderColor: '#334155',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  benefitsImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    resizeMode: 'cover',
+  },
+  benefitsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(6, 182, 212, 0.80)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  benefitsContent: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    maxWidth: '90%',
+  },
+  benefitsTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 16,
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 0.5,
+  },
+  benefitsText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 22,
+    opacity: 0.98,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   statsGrid: {
     flexDirection: 'row',

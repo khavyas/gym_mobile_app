@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { getRandomQuote, type Quote } from './motivationalQuotes';
 import { Lightbulb, Share2 } from 'lucide-react-native';
-import { Video, Play, Star, Eye } from 'lucide-react-native';
+import { Video, Play, Star, Eye, Activity, Flame, Droplet, Target, Utensils, TrendingUp } from 'lucide-react-native';
 import { getRandomVideo, getYouTubeThumbnail, getYouTubeUrl, type VideoRecommendation } from './videoRecommendations';
 import { Linking, Image } from 'react-native';
 import { BookOpen, Clock, User as UserIcon } from 'lucide-react-native';
@@ -470,57 +470,116 @@ useEffect(() => {
   </TouchableOpacity>
 </View>
 
-        {/* Today's Progress Card */}
-        <LinearGradient
-          colors={['#10B981', '#059669']}
-          style={styles.mainCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.mainCardTitle}>Today's Progress</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>5,340</Text>
-              <Text style={styles.statLabel}>Steps</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>320</Text>
-              <Text style={styles.statLabel}>Calories</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {waterLoading ? '...' : `${(todayWaterIntake / 1000).toFixed(1)}L`}
-              </Text>
-              <Text style={styles.statLabel}>Water</Text>
-            </View>
-          </View>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '68%' }]} />
-          </View>
-          <Text style={styles.progressText}>68% of daily goal completed</Text>
-        </LinearGradient>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.waterButton]}
-              onPress={() => router.push('/dashboards/user/WaterIntake')}
-            >
-              <Text style={styles.actionIcon}>💧</Text>
-              <Text style={styles.actionText}>Log Water</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.calorieButton]}>
-              <Text style={styles.actionIcon}>🍎</Text>
-              <Text style={styles.actionText}>Log Meal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.workoutButton]}>
-              <Text style={styles.actionIcon}>🏃‍♂️</Text>
-              <Text style={styles.actionText}>Start Workout</Text>
-            </TouchableOpacity>
+{/* Today's Progress Card - New Design */}
+<View style={styles.progressCard}>
+  <View style={styles.progressHeader}>
+    <View style={styles.progressIcon}>
+      <Target size={18} color="#FFFFFF" strokeWidth={2.5} />
+    </View>
+    <Text style={styles.progressCardTitle}>Today's Progress</Text>
+  </View>
+
+  {/* Steps */}
+  <View style={styles.progressItem}>
+     <View style={styles.progressItemLeft}>
+      <View style={[styles.progressItemIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+        <Activity size={20} color="#10B981" strokeWidth={2.5} />
+      </View>
+      <View style={styles.progressItemInfo}>
+        <Text style={styles.progressItemTitle}>Steps</Text>
+        <Text style={styles.progressItemValue}>8,234 / 10,000</Text>
+    </View>
+  </View>
+    <View style={styles.progressItemRight}>
+      <Text style={styles.progressPercentage}>82%</Text>
+      <View style={styles.progressBarContainer}>
+        <View style={[styles.progressBarFill, { width: '82%', backgroundColor: '#10B981' }]} />
+      </View>
+    </View>
+  </View>
+
+  {/* Calories Burned */}
+  <View style={styles.progressItem}>
+    <View style={styles.progressItemLeft}>
+      <View style={[styles.progressItemIcon, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+        <Flame size={20} color="#F59E0B" strokeWidth={2.5} />
+      </View>
+      <View style={styles.progressItemInfo}>
+        <Text style={styles.progressItemTitle}>Calories Burned</Text>
+        <Text style={styles.progressItemValue}>420 / 600</Text>
+      </View>
+    </View>
+    <View style={styles.progressItemRight}>
+      <Text style={styles.progressPercentage}>70%</Text>
+      <View style={styles.progressBarContainer}>
+        <View style={[styles.progressBarFill, { width: '70%', backgroundColor: '#10B981' }]} />
+      </View>
+    </View>
+  </View>
+
+  {/* Water Intake */}
+  <View style={styles.progressItem}>
+    <View style={styles.progressItemLeft}>
+      <View style={[styles.progressItemIcon, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+        <Droplet size={20} color="#3B82F6" strokeWidth={2.5} />
+      </View>
+      <View style={styles.progressItemInfo}>
+        <Text style={styles.progressItemTitle}>Water Intake</Text>
+        <Text style={styles.progressItemValue}>
+          {waterLoading ? 'Loading...' : `${(todayWaterIntake / 1000).toFixed(1)} / 2.0 glasses`}
+        </Text>
+      </View>
+  </View>
+    <View style={styles.progressItemRight}>
+      <Text style={styles.progressPercentage}>
+        {waterLoading ? '...' : `${Math.round((todayWaterIntake / 2000) * 100)}%`}
+      </Text>
+      <View style={styles.progressBarContainer}>
+        <View style={[
+          styles.progressBarFill, 
+          { 
+            width: waterLoading ? '0%' : `${Math.min((todayWaterIntake / 2000) * 100, 100)}%`,
+            backgroundColor: '#10B981' 
+          }
+        ]} />
+      </View>
+    </View>
+  </View>
+</View>
+
+
+
+
+    {/* Quick Actions */}
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <View style={styles.quickActions}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => router.push('/dashboards/user/WaterIntake')}
+        >
+          <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+            <Droplet size={24} color="#3B82F6" strokeWidth={2} />
           </View>
-        </View>
+          <Text style={styles.actionText}>Log Water</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton}>
+          <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+            <Utensils size={24} color="#10B981" strokeWidth={2} />
+          </View>
+          <Text style={styles.actionText}>Log Meal</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton}>
+          <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+            <TrendingUp size={24} color="#10B981" strokeWidth={2} />
+          </View>
+          <Text style={styles.actionText}>Start Workout</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
 
         {/* Upcoming Session */}
         <View style={styles.section}>
@@ -642,6 +701,125 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
+  quickActions: {
+  flexDirection: 'row',
+  paddingHorizontal: 20,
+  gap: 12,
+},
+actionButton: {
+  flex: 1,
+  backgroundColor: '#1E293B',
+  padding: 20,
+  borderRadius: 16,
+  alignItems: 'center',
+  borderWidth: 1,
+  borderColor: '#334155',
+},
+actionIconContainer: {
+  width: 48,
+  height: 48,
+  borderRadius: 12,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 12,
+},
+actionText: {
+  color: '#FFFFFF',
+  fontSize: 13,
+  fontWeight: '600',
+  textAlign: 'center',
+},
+
+  progressCard: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 20,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  progressIconContainer: {
+    marginRight: 12,
+  },
+progressIcon: {
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: '#10B981',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+  progressIconText: {
+    fontSize: 16,
+  },
+  progressCardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  progressItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  progressItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  progressItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  progressItemEmoji: {
+    fontSize: 20,
+  },
+  progressItemInfo: {
+    flex: 1,
+  },
+  progressItemTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  progressItemValue: {
+    fontSize: 13,
+    color: '#94A3B8',
+  },
+  progressItemRight: {
+    alignItems: 'flex-end',
+    minWidth: 80,
+  },
+  progressPercentage: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  progressBarContainer: {
+    width: 100,
+    height: 6,
+    backgroundColor: '#334155',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
   learningSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1078,17 +1256,7 @@ quoteAuthor: {
     fontSize: 12,
     fontWeight: '600',
   },
-  quickActions: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
+
   waterButton: {
     backgroundColor: '#1E40AF',
   },
@@ -1102,12 +1270,7 @@ quoteAuthor: {
     fontSize: 24,
     marginBottom: 8,
   },
-  actionText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+
   sessionCard: {
     backgroundColor: '#1E293B',
     marginHorizontal: 20,
