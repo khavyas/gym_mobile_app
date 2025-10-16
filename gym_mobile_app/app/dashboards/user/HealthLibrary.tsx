@@ -141,9 +141,15 @@ export default function HealthLibrary() {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.readButton}>
-                  <Text style={styles.readButtonText}>Read →</Text>
-                </TouchableOpacity>
+             <TouchableOpacity 
+                style={styles.readButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleBlogPress(post);
+                }}
+              >
+                <Text style={styles.readButtonText}>Read →</Text>
+              </TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>
