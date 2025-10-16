@@ -13,6 +13,8 @@ import { Lightbulb, Share2 } from 'lucide-react-native';
 import { Video, Play, Star, Eye } from 'lucide-react-native';
 import { getRandomVideo, getYouTubeThumbnail, getYouTubeUrl, type VideoRecommendation } from './videoRecommendations';
 import { Linking, Image } from 'react-native';
+import { BookOpen, Clock, User as UserIcon } from 'lucide-react-native';
+import { getRandomBlogPosts, type BlogPost } from './blogPosts';
 
 const { width } = Dimensions.get('window');
 
@@ -74,6 +76,7 @@ export default function HomeSummary() {
   const navigation = useNavigation<NavigationProp<TabParamList>>();
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
   const [recommendedVideo, setRecommendedVideo] = useState<VideoRecommendation | null>(null);
+  const [featuredBlogs, setFeaturedBlogs] = useState<BlogPost[]>([]);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -98,6 +101,18 @@ export default function HomeSummary() {
     const video = getRandomVideo();
     setRecommendedVideo(video);
   }, []);
+useEffect(() => {
+  const blogs = getRandomBlogPosts(2);
+  setFeaturedBlogs(blogs);
+}, []);
+
+  const handleBlogPress = (blog: BlogPost) => {
+    router.push({
+      pathname: "/dashboards/user/BlogDetail",
+      params: { id: blog.id }
+    });
+  };
+
 
   const getUserInitials = (name: string) => {
     if (!name) return 'JD'; // fallback
@@ -316,79 +331,144 @@ export default function HomeSummary() {
         )}
 
 
-{/* Recommended Video Section */}
-{recommendedVideo && (
-  <View style={styles.section}>
-    <View style={styles.videoSectionHeader}>
-      <Video size={20} color="#10B981" />
-      <Text style={styles.sectionTitle}>Recommended for You</Text>
-    </View>
-    
-    <TouchableOpacity 
-      style={styles.videoCard}
-      onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
-      activeOpacity={0.9}
+      {/* Recommended Video Section */}
+      {recommendedVideo && (
+        <View style={styles.section}>
+          <View style={styles.videoSectionHeader}>
+            <Video size={20} color="#10B981" />
+            <Text style={styles.sectionTitle}>Recommended for You</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.videoCard}
+            onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+            activeOpacity={0.9}
+          >
+            <View style={styles.videoThumbnailContainer}>
+              <Image 
+                source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId) }}
+                style={styles.videoThumbnail}
+                resizeMode="cover"
+              />
+              <View style={styles.playButtonOverlay}>
+                <View style={styles.playButton}>
+                  <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+                </View>
+              </View>
+              <View style={styles.videoDurationBadge}>
+                <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.videoInfo}>
+              <Text style={styles.videoTitle} numberOfLines={2}>
+                {recommendedVideo.title}
+              </Text>
+              <Text style={styles.videoDescription} numberOfLines={2}>
+                {recommendedVideo.description}
+              </Text>
+              
+              <View style={styles.videoMetaContainer}>
+                <View style={styles.videoInstructorInfo}>
+                  <Text style={styles.videoInstructor}>
+                    {recommendedVideo.instructor}
+                    {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
+                  </Text>
+                </View>
+                
+                <View style={styles.videoStats}>
+                  {recommendedVideo.rating && (
+                    <View style={styles.videoStatItem}>
+                      <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
+                      <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                      <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
+                    </View>
+                  )}
+                  {recommendedVideo.views && (
+                    <View style={styles.videoStatItem}>
+                      <Eye size={12} color="#94A3B8" />
+                      <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.watchNowButton}
+                onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+              >
+                <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
+                <Text style={styles.watchNowText}>Watch Now</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
+
+
+
+{/* Continue Learning Section */}
+<View style={styles.section}>
+  <View style={styles.learningSectionHeader}>
+    <BookOpen size={20} color="#10B981" />
+    <Text style={styles.sectionTitle}>Continue Learning</Text>
+  </View>
+  
+  {featuredBlogs.map((blog, index) => (
+    <TouchableOpacity
+      key={blog.id}
+      style={styles.blogCard}
+      onPress={() => handleBlogPress(blog)}
+      activeOpacity={0.8}
     >
-      <View style={styles.videoThumbnailContainer}>
+      <View style={styles.blogImageContainer}>
         <Image 
-          source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId) }}
-          style={styles.videoThumbnail}
+          source={{ uri: blog.imageUrl }}
+          style={styles.blogImage}
           resizeMode="cover"
         />
-        <View style={styles.playButtonOverlay}>
-          <View style={styles.playButton}>
-            <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+        <View style={styles.blogPlayOverlay}>
+          <View style={styles.blogPlayIcon}>
+            <BookOpen size={20} color="#FFFFFF" />
           </View>
         </View>
-        <View style={styles.videoDurationBadge}>
-          <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
+        <View style={styles.blogDurationBadge}>
+          <Text style={styles.blogDurationText}>{blog.readTime}</Text>
         </View>
       </View>
       
-      <View style={styles.videoInfo}>
-        <Text style={styles.videoTitle} numberOfLines={2}>
-          {recommendedVideo.title}
+      <View style={styles.blogInfo}>
+        <Text style={styles.blogTitle} numberOfLines={2}>
+          {blog.title}
         </Text>
-        <Text style={styles.videoDescription} numberOfLines={2}>
-          {recommendedVideo.description}
+        <Text style={styles.blogDescription} numberOfLines={2}>
+          {blog.description}
         </Text>
         
-        <View style={styles.videoMetaContainer}>
-          <View style={styles.videoInstructorInfo}>
-            <Text style={styles.videoInstructor}>
-              {recommendedVideo.instructor}
-              {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
+        <View style={styles.blogMetaContainer}>
+          <View style={styles.blogAuthorInfo}>
+            <UserIcon size={14} color="#94A3B8" />
+            <Text style={styles.blogAuthor} numberOfLines={1}>
+              {blog.author}, {blog.credentials}
             </Text>
           </View>
           
-          <View style={styles.videoStats}>
-            {recommendedVideo.rating && (
-              <View style={styles.videoStatItem}>
-                <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
-                <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
-              </View>
-            )}
-            {recommendedVideo.views && (
-              <View style={styles.videoStatItem}>
-                <Eye size={12} color="#94A3B8" />
-                <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
-              </View>
-            )}
+          <View style={styles.blogCategoryBadge}>
+            <Text style={styles.blogCategoryText}>{blog.category}</Text>
           </View>
         </View>
-        
-        <TouchableOpacity 
-          style={styles.watchNowButton}
-          onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
-        >
-          <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
-          <Text style={styles.watchNowText}>Watch Now</Text>
-        </TouchableOpacity>
       </View>
     </TouchableOpacity>
-  </View>
-)}
+  ))}
+  
+  <TouchableOpacity 
+    style={styles.exploreLibraryButton}
+    onPress={() => router.push('/dashboards/user/HealthLibrary')}
+  >
+    <BookOpen size={18} color="#FFFFFF" />
+    <Text style={styles.exploreLibraryText}>Explore Health Library</Text>
+  </TouchableOpacity>
+</View>
 
         {/* Today's Progress Card */}
         <LinearGradient
@@ -562,6 +642,135 @@ export default function HomeSummary() {
 }
 
 const styles = StyleSheet.create({
+  learningSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  blogCard: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2a3441',
+  },
+  blogImageContainer: {
+    width: '100%',
+    height: 160,
+    position: 'relative',
+  },
+  blogImage: {
+    width: '100%',
+    height: '100%',
+  },
+  blogPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  blogPlayIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  blogDurationBadge: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  blogDurationText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  blogInfo: {
+    padding: 16,
+  },
+  blogTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 6,
+    lineHeight: 22,
+  },
+  blogDescription: {
+    fontSize: 13,
+    color: '#94A3B8',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  blogMetaContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  blogAuthorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    marginRight: 8,
+  },
+  blogAuthor: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+    flex: 1,
+  },
+  blogCategoryBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  blogCategoryText: {
+    fontSize: 11,
+    color: '#10B981',
+    fontWeight: '600',
+  },
+  exploreLibraryButton: {
+    backgroundColor: '#1E293B',
+    marginHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  exploreLibraryText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  
    videoSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
