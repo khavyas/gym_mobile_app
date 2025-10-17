@@ -477,7 +477,7 @@ useEffect(() => {
     <View style={styles.progressIcon}>
       <Target size={18} color="#FFFFFF" strokeWidth={2.5} />
     </View>
-    <Text style={styles.progressCardTitle}>Today's Progress</Text>
+    <Text style={styles.progressCardTitle}>  Today's Progress</Text>
   </View>
 
   {/* Steps */}
@@ -551,35 +551,41 @@ useEffect(() => {
 
 
 
-    {/* Quick Actions */}
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <View style={styles.quickActions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => router.push('/dashboards/user/WaterIntake')}
-        >
-          <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-            <Droplet size={24} color="#3B82F6" strokeWidth={2} />
-          </View>
-          <Text style={styles.actionText}>Log Water</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton}>
-          <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-            <Utensils size={24} color="#10B981" strokeWidth={2} />
-          </View>
-          <Text style={styles.actionText}>Log Meal</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton}>
-          <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-            <TrendingUp size={24} color="#10B981" strokeWidth={2} />
-          </View>
-          <Text style={styles.actionText}>Start Workout</Text>
-        </TouchableOpacity>
-      </View>
+{/* Quick Actions */}
+<View style={styles.quickActionsContainer}>
+  <View style={styles.quickActionsHeader}>
+    <View style={styles.quickActionsIcon}>
+      <Target size={18} color="#FFFFFF" strokeWidth={2.5} />
     </View>
+    <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+  </View>
+  
+  <View style={styles.quickActions}>
+    <TouchableOpacity 
+      style={styles.actionButton}
+      onPress={() => router.push('/dashboards/user/WaterIntake')}
+    >
+      <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+        <Droplet size={24} color="#3B82F6" strokeWidth={2} />
+      </View>
+      <Text style={styles.actionText}>Log Water</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity style={styles.actionButton}>
+      <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+        <Utensils size={24} color="#10B981" strokeWidth={2} />
+      </View>
+      <Text style={styles.actionText}>Log Meal</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity style={styles.actionButton}>
+      <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+        <TrendingUp size={24} color="#10B981" strokeWidth={2} />
+      </View>
+      <Text style={styles.actionText}>Start Workout</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 
         {/* Upcoming Session */}
         <View style={styles.section}>
@@ -701,20 +707,55 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
-  quickActions: {
-  flexDirection: 'row',
-  paddingHorizontal: 20,
-  gap: 12,
+  // Add these new styles:
+quickActionsContainer: {
+  backgroundColor: '#1E293B',
+  marginHorizontal: 20,
+  borderRadius: 20,
+  padding: 20,
+  marginBottom: 24,
+  borderWidth: 1,
+  borderColor: '#334155',
 },
+quickActionsHeader: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 20,
+},
+quickActionsIcon: {
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: '#10B981',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 12,
+},
+quickActionsTitle: {
+  fontSize: 20,
+  fontWeight: '600',
+  color: '#FFFFFF',
+},
+
+// Modify existing quickActions style:
+quickActions: {
+  flexDirection: 'row',
+  gap: 12,
+  // Remove paddingHorizontal: 20,
+},
+
+// Modify existing actionButton style:
 actionButton: {
   flex: 1,
-  backgroundColor: '#1E293B',
+  backgroundColor: '#0F172A', // Changed from '#1E293B' to differentiate from container
   padding: 20,
   borderRadius: 16,
   alignItems: 'center',
   borderWidth: 1,
   borderColor: '#334155',
 },
+
+ 
 actionIconContainer: {
   width: 48,
   height: 48,
