@@ -96,41 +96,45 @@ export default function ConsultantDetails() {
     }
   };
 
-  const handleBookConsultation = () => {
-    if (!consultant) return;
+const handleBookConsultation = () => {
+  if (!consultant) return;
 
-    let price = 0;
-    let duration = '';
+  let price = 0;
+  let duration = '';
+  let packageType = selectedPackage;
 
-    if (selectedPackage === 'session') {
-      price = consultant.pricing.perSession;
-      duration = '1 Session';
-    } else if (selectedPackage === 'month' && consultant.pricing.perMonth) {
-      price = consultant.pricing.perMonth;
-      duration = '1 Month';
-    } else if (selectedPackage === 'week' && consultant.pricing.perWeek) {
-      price = consultant.pricing.perWeek;
-      duration = '1 Week';
-    } else {
-      const pkg = consultant.pricing.packages.find(p => p._id === selectedPackage);
-      if (pkg) {
-        price = pkg.price;
-        duration = pkg.duration;
-      }
+  if (selectedPackage === 'session') {
+    price = consultant.pricing.perSession;
+    duration = '1 Session';
+  } else if (selectedPackage === 'month' && consultant.pricing.perMonth) {
+    price = consultant.pricing.perMonth;
+    duration = '1 Month';
+  } else if (selectedPackage === 'week' && consultant.pricing.perWeek) {
+    price = consultant.pricing.perWeek;
+    duration = '1 Week';
+  } else {
+    const pkg = consultant.pricing.packages.find(p => p._id === selectedPackage);
+    if (pkg) {
+      price = pkg.price;
+      duration = pkg.duration;
     }
+  }
 
-    Alert.alert(
-      'Book Consultation',
-      `Book ${duration} with ${consultant.name} for $${price}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Book Now', onPress: () => {
-          // Navigate to booking/payment page
-          Alert.alert('Success', 'Booking request sent! You will be contacted soon.');
-        }}
-      ]
-    );
-  };
+  // Navigate to booking flow
+  router.push({
+    pathname: "/dashboards/user/BookingFlow",
+    params: {
+      consultantId: consultant._id,
+      consultantName: consultant.name,
+      consultantImage: consultant.image,
+      specialty: consultant.specialty,
+      packageType: packageType,
+      packagePrice: price.toString(),
+      packageDuration: duration,
+      trainingMode: consultant.modeOfTraining,
+    }
+  });
+};
 
   const getModeIcon = (mode: string) => {
     switch (mode) {

@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 // Toast Component Props Interface
 interface ToastProps {
@@ -29,6 +30,8 @@ export default function Login() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isLoading, setIsLoading] = useState(false);
+
+  const API_BASE_URL = "https://gym-backend-20dr.onrender.com/api";
 
   // Toast Component
   const Toast: React.FC<ToastProps> = ({ visible, message, onHide, type = 'success' }) => {
@@ -98,41 +101,88 @@ export default function Login() {
     );
   };
 
-  const handleLogin = async () => {
-    setIsLoading(true);
+const handleLogin = async () => {
+  // simple validations
+  if (!email.trim() || !password) {
+    setToastType('error');
+    setToastMessage('Please enter email and password.');
+    setShowToast(true);
+    return;
+  }
 
-    try {
-      const fakeData = {
-        token: "dummy-token",
-        role: "user",
-        name: "Demo User",
-        email: email || "demo@example.com",
-        userId: "demo-123",
-      };
+  setIsLoading(true);
 
-      await AsyncStorage.setItem("userToken", fakeData.token);
-      await AsyncStorage.setItem("userRole", fakeData.role);
-      await AsyncStorage.setItem("userName", fakeData.name);
-      await AsyncStorage.setItem("userEmail", fakeData.email);
-      await AsyncStorage.setItem("userId", fakeData.userId);
+  try {
+    // request payload
+    const payload = {
+      email: email.trim().toLowerCase(),
+      password,
+    };
 
-      setToastType("success");
-      setToastMessage(`Welcome back, ${fakeData.name}! 🎉`);
-      setShowToast(true);
+    const response = await axios.post(`${API_BASE_URL}/auth/login`, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 15000, // 15s
+    });
 
-      setIsLoading(false);
+    // expected server response shape:
+    // { userId, name, email, role, token }
+    const data = response.data;
 
-      setTimeout(() => {
-        router.replace("/dashboards/user");
-      }, 1500);
-    } catch (error) {
-      setIsLoading(false);
-      console.error("Bypass login error:", error);
-      setToastType("error");
-      setToastMessage("Bypass login failed.");
-      setShowToast(true);
+    if (!data || !data.token) {
+      throw new Error('Invalid server response: missing token');
     }
-  };
+
+    // persist to AsyncStorage
+    await AsyncStorage.setItem('userToken', data.token);
+    if (data.role) await AsyncStorage.setItem('userRole', data.role);
+    if (data.name) await AsyncStorage.setItem('userName', data.name);
+    if (data.email) await AsyncStorage.setItem('userEmail', data.email);
+    if (data.userId) await AsyncStorage.setItem('userId', String(data.userId));
+
+    // show success
+    setToastType('success');
+    setToastMessage(`Welcome back, ${data.name || 'User'}!`);
+    setShowToast(true);
+
+    setIsLoading(false);
+
+    // navigate after small delay (let toast show)
+    setTimeout(() => router.replace('/dashboards/user'), 1100);
+  } catch (err: any) {
+    console.error('Login error:', err?.response?.data || err.message || err);
+
+    setIsLoading(false);
+
+    // nicer error messaging
+    if (err.response) {
+      // server responded with non-2xx
+      const status = err.response.status;
+      const serverMsg = err.response.data?.message || err.response.data?.error || JSON.stringify(err.response.data);
+
+      if (status === 401) {
+        setToastType('error');
+        setToastMessage('Invalid email or password.');
+      } else if (status === 400) {
+        setToastType('error');
+        setToastMessage(serverMsg || 'Bad request.');
+      } else {
+        setToastType('error');
+        setToastMessage(serverMsg || 'Server error. Please try again later.');
+      }
+    } else if (err.request) {
+      // request made but no response
+      setToastType('error');
+      setToastMessage('Network error — please check your connection.');
+    } else {
+      // other errors
+      setToastType('error');
+      setToastMessage('Login failed. Please try again.');
+    }
+
+    setShowToast(true);
+  }
+};
+
 
   return (
     <KeyboardAvoidingView 
