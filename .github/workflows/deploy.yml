@@ -37,7 +37,7 @@ jobs:
         
       - name: Build with Expo
         working-directory: gym_mobile_app
-        run: npx expo export --platform web
+        run: npx expo export --platform web --output-dir dist
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
