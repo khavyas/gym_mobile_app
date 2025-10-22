@@ -25,7 +25,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "router": {
+        "type": "hash"
+      }
     },
     "experiments": {
       "baseUrl": "/gym_mobile_app"
