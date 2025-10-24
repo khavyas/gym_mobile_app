@@ -11,8 +11,12 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -21,11 +25,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro",
-      "router": {
-        "type": "hash"
-      },
-      "output": "static"
+      "bundler": "metro"
     },
     "experiments": {
       "baseUrl": "/gym_mobile_app"

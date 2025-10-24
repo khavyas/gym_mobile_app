@@ -2,16 +2,14 @@
   "name": "gym_mobile_app",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "homepage": "https://khavyas.github.io/gym_mobile_app",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:web": "expo export --platform web",
-    "predeploy": "npm run build:web",
-    "deploy": "gh-pages -d web-build",
+    "build:web": "expo export --platform web --output-dir dist",
+    "serve": "npx serve dist -s",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -40,6 +38,7 @@
     "expo-symbols": "~0.4.5",
     "expo-system-ui": "~5.0.11",
     "expo-web-browser": "~14.2.0",
+    "express": "^4.18.2",
     "lucide-react-native": "^0.545.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
