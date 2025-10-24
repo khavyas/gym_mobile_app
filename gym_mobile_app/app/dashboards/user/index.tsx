@@ -157,7 +157,7 @@ export default function UserDashboard() {
           ),
         }}
       />
-      <Tab.Screen 
+      {/* <Tab.Screen 
         name="Challenges" 
         component={DailyChallenge}
         options={{
@@ -184,7 +184,7 @@ export default function UserDashboard() {
             />
           ),
         }}
-      />
+      /> */}
       <Tab.Screen 
         name="Profile" 
         component={ProfileSettings}
