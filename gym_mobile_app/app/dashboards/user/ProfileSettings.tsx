@@ -170,12 +170,44 @@ const refreshProfile = async () => {
   }
 };
 
+
   useFocusEffect(
     React.useCallback(() => {
       console.log('Profile Settings screen focused - loading data');
       loadUserData();
     }, [])
   );
+
+  
+const handleLogout = async () => {
+  Alert.alert(
+    'Logout',
+    'Are you sure you want to logout?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Clear AsyncStorage
+            await AsyncStorage.removeItem('userId');
+            await AsyncStorage.removeItem('userToken');
+            
+            // Navigate to login screen
+            router.replace('/login');
+          } catch (error) {
+            console.error('Error during logout:', error);
+            Alert.alert('Error', 'Failed to logout properly');
+          }
+        },
+      },
+    ]
+  );
+};
 
 
   // Fetch profile data from API
@@ -798,7 +830,7 @@ const refreshProfile = async () => {
             <ChevronRightIcon size={20} color="#9CA3AF" />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
             <View style={styles.menuItemLeft}>
               <ArrowRightOnRectangleIcon size={20} color="#EF4444" />
               <Text style={styles.logoutText}>Logout</Text>

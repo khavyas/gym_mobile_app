@@ -185,7 +185,7 @@ export default function UserDashboard() {
           ),
         }}
       /> */}
-      <Tab.Screen 
+      {/* <Tab.Screen 
         name="Profile" 
         component={ProfileSettings}
         options={{
@@ -198,7 +198,7 @@ export default function UserDashboard() {
             />
           ),
         }}
-      />
+      /> */}
     </Tab.Navigator>
   );
 }
