@@ -52,13 +52,13 @@ export default function Header({
 
       <View style={styles.rightSection}>
         <TouchableOpacity style={styles.iconButton} onPress={handleStatsPress}>
-          <Ionicons name="stats-chart" size={22} color="#fff" />
+          <Ionicons name="bar-chart-outline" size={22} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}  onPress={handleWellBeingPress}>
-          <Ionicons name="globe-outline" size={22} color="#fff" />
+        <TouchableOpacity style={styles.iconButton} onPress={handleWellBeingPress}>
+          <Ionicons name="fitness-outline" size={22} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="location-outline" size={22} color="#fff" />
+          <Ionicons name="watch-outline" size={22} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="people-outline" size={22} color="#fff" />
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#00c48c',
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -25,13 +25,13 @@ export default function MoodWellbeing() {
   const [selectedFactors, setSelectedFactors] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
-  const moods = [
-    { id: 'great', label: 'Great', emoji: '😄', color: '#10B981' },
-    { id: 'good', label: 'Good', emoji: '🙂', color: '#06b6d4' },
-    { id: 'okay', label: 'Okay', emoji: '😐', color: '#F59E0B' },
-    { id: 'low', label: 'Low', emoji: '😔', color: '#F97316' },
-    { id: 'anxious', label: 'Anxious', emoji: '😰', color: '#8B5CF6' },
-  ];
+const moods = [
+  { id: 'great', label: 'Great', emoji: '😄', color: '#10B981', rating: 10 },
+  { id: 'good', label: 'Good', emoji: '🙂', color: '#06b6d4', rating: 7 },
+  { id: 'okay', label: 'Okay', emoji: '😐', color: '#F59E0B', rating: 5 },
+  { id: 'low', label: 'Low', emoji: '😔', color: '#F97316', rating: 3 },
+  { id: 'anxious', label: 'Anxious', emoji: '😰', color: '#8B5CF6', rating: 2 },
+];
 
   const factors = [
     { id: 'sleep', label: 'Sleep Quality', icon: MoonIcon, color: '#8B5CF6' },
@@ -70,7 +70,10 @@ export default function MoodWellbeing() {
                   backgroundColor: `${mood.color}20`
                 }
               ]}
-              onPress={() => setSelectedMood(mood.id)}
+              onPress={() => {
+                setSelectedMood(mood.id);
+                setMoodRating(mood.rating); // Add this line
+              }}
             >
               <Text style={styles.moodEmoji}>{mood.emoji}</Text>
               <Text style={styles.moodLabel}>{mood.label}</Text>
@@ -89,10 +92,12 @@ export default function MoodWellbeing() {
         <View style={styles.detailedSection}>
           <View style={styles.ratingHeader}>
             <Text style={styles.ratingQuestion}>How are you feeling?</Text>
-            <View style={styles.ratingBadge}>
-              <Text style={styles.ratingEmoji}>🙂</Text>
-              <Text style={styles.ratingValue}>{moodRating}/10</Text>
-            </View>
+              <View style={styles.ratingBadge}>
+                <Text style={styles.ratingEmoji}>
+                  {moods.find(m => m.id === selectedMood)?.emoji || '🙂'}
+                </Text>
+                <Text style={styles.ratingValue}>{moodRating}/10</Text>
+              </View>
           </View>
 
           <View style={styles.sliderContainer}>
@@ -627,7 +632,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   logButton: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#00c48c',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
