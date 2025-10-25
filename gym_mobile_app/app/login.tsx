@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { EyeIcon, EyeSlashIcon } from "react-native-heroicons/outline";
 
 // Toast Component Props Interface
 interface ToastProps {
@@ -25,6 +26,7 @@ interface ToastProps {
 export default function Login() {
   const router = useRouter();
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -101,92 +103,90 @@ export default function Login() {
     );
   };
 
-const handleLogin = async () => {
-  // simple validations
-  if (!identifier.trim() || !password) {
-    setToastType('error');
-    setToastMessage('Please enter email/phone and password.');
-    setShowToast(true);
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    const payload = {
-      identifier: identifier.trim(),
-      password,
-    };
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, payload, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    // { userId, name, email, role, token }
-    const data = response.data;
-
-    if (!data || !data.token) {
-      throw new Error('Invalid server response: missing token');
+  const handleLogin = async () => {
+    // simple validations
+    if (!identifier.trim() || !password) {
+      setToastType('error');
+      setToastMessage('Please enter email/phone and password.');
+      setShowToast(true);
+      return;
     }
 
-    // persist to AsyncStorage
-    await AsyncStorage.setItem('userToken', data.token);
-    if (data.role) await AsyncStorage.setItem('userRole', data.role);
-    if (data.name) await AsyncStorage.setItem('userName', data.name);
-    if (data.email) await AsyncStorage.setItem('userEmail', data.email);
-    if (data.userId) await AsyncStorage.setItem('userId', String(data.userId));
+    setIsLoading(true);
 
-    // show success
-    setToastType('success');
-    setToastMessage(`Welcome back, ${data.name || 'User'}!`);
-    setShowToast(true);
+    try {
+      const payload = {
+        identifier: identifier.trim(),
+        password,
+      };
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, payload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    setIsLoading(false);
+      // { userId, name, email, role, token }
+      const data = response.data;
 
-    // navigate after small delay (let toast show)
-    setTimeout(() => router.replace('/dashboards/user'), 1100);
-  } catch (err: any) {
-    console.error('Login error:', err?.response?.data || err.message || err);
-
-    setIsLoading(false);
-
-    // nicer error messaging
-    if (err.response) {
-      // server responded with non-2xx
-      const status = err.response.status;
-      const serverMsg = err.response.data?.message || err.response.data?.error || JSON.stringify(err.response.data);
-
-      if (status === 401) {
-        setToastType('error');
-        setToastMessage('Invalid email or password.');
-      } else if (status === 400) {
-        setToastType('error');
-        setToastMessage(serverMsg || 'Bad request.');
-      } else {
-        setToastType('error');
-        setToastMessage(serverMsg || 'Server error. Please try again later.');
+      if (!data || !data.token) {
+        throw new Error('Invalid server response: missing token');
       }
-    } else if (err.request) {
-      // request made but no response
-      setToastType('error');
-      setToastMessage('Network error — please check your connection.');
-    } else {
-      // other errors
-      setToastType('error');
-      setToastMessage('Login failed. Please try again.');
+
+      // persist to AsyncStorage
+      await AsyncStorage.setItem('userToken', data.token);
+      if (data.role) await AsyncStorage.setItem('userRole', data.role);
+      if (data.name) await AsyncStorage.setItem('userName', data.name);
+      if (data.email) await AsyncStorage.setItem('userEmail', data.email);
+      if (data.userId) await AsyncStorage.setItem('userId', String(data.userId));
+
+      // show success
+      setToastType('success');
+      setToastMessage(`Welcome back, ${data.name || 'User'}!`);
+      setShowToast(true);
+
+      setIsLoading(false);
+
+      // navigate after small delay (let toast show)
+      setTimeout(() => router.replace('/dashboards/user'), 1100);
+    } catch (err: any) {
+      console.error('Login error:', err?.response?.data || err.message || err);
+
+      setIsLoading(false);
+
+      // nicer error messaging
+      if (err.response) {
+        // server responded with non-2xx
+        const status = err.response.status;
+        const serverMsg = err.response.data?.message || err.response.data?.error || JSON.stringify(err.response.data);
+
+        if (status === 401) {
+          setToastType('error');
+          setToastMessage('Invalid email or password.');
+        } else if (status === 400) {
+          setToastType('error');
+          setToastMessage(serverMsg || 'Bad request.');
+        } else {
+          setToastType('error');
+          setToastMessage(serverMsg || 'Server error. Please try again later.');
+        }
+      } else if (err.request) {
+        // request made but no response
+        setToastType('error');
+        setToastMessage('Network error — please check your connection.');
+      } else {
+        // other errors
+        setToastType('error');
+        setToastMessage('Login failed. Please try again.');
+      }
+
+      setShowToast(true);
     }
+  };
 
-    setShowToast(true);
-  }
-};
-
-// Dynamically decide keyboard type
-const getKeyboardType = () => {
-  if (/^\d+$/.test(identifier)) return "phone-pad"; // only numbers → phone
-  if (identifier.includes("@")) return "email-address"; // has @ → email
-  return "default";
-};
-
-
+  // Dynamically decide keyboard type
+  const getKeyboardType = () => {
+    if (/^\d+$/.test(identifier)) return "phone-pad"; // only numbers → phone
+    if (identifier.includes("@")) return "email-address"; // has @ → email
+    return "default";
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -234,19 +234,29 @@ const getKeyboardType = () => {
             />
           </View>
 
-
-
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!isLoading}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Enter your password"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon size={24} color="#9CA3AF" />
+                ) : (
+                  <EyeIcon size={24} color="#9CA3AF" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity 
@@ -382,6 +392,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#F9FAFB',
     fontWeight: '500',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    paddingRight: 12,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: '#F9FAFB',
+    fontWeight: '500',
+  },
+  eyeButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',

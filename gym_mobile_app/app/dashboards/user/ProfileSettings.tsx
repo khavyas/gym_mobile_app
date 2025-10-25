@@ -17,22 +17,23 @@ import {
   QuestionMarkCircleIcon, 
   ArrowRightOnRectangleIcon,
   CameraIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  IdentificationIcon,
+  MapPinIcon
 } from "react-native-heroicons/outline";
 import { useFocusEffect } from '@react-navigation/native';
 import React from "react";
-import { useNavigation } from '@react-navigation/native';
 
 // API Configuration
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
-// Define TypeScript interfaces for our state objects
 interface UserInfo {
   name: string;
   email: string;
   phone: string;
   bio: string;
   profileImage: string | null;
+  dateOfBirth: string;
 }
 
 interface HealthMetrics {
@@ -50,6 +51,18 @@ interface WorkPreferences {
   workStressLevel: string;
   sedentaryHours: string;
   workoutLocation: string;
+}
+
+interface GovernmentIds {
+  aadharNumber: string;
+  abhaId: string;
+}
+
+interface Address {
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
 
 interface Notifications {
@@ -72,34 +85,31 @@ interface ProfileData {
   phone?: string;
   bio?: string;
   profileImage?: string;
+  dateOfBirth?: string;
   healthMetrics?: HealthMetrics;
   workPreferences?: WorkPreferences;
+  aadharNumber?: string;
+  abhaId?: string;
+  address?: Address;
   notifications?: Notifications;     
   security?: Security;              
 }
-
-interface ProfileSettingsProps {
-  navigation: any;
-}
-
 
 export default function ProfileSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const navigation = useNavigation();
   
-  // State for user information
   const [userInfo, setUserInfo] = useState<UserInfo>({
     name: "",
     email: "",
     phone: "",
     bio: "",
     profileImage: null,
+    dateOfBirth: "",
   });
 
-  // State for health metrics
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>({
     weight: "",
     height: "",
@@ -108,7 +118,6 @@ export default function ProfileSettings() {
     fitnessGoal: "general_fitness",
   });
 
-  // State for work preferences
   const [workPreferences, setWorkPreferences] = useState<WorkPreferences>({
     occupation: "other",
     workoutTiming: "morning",
@@ -118,7 +127,18 @@ export default function ProfileSettings() {
     workoutLocation: "gym",
   });
 
-  // State for notification preferences
+  const [governmentIds, setGovernmentIds] = useState<GovernmentIds>({
+    aadharNumber: "",
+    abhaId: "",
+  });
+
+  const [address, setAddress] = useState<Address>({
+    street: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
+
   const [notifications, setNotifications] = useState<Notifications>({
     workoutReminders: true,
     newContent: true,
@@ -126,33 +146,25 @@ export default function ProfileSettings() {
     appointmentReminders: true,
   });
 
-  // State for security settings
   const [security, setSecurity] = useState<Security>({
     biometricLogin: false,
     twoFactorAuth: false,
   });
 
-  // Load user data and profile on component mount
   useEffect(() => {
     loadUserData();
   }, []);
 
-const loadUserData = async () => {
-    console.log('Starting loadUserData...');
+  const loadUserData = async () => {
     try {
       const storedUserId = await AsyncStorage.getItem("userId");
       const storedToken = await AsyncStorage.getItem("userToken");
-     
-      console.log('Stored userId:', storedUserId);
-      console.log('Stored token exists:', !!storedToken);
       
       if (storedUserId && storedToken) {
         setUserId(storedUserId);
         setToken(storedToken);
-        console.log('Calling fetchProfile...');
         await fetchProfile(storedUserId, storedToken);
       } else {
-        console.error('Missing authentication data:', { storedUserId, hasToken: !!storedToken });
         Alert.alert('Error', 'User not logged in. Please log in again.');
         setLoading(false);
       }
@@ -163,58 +175,40 @@ const loadUserData = async () => {
     }
   };
 
-const refreshProfile = async () => {
-  if (userId && token) {
-    setLoading(true);
-    await fetchProfile(userId, token);
-  }
-};
-
-
   useFocusEffect(
     React.useCallback(() => {
-      console.log('Profile Settings screen focused - loading data');
       loadUserData();
     }, [])
   );
 
-  
-const handleLogout = async () => {
-  Alert.alert(
-    'Logout',
-    'Are you sure you want to logout?',
-    [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            // Clear AsyncStorage
-            await AsyncStorage.removeItem('userId');
-            await AsyncStorage.removeItem('userToken');
-            
-            // Navigate to login screen
-            router.replace('/login');
-          } catch (error) {
-            console.error('Error during logout:', error);
-            Alert.alert('Error', 'Failed to logout properly');
-          }
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
         },
-      },
-    ]
-  );
-};
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('userId');
+              await AsyncStorage.removeItem('userToken');
+              router.replace('/login');
+            } catch (error) {
+              console.error('Error during logout:', error);
+              Alert.alert('Error', 'Failed to logout properly');
+            }
+          },
+        },
+      ]
+    );
+  };
 
-
-  // Fetch profile data from API
- const fetchProfile = async (userId: string, token: string) => {
-    console.log('fetchProfile called with:', { userId, hasToken: !!token });
-    console.log('API URL:', `${API_BASE_URL}/profile/${userId}`);
-    
+  const fetchProfile = async (userId: string, token: string) => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
@@ -225,29 +219,35 @@ const handleLogout = async () => {
         },
       });
 
-      console.log('API Response status:', response.status);
-      console.log('API Response ok:', response.ok);
-
       if (response.ok) {
         const profileData: ProfileData = await response.json();
-        console.log('Profile data received:', profileData);
         
-        // Update state with fetched data
         setUserInfo({
           name: profileData.fullName || "",
           email: profileData.email || "",
           phone: profileData.phone || "",
           bio: profileData.bio || "",
           profileImage: profileData.profileImage || null,
+          dateOfBirth: profileData.dateOfBirth || "",
         });
 
-        // Handle optional nested objects
         if (profileData.healthMetrics) {
           setHealthMetrics(profileData.healthMetrics);
         }
 
         if (profileData.workPreferences) {
           setWorkPreferences(profileData.workPreferences);
+        }
+
+        if (profileData.aadharNumber || profileData.abhaId) {
+          setGovernmentIds({
+            aadharNumber: profileData.aadharNumber || "",
+            abhaId: profileData.abhaId || "",
+          });
+        }
+
+        if (profileData.address) {
+          setAddress(profileData.address);
         }
 
         if (profileData.notifications) {
@@ -260,20 +260,16 @@ const handleLogout = async () => {
 
       } else {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        console.error('API Error:', errorData);
         Alert.alert('Error', errorData.message || 'Failed to fetch profile');
       }
     } catch (error) {
       console.error('Network error in fetchProfile:', error);
       Alert.alert('Error', 'Network error while fetching profile');
     } finally {
-      console.log('Setting loading to false');
       setLoading(false);
     }
   };
 
-
-  // Update profile data via API
   const updateProfile = async (profileData: Partial<ProfileData>) => {
     if (!userId || !token) {
       Alert.alert('Error', 'User not authenticated');
@@ -307,7 +303,6 @@ const handleLogout = async () => {
     }
   };
 
-  // Function to handle image picking
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
@@ -328,7 +323,6 @@ const handleLogout = async () => {
     }
   };
 
-  // Function to take photo with camera
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     
@@ -348,7 +342,6 @@ const handleLogout = async () => {
     }
   };
 
-  // Function to show image picker options
   const showImagePicker = () => {
     Alert.alert(
       "Select Profile Picture",
@@ -361,18 +354,20 @@ const handleLogout = async () => {
     );
   };
 
-  // Function to handle input changes with proper typing
-  const handleInputChange = (section: "userInfo" | "healthMetrics" | "workPreferences", field: string, value: string) => {
+  const handleInputChange = (section: string, field: string, value: string) => {
     if (section === "userInfo") {
       setUserInfo({ ...userInfo, [field]: value });
     } else if (section === "healthMetrics") {
       setHealthMetrics({ ...healthMetrics, [field]: value });
     } else if (section === "workPreferences") {
       setWorkPreferences({ ...workPreferences, [field]: value });
+    } else if (section === "governmentIds") {
+      setGovernmentIds({ ...governmentIds, [field]: value });
+    } else if (section === "address") {
+      setAddress({ ...address, [field]: value });
     }
   };
 
-  // Function to toggle work days
   const toggleWorkDay = (day: string) => {
     const updatedDays = workPreferences.availableDays.includes(day)
       ? workPreferences.availableDays.filter(d => d !== day)
@@ -381,7 +376,6 @@ const handleLogout = async () => {
     setWorkPreferences({ ...workPreferences, availableDays: updatedDays });
   };
 
-  // Function to toggle switches with proper typing
   const toggleSwitch = (field: keyof Notifications | keyof Security) => {
     if (field in notifications) {
       setNotifications({ ...notifications, [field]: !notifications[field as keyof Notifications] });
@@ -390,27 +384,29 @@ const handleLogout = async () => {
     }
   };
 
-  // Function to handle saving changes
- const saveChanges = async () => {
-  const profileUpdateData = {
-    fullName: userInfo.name,
-    email: userInfo.email,
-    phone: userInfo.phone,
-    bio: userInfo.bio,
-    profileImage: userInfo.profileImage || undefined,
-    healthMetrics,
-    workPreferences,
-    notifications,
-    security,
+  const saveChanges = async () => {
+    const profileUpdateData = {
+      fullName: userInfo.name,
+      email: userInfo.email,
+      phone: userInfo.phone,
+      bio: userInfo.bio,
+      profileImage: userInfo.profileImage || undefined,
+      dateOfBirth: userInfo.dateOfBirth || undefined,
+      healthMetrics,
+      workPreferences,
+      aadharNumber: governmentIds.aadharNumber || undefined,
+      abhaId: governmentIds.abhaId || undefined,
+      address,
+      notifications,
+      security,
+    };
+
+    const success = await updateProfile(profileUpdateData);
+    if (success) {
+      Alert.alert("Success", "Your changes have been saved successfully!");
+    }
   };
 
-  const success = await updateProfile(profileUpdateData);
-  if (success) {
-    Alert.alert("Success", "Your changes have been saved successfully!");
-  }
-};
-
-  // Show loading indicator while fetching data
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -425,7 +421,6 @@ const handleLogout = async () => {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile Settings</Text>
         <Text style={styles.headerSubtitle}>
@@ -442,7 +437,6 @@ const handleLogout = async () => {
           </View>
           
           <View style={styles.sectionContent}>
-            {/* Profile Picture Upload */}
             <View style={styles.profileImageSection}>
               <Text style={styles.inputLabel}>Profile Picture</Text>
               <View style={styles.profileImageContainer}>
@@ -456,14 +450,6 @@ const handleLogout = async () => {
                     </View>
                   )}
                 </TouchableOpacity>
-                {/* <TouchableOpacity 
-                    style={[styles.menuItem, styles.borderTop]}
-                   onPress={() => router.push("/dashboards/user/ChangePassword")}
-                  >
-                    <Text style={styles.menuItemText}>Change Password</Text>
-                    <ChevronRightIcon size={20} color="#9CA3AF" />
-                </TouchableOpacity> */}
-                
               </View>
             </View>
 
@@ -477,12 +463,11 @@ const handleLogout = async () => {
             </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email Address</Text>
+              <Text style={styles.inputLabel}>Email Address (Cannot be changed)</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, styles.disabledInput]}
                 value={userInfo.email}
-                onChangeText={(value) => handleInputChange("userInfo", "email", value)}
-                keyboardType="email-address"
+                editable={false}
               />
             </View>
             
@@ -495,6 +480,17 @@ const handleLogout = async () => {
                 keyboardType="phone-pad"
               />
             </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Date of Birth</Text>
+              <TextInput
+                style={styles.textInput}
+                value={userInfo.dateOfBirth}
+                onChangeText={(value) => handleInputChange("userInfo", "dateOfBirth", value)}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#6B7280"
+              />
+            </View>
             
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Bio</Text>
@@ -503,6 +499,107 @@ const handleLogout = async () => {
                 value={userInfo.bio}
                 onChangeText={(value) => handleInputChange("userInfo", "bio", value)}
                 multiline
+                placeholder="Tell us about yourself"
+                placeholderTextColor="#6B7280"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Government IDs Section - Secure */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IdentificationIcon size={20} color="#EF4444" />
+            <Text style={[styles.sectionTitle, styles.secureTitle]}>Government IDs (Secure)</Text>
+          </View>
+          
+          <View style={styles.sectionContent}>
+            <View style={styles.securityNotice}>
+              <Text style={styles.securityNoticeText}>
+                🔒 Your government IDs are encrypted and stored securely. This information is used for verification purposes only.
+              </Text>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Aadhar Number (12 digits)</Text>
+              <TextInput
+                style={styles.textInput}
+                value={governmentIds.aadharNumber}
+                onChangeText={(value) => handleInputChange("governmentIds", "aadharNumber", value)}
+                keyboardType="numeric"
+                maxLength={12}
+                placeholder="XXXX XXXX XXXX"
+                placeholderTextColor="#6B7280"
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>ABHA ID (Health ID)</Text>
+              <TextInput
+                style={styles.textInput}
+                value={governmentIds.abhaId}
+                onChangeText={(value) => handleInputChange("governmentIds", "abhaId", value)}
+                placeholder="Your ABDM Health ID"
+                placeholderTextColor="#6B7280"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Address Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MapPinIcon size={20} color="#4F46E5" />
+            <Text style={styles.sectionTitle}>Address</Text>
+          </View>
+          
+          <View style={styles.sectionContent}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Street Address</Text>
+              <TextInput
+                style={styles.textInput}
+                value={address.street}
+                onChangeText={(value) => handleInputChange("address", "street", value)}
+                placeholder="Enter street address"
+                placeholderTextColor="#6B7280"
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>City</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={address.city}
+                  onChangeText={(value) => handleInputChange("address", "city", value)}
+                  placeholder="City"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+              
+              <View style={styles.halfWidth}>
+                <Text style={styles.inputLabel}>State</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={address.state}
+                  onChangeText={(value) => handleInputChange("address", "state", value)}
+                  placeholder="State"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Pincode</Text>
+              <TextInput
+                style={styles.textInput}
+                value={address.pincode}
+                onChangeText={(value) => handleInputChange("address", "pincode", value)}
+                keyboardType="numeric"
+                maxLength={6}
+                placeholder="6-digit pincode"
+                placeholderTextColor="#6B7280"
               />
             </View>
           </View>
@@ -644,6 +741,8 @@ const handleLogout = async () => {
                   value={healthMetrics.weight}
                   onChangeText={(value) => handleInputChange("healthMetrics", "weight", value)}
                   keyboardType="numeric"
+                  placeholder="70"
+                  placeholderTextColor="#6B7280"
                 />
               </View>
               
@@ -654,6 +753,8 @@ const handleLogout = async () => {
                   value={healthMetrics.height}
                   onChangeText={(value) => handleInputChange("healthMetrics", "height", value)}
                   keyboardType="numeric"
+                  placeholder="170"
+                  placeholderTextColor="#6B7280"
                 />
               </View>
             </View>
@@ -666,6 +767,8 @@ const handleLogout = async () => {
                   value={healthMetrics.age}
                   onChangeText={(value) => handleInputChange("healthMetrics", "age", value)}
                   keyboardType="numeric"
+                  placeholder="25"
+                  placeholderTextColor="#6B7280"
                 />
               </View>
               
@@ -794,13 +897,13 @@ const handleLogout = async () => {
               />
             </View>
             
-                <TouchableOpacity 
-                    style={[styles.menuItem, styles.borderTop]}
-                   onPress={() => router.push("/dashboards/user/ChangePassword")}
-                  >
-                    <Text style={styles.menuItemText}>Change Password</Text>
-                    <ChevronRightIcon size={20} color="#9CA3AF" />
-                </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.menuItem, styles.borderTop]}
+              onPress={() => router.push("/dashboards/user/ChangePassword")}
+            >
+              <Text style={styles.menuItemText}>Change Password</Text>
+              <ChevronRightIcon size={20} color="#9CA3AF" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -854,7 +957,39 @@ const handleLogout = async () => {
 }
 
 
+
 const styles = StyleSheet.create({
+  secureTitle: {
+  color: '#FCA5A5',
+  fontWeight: '700',
+},
+securityNotice: {
+  backgroundColor: '#1F2937',
+  borderLeftWidth: 4,
+  borderLeftColor: '#EF4444',
+  borderRadius: 8,
+  padding: 16,
+  marginBottom: 20,
+  shadowColor: '#EF4444',
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+securityNoticeText: {
+  color: '#E5E7EB',
+  fontSize: 14,
+  lineHeight: 20,
+  fontWeight: '500',
+},
+disabledInput: {
+  backgroundColor: '#1F2937',
+  color: '#6B7280',
+  opacity: 0.7,
+},
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
