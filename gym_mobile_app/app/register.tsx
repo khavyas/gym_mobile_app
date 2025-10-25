@@ -87,13 +87,35 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("user");
+  const [consent, setConsent] = useState(false);
+  const [privacyNoticeAccepted, setPrivacyNoticeAccepted] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
+    // Validation
+    if (!name || !email || !password) {
+      alert("Please fill in all required fields (Name, Email, Password)");
+      return;
+    }
+
+    if (!consent || !privacyNoticeAccepted) {
+      alert("Please accept the consent and privacy policy to continue");
+      return;
+    }
+
     setIsLoading(true);
-    const payload = { name, age, phone, email, password, role };
+    const payload = { 
+      name, 
+      age: age ? parseInt(age) : undefined, 
+      phone, 
+      email, 
+      password, 
+      role,
+      consent,
+      privacyNoticeAccepted
+    };
 
     try {
       const response = await fetch(
@@ -110,14 +132,13 @@ export default function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        // Success: user registered
         console.log("Registration successful:", data);
         setIsLoading(false);
         
         // Save token + role in AsyncStorage
         await AsyncStorage.setItem("userToken", data.token);
-        await AsyncStorage.setItem("userRole", role); 
-
+        await AsyncStorage.setItem("userRole", role);
+        await AsyncStorage.setItem("userId", data.userId);
 
         // Show professional toast notification
         setToastMessage(`Registration successful! Welcome ${data.name} 🎉`);
@@ -133,7 +154,6 @@ export default function Register() {
         }, 2000);
         
       } else {
-        // Backend returned an error
         setIsLoading(false);
         console.error("Registration failed:", data);
         alert(`Error: ${data.message || "Registration failed"}`);
@@ -150,7 +170,6 @@ export default function Register() {
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Toast Notification */}
       <Toast 
         visible={showToast} 
         message={toastMessage} 
@@ -289,6 +308,37 @@ export default function Register() {
             </View>
           </View>
 
+          {/* Consent Checkboxes */}
+          <View style={styles.consentContainer}>
+            <TouchableOpacity 
+              style={styles.checkboxRow}
+              onPress={() => setConsent(!consent)}
+              disabled={isLoading}
+            >
+              <View style={[styles.checkbox, consent && styles.checkboxChecked]}>
+                {consent && <Text style={styles.checkboxCheck}>✓</Text>}
+              </View>
+              <Text style={styles.consentText}>
+                I consent to the collection and processing of my health data *
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.checkboxRow}
+              onPress={() => setPrivacyNoticeAccepted(!privacyNoticeAccepted)}
+              disabled={isLoading}
+            >
+              <View style={[styles.checkbox, privacyNoticeAccepted && styles.checkboxChecked]}>
+                {privacyNoticeAccepted && <Text style={styles.checkboxCheck}>✓</Text>}
+              </View>
+              <Text style={styles.consentText}>
+                I have read and accept the{' '}
+                <Text style={styles.linkInline}>Privacy Policy</Text> and{' '}
+                <Text style={styles.linkInline}>Terms of Service</Text> *
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity 
             style={[
               styles.registerButton,
@@ -323,7 +373,7 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Dark charcoal background
+    backgroundColor: '#111827',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -337,7 +387,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#10B981', // Vibrant green
+    color: '#10B981',
     marginBottom: 8,
   },
   subtitle: {
@@ -346,7 +396,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   formContainer: {
-    backgroundColor: '#1F2937', // Dark gray
+    backgroundColor: '#1F2937',
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
@@ -379,53 +429,6 @@ const styles = StyleSheet.create({
     color: '#F9FAFB',
     fontWeight: '500',
   },
-  registerButton: {
-    backgroundColor: '#10B981', // Professional green
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#10B981',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  loadingButton: {
-    backgroundColor: '#6B7280',
-  },
-  registerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  linkContainer: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  linkText: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    textAlign: 'center',
-  },
-  linkTextBold: {
-    color: '#10B981',
-    fontWeight: 'bold',
-  },
-  // Card-based Role Selection Styles
   roleCardsContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -500,7 +503,91 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Toast Styles
+  consentContainer: {
+    marginBottom: 24,
+    gap: 16,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: 6,
+    marginRight: 12,
+    marginTop: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111827',
+  },
+  checkboxChecked: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  checkboxCheck: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#D1D5DB',
+    lineHeight: 20,
+  },
+  linkInline: {
+    color: '#10B981',
+    fontWeight: '600',
+  },
+  registerButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#10B981',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  loadingButton: {
+    backgroundColor: '#6B7280',
+  },
+  registerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  linkContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  linkText: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
+  linkTextBold: {
+    color: '#10B981',
+    fontWeight: 'bold',
+  },
   toastContainer: {
     position: 'absolute',
     top: 60,
@@ -535,9 +622,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-
-
-
-
-

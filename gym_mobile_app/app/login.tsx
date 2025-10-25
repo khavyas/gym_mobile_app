@@ -24,12 +24,12 @@ interface ToastProps {
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isLoading, setIsLoading] = useState(false);
+  const [identifier, setIdentifier] = useState("");
 
   const API_BASE_URL = "https://gym-backend-20dr.onrender.com/api";
 
@@ -103,9 +103,9 @@ export default function Login() {
 
 const handleLogin = async () => {
   // simple validations
-  if (!email.trim() || !password) {
+  if (!identifier.trim() || !password) {
     setToastType('error');
-    setToastMessage('Please enter email and password.');
+    setToastMessage('Please enter email/phone and password.');
     setShowToast(true);
     return;
   }
@@ -113,18 +113,14 @@ const handleLogin = async () => {
   setIsLoading(true);
 
   try {
-    // request payload
     const payload = {
-      email: email.trim().toLowerCase(),
+      identifier: identifier.trim(),
       password,
     };
-
     const response = await axios.post(`${API_BASE_URL}/auth/login`, payload, {
       headers: { 'Content-Type': 'application/json' },
-      timeout: 15000, // 15s
     });
 
-    // expected server response shape:
     // { userId, name, email, role, token }
     const data = response.data;
 
@@ -183,6 +179,14 @@ const handleLogin = async () => {
   }
 };
 
+// Dynamically decide keyboard type
+const getKeyboardType = () => {
+  if (/^\d+$/.test(identifier)) return "phone-pad"; // only numbers → phone
+  if (identifier.includes("@")) return "email-address"; // has @ → email
+  return "default";
+};
+
+
 
   return (
     <KeyboardAvoidingView 
@@ -217,18 +221,20 @@ const handleLogin = async () => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email Address</Text>
+            <Text style={styles.inputLabel}>Email or Phone Number</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your email"
+              placeholder="Enter your email or phone"
               placeholderTextColor="#9CA3AF"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              value={identifier}
+              onChangeText={setIdentifier}
+              keyboardType={getKeyboardType()}
               autoCapitalize="none"
               editable={!isLoading}
             />
           </View>
+
+
 
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Password</Text>
