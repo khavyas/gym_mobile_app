@@ -15,7 +15,7 @@ export interface VideoRecommendation {
 export const videoRecommendations: VideoRecommendation[] = [
   {
     id: '1',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'LbX6jYAc0CU', // Heart Health video - working thumbnail
     title: 'Understanding Your Heart Health: 5 Essential Tips',
     description: 'Learn how to optimize your cardiovascular health with evidence-based strategies from leading cardiologists.',
     duration: '8:42',
@@ -27,7 +27,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '2',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'v7AYKMP6rOE', // Morning Yoga Flow
     title: '10-Minute Morning Yoga Flow for Beginners',
     description: 'Start your day with energy and flexibility through this simple yet effective yoga routine.',
     duration: '10:15',
@@ -39,7 +39,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '3',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'qcpY-8HRKxA', // Nutrition Basics
     title: 'Nutrition Basics: What to Eat for Optimal Health',
     description: 'Discover the fundamental principles of nutrition and how to build a balanced diet.',
     duration: '7:30',
@@ -51,7 +51,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '4',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'ml6cT4AZdqI', // HIIT Workout
     title: 'Quick HIIT Workout: Burn Calories in 8 Minutes',
     description: 'High-intensity interval training that maximizes calorie burn in minimal time.',
     duration: '8:00',
@@ -63,7 +63,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '5',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'EiYm20F9WXU', // Sleep Better
     title: 'Sleep Better: 5 Science-Backed Techniques',
     description: 'Improve your sleep quality with proven methods recommended by sleep specialists.',
     duration: '9:20',
@@ -75,7 +75,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '6',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'inpok4MKVLM', // Meditation
     title: 'Meditation for Stress Relief: A Beginner\'s Guide',
     description: 'Learn meditation techniques to reduce stress and improve mental clarity.',
     duration: '6:45',
@@ -87,7 +87,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '7',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: 'R6gZoAzAhCg', // Strength Training for Women - working thumbnail
     title: 'Strength Training Fundamentals for Women',
     description: 'Build strength and confidence with proper weightlifting techniques.',
     duration: '9:55',
@@ -99,7 +99,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '8',
-    youtubeId: 'ZJpt_bRTC6g', // Replace with actual YouTube video ID
+    youtubeId: '8nGC35uEgGQ', // Meal Prep
     title: 'Healthy Meal Prep: 5 Recipes for the Week',
     description: 'Save time and eat healthy with these simple meal prep ideas.',
     duration: '10:30',
@@ -117,9 +117,13 @@ export const getRandomVideo = (): VideoRecommendation => {
   return videoRecommendations[randomIndex];
 };
 
-// Function to get YouTube thumbnail URL
-export const getYouTubeThumbnail = (youtubeId: string, quality: 'default' | 'medium' | 'high' | 'maxres' = 'maxres'): string => {
-  return `https://img.youtube.com/vi/${youtubeId}/${quality}default.jpg`;
+// Function to get YouTube thumbnail URL with better quality fallback
+export const getYouTubeThumbnail = (
+  youtubeId: string, 
+  quality: 'default' | 'medium' | 'high' | 'maxres' = 'high'
+): string => {
+  // Using i.ytimg.com for better reliability
+  return `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
 };
 
 // Function to get YouTube video URL

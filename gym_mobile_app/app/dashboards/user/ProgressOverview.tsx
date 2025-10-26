@@ -5,16 +5,83 @@ import { useState } from 'react';
 import { CalendarIcon, FireIcon, ClockIcon, HeartIcon, TrophyIcon, ArrowTrendingUpIcon } from 'react-native-heroicons/outline';
 
 const screenWidth = Dimensions.get('window').width;
+const chartWidth = screenWidth - 72; // 40 (container padding) + 32 (chart container padding 16*2)
 
 export default function ProgressOverview() {
-  const [selectedTimeframe, setSelectedTimeframe] = useState('week');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<'week' | 'month' | 'year'>('week');
   
-  // Sample data - in a real app, this would come from your backend
+  // Data for different timeframes
+  const timeframeData = {
+    week: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      workoutDurations: [45, 60, 30, 75, 90, 50, 70],
+      calories: [320, 450, 280, 510, 620, 380, 490],
+      stats: {
+        totalCalories: '3,050',
+        totalTime: '7h 00m',
+        workoutsCompleted: 7
+      },
+      progressData: {
+        labels: ["Cardio", "Strength", "Flexibility"],
+        data: [0.7, 0.5, 0.3]
+      },
+      recentWorkouts: [
+        { type: 'Strength', name: 'Chest & Triceps', duration: '45 min', calories: 320, date: 'Today' },
+        { type: 'Cardio', name: 'Running', duration: '30 min', calories: 280, date: 'Yesterday' },
+        { type: 'Yoga', name: 'Flexibility Flow', duration: '40 min', calories: 180, date: '2 days ago' },
+        { type: 'Strength', name: 'Leg Day', duration: '55 min', calories: 420, date: '3 days ago' },
+      ]
+    },
+    month: {
+      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+      workoutDurations: [280, 350, 320, 400],
+      calories: [2100, 2650, 2400, 3100],
+      stats: {
+        totalCalories: '10,250',
+        totalTime: '22h 30m',
+        workoutsCompleted: 28
+      },
+      progressData: {
+        labels: ["Cardio", "Strength", "Flexibility"],
+        data: [0.65, 0.6, 0.4]
+      },
+      recentWorkouts: [
+        { type: 'HIIT', name: 'Full Body HIIT', duration: '35 min', calories: 410, date: 'Week 4' },
+        { type: 'Strength', name: 'Upper Body', duration: '50 min', calories: 380, date: 'Week 4' },
+        { type: 'Cardio', name: 'Cycling', duration: '45 min', calories: 320, date: 'Week 3' },
+        { type: 'Yoga', name: 'Power Yoga', duration: '60 min', calories: 250, date: 'Week 3' },
+      ]
+    },
+    year: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      workoutDurations: [1200, 1400, 1350, 1500, 1600, 1550, 1700, 1650, 1750, 1800, 1850, 1900],
+      calories: [8500, 10200, 9800, 11500, 12200, 11800, 13000, 12600, 13400, 13800, 14200, 14500],
+      stats: {
+        totalCalories: '145,500',
+        totalTime: '312h 45m',
+        workoutsCompleted: 365
+      },
+      progressData: {
+        labels: ["Cardio", "Strength", "Flexibility"],
+        data: [0.68, 0.72, 0.55]
+      },
+      recentWorkouts: [
+        { type: 'Strength', name: 'Back & Biceps', duration: '55 min', calories: 440, date: 'Dec' },
+        { type: 'Cardio', name: 'Trail Running', duration: '60 min', calories: 520, date: 'Dec' },
+        { type: 'HIIT', name: 'Tabata Training', duration: '30 min', calories: 380, date: 'Nov' },
+        { type: 'Yoga', name: 'Restorative Yoga', duration: '45 min', calories: 200, date: 'Nov' },
+      ]
+    }
+  };
+
+  // Get current timeframe data
+  const currentData = timeframeData[selectedTimeframe];
+
   const workoutData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: currentData.labels,
     datasets: [
       {
-        data: [45, 60, 30, 75, 90, 50, 70],
+        data: currentData.workoutDurations,
         color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
         strokeWidth: 2
       }
@@ -22,25 +89,13 @@ export default function ProgressOverview() {
   };
 
   const calorieData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: currentData.labels,
     datasets: [
       {
-        data: [320, 450, 280, 510, 620, 380, 490]
+        data: currentData.calories
       }
     ]
   };
-
-  const progressData = {
-    labels: ["Cardio", "Strength", "Flexibility"],
-    data: [0.7, 0.5, 0.3]
-  };
-
-  const recentWorkouts = [
-    { type: 'Strength', name: 'Chest & Triceps', duration: '45 min', calories: 320, date: 'Today' },
-    { type: 'Cardio', name: 'Running', duration: '30 min', calories: 280, date: 'Yesterday' },
-    { type: 'Yoga', name: 'Flexibility Flow', duration: '40 min', calories: 180, date: '2 days ago' },
-    { type: 'Strength', name: 'Leg Day', duration: '55 min', calories: 420, date: '3 days ago' },
-  ];
 
   const chartConfig = {
     backgroundColor: '#1F2937',
@@ -103,7 +158,7 @@ export default function ProgressOverview() {
           <View style={styles.statIcon}>
             <FireIcon size={20} color="#10B981" />
           </View>
-          <Text style={styles.statValue}>12,450</Text>
+          <Text style={styles.statValue}>{currentData.stats.totalCalories}</Text>
           <Text style={styles.statLabel}>Calories Burned</Text>
         </View>
         
@@ -111,7 +166,7 @@ export default function ProgressOverview() {
           <View style={styles.statIcon}>
             <ClockIcon size={20} color="#10B981" />
           </View>
-          <Text style={styles.statValue}>28h 15m</Text>
+          <Text style={styles.statValue}>{currentData.stats.totalTime}</Text>
           <Text style={styles.statLabel}>Total Workout Time</Text>
         </View>
         
@@ -119,7 +174,7 @@ export default function ProgressOverview() {
           <View style={styles.statIcon}>
             <TrophyIcon size={20} color="#10B981" />
           </View>
-          <Text style={styles.statValue}>42</Text>
+          <Text style={styles.statValue}>{currentData.stats.workoutsCompleted}</Text>
           <Text style={styles.statLabel}>Workouts Completed</Text>
         </View>
       </View>
@@ -129,7 +184,7 @@ export default function ProgressOverview() {
         <Text style={styles.chartTitle}>Workout Duration (Minutes)</Text>
         <LineChart
           data={workoutData}
-          width={screenWidth - 40}
+          width={chartWidth}
           height={220}
           chartConfig={chartConfig}
           bezier
@@ -141,20 +196,23 @@ export default function ProgressOverview() {
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Calories Burned</Text>
         <BarChart
-                  data={calorieData}
-                  width={screenWidth - 40}
-                  height={220}
-                  chartConfig={chartConfig}
-                  style={styles.chart}
-                  fromZero yAxisLabel={''} yAxisSuffix={''}        />
+          data={calorieData}
+          width={chartWidth}
+          height={220}
+          chartConfig={chartConfig}
+          style={styles.chart}
+          fromZero 
+          yAxisLabel={''} 
+          yAxisSuffix={''}
+        />
       </View>
 
       {/* Progress Chart */}
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Workout Distribution</Text>
         <ProgressChart
-          data={progressData}
-          width={screenWidth - 40}
+          data={currentData.progressData}
+          width={chartWidth}
           height={220}
           strokeWidth={16}
           radius={32}
@@ -167,12 +225,13 @@ export default function ProgressOverview() {
       {/* Recent Workouts */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Workouts</Text>
-        {recentWorkouts.map((workout, index) => (
+        {currentData.recentWorkouts.map((workout: any, index: number) => (
           <View key={index} style={styles.workoutCard}>
             <View style={styles.workoutHeader}>
               <View style={[styles.workoutType, 
                 {backgroundColor: workout.type === 'Strength' ? '#10B981' : 
-                                 workout.type === 'Cardio' ? '#3B82F6' : '#8B5CF6'}]}>
+                                 workout.type === 'Cardio' ? '#3B82F6' : 
+                                 workout.type === 'HIIT' ? '#F59E0B' : '#8B5CF6'}]}>
                 <Text style={styles.workoutTypeText}>{workout.type}</Text>
               </View>
               <Text style={styles.workoutDate}>{workout.date}</Text>
@@ -200,7 +259,10 @@ export default function ProgressOverview() {
             <View style={styles.achievementIcon}>
               <TrophyIcon size={24} color="#F59E0B" />
             </View>
-            <Text style={styles.achievementText}>7 Day Streak</Text>
+            <Text style={styles.achievementText}>
+              {selectedTimeframe === 'week' ? '7 Day Streak' : 
+               selectedTimeframe === 'month' ? '30 Day Streak' : 'Year Complete'}
+            </Text>
           </View>
           <View style={styles.achievement}>
             <View style={styles.achievementIcon}>
@@ -212,7 +274,10 @@ export default function ProgressOverview() {
             <View style={styles.achievementIcon}>
               <ArrowTrendingUpIcon size={24} color="#10B981" />
             </View>
-            <Text style={styles.achievementText}>Consistency</Text>
+            <Text style={styles.achievementText}>
+              {selectedTimeframe === 'week' ? 'Weekly Goal' : 
+               selectedTimeframe === 'month' ? 'Monthly Goal' : 'Annual Goal'}
+            </Text>
           </View>
         </View>
       </View>
@@ -289,12 +354,14 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: '#9CA3AF',
+    textAlign: 'center',
   },
   chartContainer: {
     backgroundColor: '#1F2937',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
+    overflow: 'hidden',
   },
   chartTitle: {
     fontSize: 16,

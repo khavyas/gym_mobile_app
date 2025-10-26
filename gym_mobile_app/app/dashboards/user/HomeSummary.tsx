@@ -331,81 +331,81 @@ useEffect(() => {
         )}
 
 
-      {/* Recommended Video Section */}
-      {recommendedVideo && (
-        <View style={styles.section}>
-          <View style={styles.videoSectionHeader}>
-            <Video size={20} color="#10B981" />
-            <Text style={styles.sectionTitle}>Recommended for You</Text>
+{/* Recommended Video Section - Fixed */}
+{recommendedVideo && (
+  <View style={styles.section}>
+    <View style={styles.videoSectionHeader}>
+      <Video size={20} color="#10B981" />
+      <Text style={styles.sectionTitle}>Recommended for You</Text>
+    </View>
+    
+    <TouchableOpacity 
+      style={styles.videoCard}
+      onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+      activeOpacity={0.9}
+    >
+      <View style={styles.videoThumbnailContainer}>
+        <Image 
+          source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId, 'high') }}
+          style={styles.videoThumbnail}
+          resizeMode="cover"
+        />
+        {/* Gradient overlay for better visibility */}
+        <View style={styles.playButtonOverlay}>
+          <View style={styles.playButton}>
+            <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+          </View>
+        </View>
+        <View style={styles.videoDurationBadge}>
+          <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
+        </View>
+      </View>
+      
+      {/* Video Info Section - This should be visible now */}
+      <View style={styles.videoInfo}>
+        <Text style={styles.videoTitle} numberOfLines={2}>
+          {recommendedVideo.title}
+        </Text>
+        <Text style={styles.videoDescription} numberOfLines={2}>
+          {recommendedVideo.description}
+        </Text>
+        
+        <View style={styles.videoMetaContainer}>
+          <View style={styles.videoInstructorInfo}>
+            <Text style={styles.videoInstructor}>
+              {recommendedVideo.instructor}
+              {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
+            </Text>
           </View>
           
-          <TouchableOpacity 
-            style={styles.videoCard}
-            onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
-            activeOpacity={0.9}
-          >
-            <View style={styles.videoThumbnailContainer}>
-              <Image 
-                source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId) }}
-                style={styles.videoThumbnail}
-                resizeMode="cover"
-              />
-              <View style={styles.playButtonOverlay}>
-                <View style={styles.playButton}>
-                  <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
-                </View>
+          <View style={styles.videoStats}>
+            {recommendedVideo.rating && (
+              <View style={styles.videoStatItem}>
+                <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
+                <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
               </View>
-              <View style={styles.videoDurationBadge}>
-                <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
+            )}
+            {recommendedVideo.views && (
+              <View style={styles.videoStatItem}>
+                <Eye size={12} color="#94A3B8" />
+                <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
               </View>
-            </View>
-            
-            <View style={styles.videoInfo}>
-              <Text style={styles.videoTitle} numberOfLines={2}>
-                {recommendedVideo.title}
-              </Text>
-              <Text style={styles.videoDescription} numberOfLines={2}>
-                {recommendedVideo.description}
-              </Text>
-              
-              <View style={styles.videoMetaContainer}>
-                <View style={styles.videoInstructorInfo}>
-                  <Text style={styles.videoInstructor}>
-                    {recommendedVideo.instructor}
-                    {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
-                  </Text>
-                </View>
-                
-                <View style={styles.videoStats}>
-                  {recommendedVideo.rating && (
-                    <View style={styles.videoStatItem}>
-                      <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
-                      <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                      <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
-                    </View>
-                  )}
-                  {recommendedVideo.views && (
-                    <View style={styles.videoStatItem}>
-                      <Eye size={12} color="#94A3B8" />
-                      <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-              
-              <TouchableOpacity 
-                style={styles.watchNowButton}
-                onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
-              >
-                <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.watchNowText}>Watch Now</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
+            )}
+          </View>
         </View>
-      )}
-
-
+        
+        <TouchableOpacity 
+          style={styles.watchNowButton}
+          onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+        >
+          <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
+          <Text style={styles.watchNowText}>Watch Now</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  </View>
+)}
 
 {/* Continue Learning Section */}
 <View style={styles.section}>
@@ -713,7 +713,19 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
-  // Add these new styles:
+    thumbnailFallback: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1E293B', // Dark gray-blue as fallback
+  },
+   thumbnailGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
 quickActionsContainer: {
   backgroundColor: '#1E293B',
   marginHorizontal: 20,
@@ -1011,11 +1023,12 @@ progressIcon: {
     borderWidth: 1,
     borderColor: '#2a3441',
   },
-  videoThumbnailContainer: {
-    width: '100%',
-    height: 200,
-    position: 'relative',
-  },
+videoThumbnailContainer: {
+  width: '100%',
+  height: 200,
+  position: 'relative',
+  backgroundColor: '#1E293B', // Add this line
+},
   videoThumbnail: {
     width: '100%',
     height: '100%',
