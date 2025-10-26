@@ -252,9 +252,8 @@ export default function WaterIntake() {
         <View style={styles.progressSection}>
           <View style={styles.waterCard}>
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80' }}
+              source={{ uri: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' }}
               style={styles.waterCardBackground}
-              blurRadius={2}
             />
             <View style={styles.waterCardOverlay} />
             
@@ -358,7 +357,7 @@ export default function WaterIntake() {
         <View style={styles.benefitsSection}>
           <View style={styles.benefitsCard}>
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1550572017-4a6a44fdc0e0?w=800&q=80' }}
+              source={{ uri: 'https://images.unsplash.com/photo-1523294587484-bae6cc870010?w=800&q=80' }}
               style={styles.benefitsImage}
             />
             <View style={styles.benefitsOverlay}>
@@ -516,7 +515,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(14, 165, 233, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   waterCardContent: {
     padding: 24,
@@ -792,7 +791,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(6, 182, 212, 0.80)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,

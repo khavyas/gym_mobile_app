@@ -571,14 +571,20 @@ useEffect(() => {
       <Text style={styles.actionText}>Log Water</Text>
     </TouchableOpacity>
 
-    <TouchableOpacity style={styles.actionButton}>
+    <TouchableOpacity 
+      style={styles.actionButton}
+      onPress={() => router.push('/dashboards/user/LogMeal')}  // Add this line
+    >
       <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
         <Utensils size={24} color="#10B981" strokeWidth={2} />
       </View>
       <Text style={styles.actionText}>Log Meal</Text>
     </TouchableOpacity>
 
-    <TouchableOpacity style={styles.actionButton}>
+    <TouchableOpacity 
+      style={styles.actionButton}
+      onPress={() => router.push('/dashboards/user/StartWorkout')}  // Add this line
+    >
       <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
         <TrendingUp size={24} color="#10B981" strokeWidth={2} />
       </View>

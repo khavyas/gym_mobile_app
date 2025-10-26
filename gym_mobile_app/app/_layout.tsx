@@ -22,7 +22,7 @@ export default function RootLayout() {
   }
 
   // Define screens where header should NOT be shown
-  const hideHeaderScreens = ['/login', '/register', '/'];
+  const hideHeaderScreens = ['/login', '/register', '/home'];
   const shouldShowHeader = !hideHeaderScreens.includes(pathname);
 
   return (

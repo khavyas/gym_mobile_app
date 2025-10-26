@@ -7,11 +7,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Animated 
+  Animated ,
+  Modal
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, EyeSlashIcon } from "react-native-heroicons/outline";
 
 // Toast Component Props Interface
 interface ToastProps {
@@ -24,7 +27,7 @@ interface ToastProps {
 const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-100));
-
+ 
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -86,17 +89,27 @@ export default function Register() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("user");
   const [consent, setConsent] = useState(false);
   const [privacyNoticeAccepted, setPrivacyNoticeAccepted] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false); 
+  
   const handleRegister = async () => {
     // Validation
-    if (!name || !email || !password) {
-      alert("Please fill in all required fields (Name, Email, Password)");
+    if (!name || !email || !password || !confirmPassword) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
       return;
     }
 
@@ -165,25 +178,147 @@ export default function Register() {
     }
   };
 
-  return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <Toast 
-        visible={showToast} 
-        message={toastMessage} 
-        onHide={() => setShowToast(false)} 
-      />
-      
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join our wellness community</Text>
+  // Privacy Policy Modal Component
+const PrivacyPolicyModal = () => (
+  <Modal
+    visible={showPrivacyModal}
+    animationType="slide"
+    transparent={true}
+    onRequestClose={() => setShowPrivacyModal(false)}
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Privacy Policy</Text>
+          <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
+            <Text style={styles.modalClose}>✕</Text>
+          </TouchableOpacity>
         </View>
+        
+        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.modalText}>
+            <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
+            
+            <Text style={styles.modalBold}>1. Information We Collect{'\n'}</Text>
+            We collect personal information including your name, age, phone number, email address, and health-related data that you provide during registration and while using our services.{'\n\n'}
+            
+            <Text style={styles.modalBold}>2. How We Use Your Information{'\n'}</Text>
+            Your information is used to provide personalized fitness guidance, track your wellness journey, connect you with fitness consultants, and improve our services.{'\n\n'}
+            
+            <Text style={styles.modalBold}>3. Data Security{'\n'}</Text>
+            We implement industry-standard security measures to protect your personal and health data. All data transmissions are encrypted using secure protocols.{'\n\n'}
+            
+            <Text style={styles.modalBold}>4. Data Sharing{'\n'}</Text>
+            We do not sell your personal information. Your health data is only shared with assigned fitness consultants to provide you with professional guidance.{'\n\n'}
+            
+            <Text style={styles.modalBold}>5. Your Rights{'\n'}</Text>
+            You have the right to access, modify, or delete your personal data at any time through your profile settings.{'\n\n'}
+            
+            <Text style={styles.modalBold}>6. Cookies and Tracking{'\n'}</Text>
+            We use cookies and similar technologies to enhance your experience and analyze app usage.{'\n\n'}
+            
+            <Text style={styles.modalBold}>7. Contact Us{'\n'}</Text>
+            For privacy concerns, contact us at privacy@healthhub.com
+          </Text>
+        </ScrollView>
+        
+        <TouchableOpacity 
+          style={styles.modalButton}
+          onPress={() => setShowPrivacyModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
+
+// Terms of Service Modal Component
+const TermsOfServiceModal = () => (
+  <Modal
+    visible={showTermsModal}
+    animationType="slide"
+    transparent={true}
+    onRequestClose={() => setShowTermsModal(false)}
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Terms of Service</Text>
+          <TouchableOpacity onPress={() => setShowTermsModal(false)}>
+            <Text style={styles.modalClose}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.modalText}>
+            <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
+            
+            <Text style={styles.modalBold}>1. Acceptance of Terms{'\n'}</Text>
+            By creating an account and using HealthHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
+            
+            <Text style={styles.modalBold}>2. User Responsibilities{'\n'}</Text>
+            You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.{'\n\n'}
+            
+            <Text style={styles.modalBold}>3. Health Disclaimer{'\n'}</Text>
+            The fitness guidance provided is for informational purposes only and does not constitute medical advice. Always consult with healthcare professionals before starting any fitness program.{'\n\n'}
+            
+            <Text style={styles.modalBold}>4. User Conduct{'\n'}</Text>
+            You agree not to use the service for any unlawful purpose, harass other users, or post inappropriate content.{'\n\n'}
+            
+            <Text style={styles.modalBold}>5. Consultant Services{'\n'}</Text>
+            Fitness consultants are independent professionals. HealthHub facilitates connections but does not guarantee specific results.{'\n\n'}
+            
+            <Text style={styles.modalBold}>6. Intellectual Property{'\n'}</Text>
+            All content, features, and functionality are owned by HealthHub and protected by copyright and trademark laws.{'\n\n'}
+            
+            <Text style={styles.modalBold}>7. Account Termination{'\n'}</Text>
+            We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.{'\n\n'}
+            
+            <Text style={styles.modalBold}>8. Limitation of Liability{'\n'}</Text>
+            HealthHub is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
+            
+            <Text style={styles.modalBold}>9. Changes to Terms{'\n'}</Text>
+            We may modify these terms at any time. Continued use after changes constitutes acceptance of new terms.{'\n\n'}
+            
+            <Text style={styles.modalBold}>10. Contact Information{'\n'}</Text>
+            For questions about these terms, contact us at support@healthhub.com
+          </Text>
+        </ScrollView>
+        
+        <TouchableOpacity 
+          style={styles.modalButton}
+          onPress={() => setShowTermsModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
+
+  return (
+  <KeyboardAvoidingView 
+    style={styles.container} 
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+    <Toast 
+      visible={showToast} 
+      message={toastMessage} 
+      onHide={() => setShowToast(false)} 
+    />
+    
+    <PrivacyPolicyModal />
+    <TermsOfServiceModal />
+    
+    <ScrollView 
+      contentContainerStyle={styles.scrollContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.headerContainer}>
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join our wellness community</Text>
+      </View>
 
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
@@ -240,15 +375,54 @@ export default function Register() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Password *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Create a secure password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!isLoading}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Create a secure password"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon size={24} color="#9CA3AF" />
+                ) : (
+                  <EyeIcon size={24} color="#9CA3AF" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Confirm Password *</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Re-enter your password"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showConfirmPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                disabled={isLoading}
+              >
+                {showConfirmPassword ? (
+                  <EyeSlashIcon size={24} color="#9CA3AF" />
+                ) : (
+                  <EyeIcon size={24} color="#9CA3AF" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.inputContainer}>
@@ -264,7 +438,11 @@ export default function Register() {
               >
                 <View style={styles.roleCardContent}>
                   <View style={[styles.roleIcon, role === "user" && styles.activeRoleIcon]}>
-                    <Text style={[styles.roleIconText, role === "user" && styles.activeRoleIconText]}>👤</Text>
+                    <Ionicons 
+                      name="person-outline" 
+                      size={28} 
+                      color={role === "user" ? "#FFFFFF" : "#9CA3AF"} 
+                    />
                   </View>
                   <Text style={[styles.roleCardTitle, role === "user" && styles.activeRoleCardTitle]}>
                     User
@@ -290,7 +468,11 @@ export default function Register() {
               >
                 <View style={styles.roleCardContent}>
                   <View style={[styles.roleIcon, role === "consultant" && styles.activeRoleIcon]}>
-                    <Text style={[styles.roleIconText, role === "consultant" && styles.activeRoleIconText]}>💪</Text>
+                    <Ionicons 
+                      name="fitness-outline" 
+                      size={28} 
+                      color={role === "consultant" ? "#FFFFFF" : "#9CA3AF"} 
+                    />
                   </View>
                   <Text style={[styles.roleCardTitle, role === "consultant" && styles.activeRoleCardTitle]}>
                     Consultant
@@ -333,8 +515,19 @@ export default function Register() {
               </View>
               <Text style={styles.consentText}>
                 I have read and accept the{' '}
-                <Text style={styles.linkInline}>Privacy Policy</Text> and{' '}
-                <Text style={styles.linkInline}>Terms of Service</Text> *
+                <Text 
+                  style={styles.linkInline}
+                  onPress={() => setShowPrivacyModal(true)}
+                >
+                  Privacy Policy
+                </Text>
+                {' '}and{' '}
+                <Text 
+                  style={styles.linkInline}
+                  onPress={() => setShowTermsModal(true)}
+                >
+                  Terms of Service
+                </Text> *
               </Text>
             </TouchableOpacity>
           </View>
@@ -371,6 +564,85 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: 20,
+},
+modalContainer: {
+  backgroundColor: '#1F2937',
+  borderRadius: 16,
+  width: '100%',
+  maxHeight: '80%',
+  borderWidth: 1,
+  borderColor: '#374151',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 10,
+},
+modalHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: '#374151',
+},
+modalTitle: {
+  fontSize: 20,
+  fontWeight: 'bold',
+  color: '#10B981',
+},
+modalClose: {
+  fontSize: 28,
+  color: '#9CA3AF',
+  fontWeight: '300',
+},
+modalContent: {
+  padding: 20,
+  maxHeight: 400,
+},
+modalText: {
+  fontSize: 14,
+  color: '#D1D5DB',
+  lineHeight: 22,
+},
+modalBold: {
+  fontWeight: 'bold',
+  color: '#E5E7EB',
+  fontSize: 15,
+},
+modalButton: {
+  backgroundColor: '#10B981',
+  margin: 20,
+  marginTop: 0,
+  paddingVertical: 14,
+  borderRadius: 12,
+  alignItems: 'center',
+},
+modalButtonText: {
+  color: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+  passwordContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderWidth: 1.5,
+  borderColor: '#374151',
+  backgroundColor: '#111827',
+  borderRadius: 12,
+  paddingRight: 12,
+},
+eyeButton: {
+  padding: 8,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   container: {
     flex: 1,
     backgroundColor: '#111827',
@@ -429,6 +701,25 @@ const styles = StyleSheet.create({
     color: '#F9FAFB',
     fontWeight: '500',
   },
+
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: '#F9FAFB',
+    fontWeight: '500',
+  },
+  eyeIconButton: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    fontSize: 20,
+    color: '#9CA3AF',
+  },
   roleCardsContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -462,12 +753,6 @@ const styles = StyleSheet.create({
   },
   activeRoleIcon: {
     backgroundColor: '#10B981',
-  },
-  roleIconText: {
-    fontSize: 24,
-  },
-  activeRoleIconText: {
-    fontSize: 24,
   },
   roleCardTitle: {
     fontSize: 16,
