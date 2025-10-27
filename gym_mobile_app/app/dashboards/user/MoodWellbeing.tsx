@@ -15,16 +15,17 @@ import {
 } from 'react-native-heroicons/outline';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+import WellnessRecommendation from './WellnessRecommendation';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function MoodWellbeing() {
-  const [activeTab, setActiveTab] = useState<'log' | 'analysis' | 'tips'>('log');
+ const [activeTab, setActiveTab] = useState<'log' | 'analysis' | 'tips' | 'recommendations'>('log');
   const [selectedMood, setSelectedMood] = useState<string>('good');
   const [moodRating, setMoodRating] = useState(7);
   const [selectedFactors, setSelectedFactors] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
-
+  
 const moods = [
   { id: 'great', label: 'Great', emoji: '😄', color: '#10B981', rating: 10 },
   { id: 'good', label: 'Good', emoji: '🙂', color: '#06b6d4', rating: 7 },
@@ -428,12 +429,23 @@ const moods = [
             AI Tips
           </Text>
         </TouchableOpacity>
+        
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'recommendations' && styles.activeTab]}
+          onPress={() => setActiveTab('recommendations')}
+        >
+          <Text style={[styles.tabText, activeTab === 'recommendations' && styles.activeTabText]}>
+            Recommendations
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Tab Content */}
       {activeTab === 'log' && renderLogMoodTab()}
       {activeTab === 'analysis' && renderAnalysisTab()}
       {activeTab === 'tips' && renderAITipsTab()}
+      {activeTab === 'recommendations' && <WellnessRecommendation />} 
     </SafeAreaView>
   );
 }

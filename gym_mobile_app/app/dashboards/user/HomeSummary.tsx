@@ -15,6 +15,7 @@ import { getRandomVideo, getYouTubeThumbnail, getYouTubeUrl, type VideoRecommend
 import { Linking, Image } from 'react-native';
 import { BookOpen, Clock, User as UserIcon } from 'lucide-react-native';
 import { getRandomBlogPosts, type BlogPost } from './blogPosts';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -77,6 +78,8 @@ export default function HomeSummary() {
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
   const [recommendedVideo, setRecommendedVideo] = useState<VideoRecommendation | null>(null);
   const [featuredBlogs, setFeaturedBlogs] = useState<BlogPost[]>([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [allVideos, setAllVideos] = useState<VideoRecommendation[]>([]);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -106,11 +109,30 @@ useEffect(() => {
   setFeaturedBlogs(blogs);
 }, []);
 
+useEffect(() => {
+  // Get multiple random videos (e.g., 5 videos)
+  const videos = Array.from({ length: 5 }, () => getRandomVideo());
+  setAllVideos(videos);
+  setRecommendedVideo(videos[0]);
+}, []);
+
   const handleBlogPress = (blog: BlogPost) => {
     router.push({
       pathname: "/dashboards/user/BlogDetail",
       params: { id: blog.id }
     });
+  };
+
+  const handlePreviousVideo = () => {
+    const newIndex = currentVideoIndex > 0 ? currentVideoIndex - 1 : allVideos.length - 1;
+    setCurrentVideoIndex(newIndex);
+    setRecommendedVideo(allVideos[newIndex]);
+  };
+
+  const handleNextVideo = () => {
+    const newIndex = currentVideoIndex < allVideos.length - 1 ? currentVideoIndex + 1 : 0;
+    setCurrentVideoIndex(newIndex);
+    setRecommendedVideo(allVideos[newIndex]);
   };
 
 
@@ -331,81 +353,112 @@ useEffect(() => {
         )}
 
 
-{/* Recommended Video Section - Fixed */}
-{recommendedVideo && (
+{/* Recommended Video Section with Navigation */}
+{recommendedVideo && allVideos.length > 0 && (
   <View style={styles.section}>
     <View style={styles.videoSectionHeader}>
       <Video size={20} color="#10B981" />
       <Text style={styles.sectionTitle}>Recommended for You</Text>
+      <View style={styles.videoNavigationDots}>
+        {allVideos.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.navigationDot,
+              index === currentVideoIndex && styles.navigationDotActive
+            ]}
+          />
+        ))}
+      </View>
     </View>
     
-    <TouchableOpacity 
-      style={styles.videoCard}
-      onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
-      activeOpacity={0.9}
-    >
-      <View style={styles.videoThumbnailContainer}>
-        <Image 
-          source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId, 'high') }}
-          style={styles.videoThumbnail}
-          resizeMode="cover"
-        />
-        {/* Gradient overlay for better visibility */}
-        <View style={styles.playButtonOverlay}>
-          <View style={styles.playButton}>
-            <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+    <View style={styles.videoCarouselContainer}>
+      {/* Left Arrow */}
+      <TouchableOpacity 
+        style={[styles.videoNavButton, styles.videoNavButtonLeft]}
+        onPress={handlePreviousVideo}
+        activeOpacity={0.7}
+      >
+        <ChevronLeft size={24} color="#FFFFFF" strokeWidth={3} />
+      </TouchableOpacity>
+
+      {/* Video Card */}
+      <TouchableOpacity 
+        style={styles.videoCard}
+        onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+        activeOpacity={0.9}
+      >
+        <View style={styles.videoThumbnailContainer}>
+          <Image 
+            source={{ uri: getYouTubeThumbnail(recommendedVideo.youtubeId, 'high') }}
+            style={styles.videoThumbnail}
+            resizeMode="cover"
+          />
+          <View style={styles.playButtonOverlay}>
+            <View style={styles.playButton}>
+              <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+            </View>
+          </View>
+          <View style={styles.videoDurationBadge}>
+            <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
           </View>
         </View>
-        <View style={styles.videoDurationBadge}>
-          <Text style={styles.videoDurationText}>{recommendedVideo.duration}</Text>
-        </View>
-      </View>
-      
-      {/* Video Info Section - This should be visible now */}
-      <View style={styles.videoInfo}>
-        <Text style={styles.videoTitle} numberOfLines={2}>
-          {recommendedVideo.title}
-        </Text>
-        <Text style={styles.videoDescription} numberOfLines={2}>
-          {recommendedVideo.description}
-        </Text>
         
-        <View style={styles.videoMetaContainer}>
-          <View style={styles.videoInstructorInfo}>
-            <Text style={styles.videoInstructor}>
-              {recommendedVideo.instructor}
-              {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
-            </Text>
+        <View style={styles.videoInfo}>
+          <Text style={styles.videoTitle} numberOfLines={2}>
+            {recommendedVideo.title}
+          </Text>
+          <Text style={styles.videoDescription} numberOfLines={2}>
+            {recommendedVideo.description}
+          </Text>
+          
+          <View style={styles.videoMetaContainer}>
+            <View style={styles.videoInstructorInfo}>
+              <Text style={styles.videoInstructor}>
+                {recommendedVideo.instructor}
+                {recommendedVideo.credentials && `, ${recommendedVideo.credentials}`}
+              </Text>
+            </View>
+            
+            <View style={styles.videoStats}>
+              {recommendedVideo.rating && (
+                <View style={styles.videoStatItem}>
+                  <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
+                  <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                  <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
+                </View>
+              )}
+              {recommendedVideo.views && (
+                <View style={styles.videoStatItem}>
+                  <Eye size={12} color="#94A3B8" />
+                  <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
+                </View>
+              )}
+            </View>
           </View>
           
-          <View style={styles.videoStats}>
-            {recommendedVideo.rating && (
-              <View style={styles.videoStatItem}>
-                <Text style={styles.videoCategoryBadge}>{recommendedVideo.category}</Text>
-                <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                <Text style={styles.videoStatText}>{recommendedVideo.rating}</Text>
-              </View>
-            )}
-            {recommendedVideo.views && (
-              <View style={styles.videoStatItem}>
-                <Eye size={12} color="#94A3B8" />
-                <Text style={styles.videoStatText}>{recommendedVideo.views} views</Text>
-              </View>
-            )}
-          </View>
+          <TouchableOpacity 
+            style={styles.watchNowButton}
+            onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
+          >
+            <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
+            <Text style={styles.watchNowText}>Watch Now</Text>
+          </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
-          style={styles.watchNowButton}
-          onPress={() => handleVideoPress(recommendedVideo.youtubeId)}
-        >
-          <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
-          <Text style={styles.watchNowText}>Watch Now</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+
+      {/* Right Arrow */}
+      <TouchableOpacity 
+        style={[styles.videoNavButton, styles.videoNavButtonRight]}
+        onPress={handleNextVideo}
+        activeOpacity={0.7}
+      >
+        <ChevronRight size={24} color="#FFFFFF" strokeWidth={3} />
+      </TouchableOpacity>
+    </View>
   </View>
 )}
+
 
 {/* Continue Learning Section */}
 <View style={styles.section}>
@@ -713,6 +766,48 @@ useEffect(() => {
 }
 
 const styles = StyleSheet.create({
+  videoCarouselContainer: {
+  position: 'relative',
+  marginHorizontal: 20,
+},
+videoNavButton: {
+  position: 'absolute',
+  top: '35%',
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  backgroundColor: 'rgba(16, 185, 129, 0.9)',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 10,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 5,
+},
+videoNavButtonLeft: {
+  left: -15,
+},
+videoNavButtonRight: {
+  right: -15,
+},
+videoNavigationDots: {
+  flexDirection: 'row',
+  gap: 6,
+  marginLeft: 'auto',
+},
+navigationDot: {
+  width: 6,
+  height: 6,
+  borderRadius: 3,
+  backgroundColor: '#334155',
+},
+navigationDotActive: {
+  backgroundColor: '#10B981',
+  width: 20,
+},
+
     thumbnailFallback: {
     position: 'absolute',
     width: '100%',
@@ -1017,7 +1112,6 @@ progressIcon: {
   },
   videoCard: {
     backgroundColor: '#1E293B',
-    marginHorizontal: 20,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,

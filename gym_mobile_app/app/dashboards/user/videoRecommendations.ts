@@ -14,18 +14,6 @@ export interface VideoRecommendation {
 
 export const videoRecommendations: VideoRecommendation[] = [
   {
-    id: '1',
-    youtubeId: 'LbX6jYAc0CU', // Heart Health video - working thumbnail
-    title: 'Understanding Your Heart Health: 5 Essential Tips',
-    description: 'Learn how to optimize your cardiovascular health with evidence-based strategies from leading cardiologists.',
-    duration: '8:42',
-    category: 'Cardiology',
-    instructor: 'Dr. Sarah Mitchell',
-    credentials: 'MD',
-    rating: 4.9,
-    views: '2.3M',
-  },
-  {
     id: '2',
     youtubeId: 'v7AYKMP6rOE', // Morning Yoga Flow
     title: '10-Minute Morning Yoga Flow for Beginners',
@@ -87,7 +75,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '7',
-    youtubeId: 'R6gZoAzAhCg', // Strength Training for Women - working thumbnail
+    youtubeId: 'R6gZoAzAhCg', // Strength Training for Women
     title: 'Strength Training Fundamentals for Women',
     description: 'Build strength and confidence with proper weightlifting techniques.',
     duration: '9:55',
@@ -109,12 +97,68 @@ export const videoRecommendations: VideoRecommendation[] = [
     rating: 4.7,
     views: '890K',
   },
+  {
+    id: '9',
+    youtubeId: 'COp7BR_Dvps', // Stretching Routine
+    title: 'Full Body Stretching Routine for Flexibility',
+    description: 'Improve flexibility and reduce muscle tension with this comprehensive stretching guide.',
+    duration: '12:18',
+    category: 'Flexibility',
+    instructor: 'Alex Morgan',
+    credentials: 'Physical Therapist',
+    rating: 4.8,
+    views: '1.4M',
+  },
+  {
+    id: '10',
+    youtubeId: 'sTANio_2E0Q', // Posture Correction
+    title: 'Fix Your Posture: Essential Exercises',
+    description: 'Correct poor posture and relieve back pain with these simple daily exercises.',
+    duration: '10:22',
+    category: 'Physical Therapy',
+    instructor: 'Dr. Rachel Foster',
+    credentials: 'DPT, Physical Therapist',
+    rating: 4.9,
+    views: '2.4M',
+  },
+  {
+    id: '11',
+    youtubeId: 'aUaInS6HIGo', // Core Workout
+    title: 'Effective Core Strengthening Exercises',
+    description: 'Build a strong core with these targeted exercises that improve posture and stability.',
+    duration: '11:30',
+    category: 'Strength',
+    instructor: 'Ryan Peterson',
+    credentials: 'Fitness Coach',
+    rating: 4.7,
+    views: '1.6M',
+  },
+  {
+    id: '12',
+    youtubeId: 'hJbRpHZr_d0', // Walking for Health
+    title: 'Walking for Health: Complete Guide',
+    description: 'Discover the incredible health benefits of walking and how to optimize your routine.',
+    duration: '9:45',
+    category: 'Cardiology',
+    instructor: 'Dr. Michael Brown',
+    credentials: 'Sports Medicine, MD',
+    rating: 4.8,
+    views: '950K',
+  },
 ];
 
-// Function to get a random video
+// Function to get a random video (with shuffling to avoid repetition)
 export const getRandomVideo = (): VideoRecommendation => {
   const randomIndex = Math.floor(Math.random() * videoRecommendations.length);
   return videoRecommendations[randomIndex];
+};
+
+// Function to get multiple unique random videos
+export const getRandomVideos = (count: number): VideoRecommendation[] => {
+  // Create a shuffled copy of the array
+  const shuffled = [...videoRecommendations].sort(() => Math.random() - 0.5);
+  // Return the first 'count' items
+  return shuffled.slice(0, Math.min(count, videoRecommendations.length));
 };
 
 // Function to get YouTube thumbnail URL with better quality fallback
