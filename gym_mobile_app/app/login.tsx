@@ -605,6 +605,7 @@ formContainer: {
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 6,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',

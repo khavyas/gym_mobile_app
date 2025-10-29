@@ -146,6 +146,7 @@ export default function NotificationModal({
               {/* Notifications List */}
               <ScrollView
                 style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
                 showsVerticalScrollIndicator={false}
               >
                 {notifications.length === 0 ? (
@@ -162,7 +163,7 @@ export default function NotificationModal({
                   </View>
                 ) : (
                   notifications.map((notification) => (
-                    <View key={notification.id} style={styles.notificationItem}>
+                    <View key={notification.id} style={styles.notificationCard}>
                       <View style={styles.notificationContent}>
                         {/* Icon */}
                         <View
@@ -308,6 +309,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollViewContent: {
+    padding: 16,
+  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -324,9 +328,13 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 4,
   },
-  notificationItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+  notificationCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 12,
+    overflow: 'hidden',
   },
   notificationContent: {
     flexDirection: 'row',

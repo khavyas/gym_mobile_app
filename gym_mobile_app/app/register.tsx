@@ -297,125 +297,137 @@ export default function Register() {
     }
   };
 
-  // Privacy Policy Modal Component
-  const PrivacyPolicyModal = () => (
-    <Modal
-      visible={showPrivacyModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowPrivacyModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Privacy Policy</Text>
-            <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
-              <Text style={styles.modalClose}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalText}>
-              <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
-              
-              <Text style={styles.modalBold}>1. Information We Collect{'\n'}</Text>
-              We collect personal information including your name, age, phone number, email address, and health-related data that you provide during registration and while using our services.{'\n\n'}
-              
-              <Text style={styles.modalBold}>2. How We Use Your Information{'\n'}</Text>
-              Your information is used to provide personalized fitness guidance, track your wellness journey, connect you with fitness consultants, and improve our services.{'\n\n'}
-              
-              <Text style={styles.modalBold}>3. Data Security{'\n'}</Text>
-              We implement industry-standard security measures to protect your personal and health data. All data transmissions are encrypted using secure protocols.{'\n\n'}
-              
-              <Text style={styles.modalBold}>4. Data Sharing{'\n'}</Text>
-              We do not sell your personal information. Your health data is only shared with assigned fitness consultants to provide you with professional guidance.{'\n\n'}
-              
-              <Text style={styles.modalBold}>5. Your Rights{'\n'}</Text>
-              You have the right to access, modify, or delete your personal data at any time through your profile settings.{'\n\n'}
-              
-              <Text style={styles.modalBold}>6. Cookies and Tracking{'\n'}</Text>
-              We use cookies and similar technologies to enhance your experience and analyze app usage.{'\n\n'}
-              
-              <Text style={styles.modalBold}>7. Contact Us{'\n'}</Text>
-              For privacy concerns, contact us at privacy@healthhub.com
-            </Text>
-            <View style={{ height: 100 }} />
-          </ScrollView>
-          
+const PrivacyPolicyModal = () => (
+  <Modal
+    visible={showPrivacyModal}
+    animationType="slide"
+    transparent={true}
+    onRequestClose={() => setShowPrivacyModal(false)}
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Privacy Policy</Text>
           <TouchableOpacity 
-            style={styles.modalButton}
             onPress={() => setShowPrivacyModal(false)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.modalButtonText}>Close</Text>
+            <Text style={styles.modalClose}>✕</Text>
           </TouchableOpacity>
         </View>
+        
+        <ScrollView 
+          style={styles.modalContent} 
+          showsVerticalScrollIndicator={true}
+          bounces={true}
+        >
+          <Text style={styles.modalText}>
+            <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
+            
+            <Text style={styles.modalBold}>1. Information We Collect{'\n'}</Text>
+            We collect personal information including your name, age, phone number, email address, and health-related data that you provide during registration and while using our services.{'\n\n'}
+            
+            <Text style={styles.modalBold}>2. How We Use Your Information{'\n'}</Text>
+            Your information is used to provide personalized fitness guidance, track your wellness journey, connect you with fitness consultants, and improve our services.{'\n\n'}
+            
+            <Text style={styles.modalBold}>3. Data Security{'\n'}</Text>
+            We implement industry-standard security measures to protect your personal and health data. All data transmissions are encrypted using secure protocols.{'\n\n'}
+            
+            <Text style={styles.modalBold}>4. Data Sharing{'\n'}</Text>
+            We do not sell your personal information. Your health data is only shared with assigned fitness consultants to provide you with professional guidance.{'\n\n'}
+            
+            <Text style={styles.modalBold}>5. Your Rights{'\n'}</Text>
+            You have the right to access, modify, or delete your personal data at any time through your profile settings.{'\n\n'}
+            
+            <Text style={styles.modalBold}>6. Cookies and Tracking{'\n'}</Text>
+            We use cookies and similar technologies to enhance your experience and analyze app usage.{'\n\n'}
+            
+            <Text style={styles.modalBold}>7. Contact Us{'\n'}</Text>
+            For privacy concerns, contact us at privacy@healthhub.com
+          </Text>
+        </ScrollView>
+        
+        <TouchableOpacity 
+          style={styles.modalButton}
+          onPress={() => setShowPrivacyModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Close</Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
-  );
+    </View>
+  </Modal>
+);
 
-  // Terms of Service Modal Component
-  const TermsOfServiceModal = () => (
-    <Modal
-      visible={showTermsModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowTermsModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Terms of Service</Text>
-            <TouchableOpacity onPress={() => setShowTermsModal(false)}>
-              <Text style={styles.modalClose}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalText}>
-              <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
-              
-              <Text style={styles.modalBold}>1. Acceptance of Terms{'\n'}</Text>
-              By creating an account and using HealthHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
-              
-              <Text style={styles.modalBold}>2. User Responsibilities{'\n'}</Text>
-              You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.{'\n\n'}
-              
-              <Text style={styles.modalBold}>3. Health Disclaimer{'\n'}</Text>
-              The fitness guidance provided is for informational purposes only and does not constitute medical advice. Always consult with healthcare professionals before starting any fitness program.{'\n\n'}
-              
-              <Text style={styles.modalBold}>4. User Conduct{'\n'}</Text>
-              You agree not to use the service for any unlawful purpose, harass other users, or post inappropriate content.{'\n\n'}
-              
-              <Text style={styles.modalBold}>5. Consultant Services{'\n'}</Text>
-              Fitness consultants are independent professionals. HealthHub facilitates connections but does not guarantee specific results.{'\n\n'}
-              
-              <Text style={styles.modalBold}>6. Intellectual Property{'\n'}</Text>
-              All content, features, and functionality are owned by HealthHub and protected by copyright and trademark laws.{'\n\n'}
-              
-              <Text style={styles.modalBold}>7. Account Termination{'\n'}</Text>
-              We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.{'\n\n'}
-              
-              <Text style={styles.modalBold}>8. Limitation of Liability{'\n'}</Text>
-              HealthHub is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
-              
-              <Text style={styles.modalBold}>9. Changes to Terms{'\n'}</Text>
-              We may modify these terms at any time. Continued use after changes constitutes acceptance of new terms.{'\n\n'}
-              
-              <Text style={styles.modalBold}>10. Contact Information{'\n'}</Text>
-              For questions about these terms, contact us at support@healthhub.com
-            </Text>
-          </ScrollView>
-          
+// Terms of Service Modal Component
+const TermsOfServiceModal = () => (
+  <Modal
+    visible={showTermsModal}
+    animationType="slide"
+    transparent={true}
+    onRequestClose={() => setShowTermsModal(false)}
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Terms of Service</Text>
           <TouchableOpacity 
-            style={styles.modalButton}
             onPress={() => setShowTermsModal(false)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.modalButtonText}>Close</Text>
+            <Text style={styles.modalClose}>✕</Text>
           </TouchableOpacity>
         </View>
+        
+        <ScrollView 
+          style={styles.modalContent} 
+          showsVerticalScrollIndicator={true}
+          bounces={true}
+        >
+          <Text style={styles.modalText}>
+            <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
+            
+            <Text style={styles.modalBold}>1. Acceptance of Terms{'\n'}</Text>
+            By creating an account and using HealthHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
+            
+            <Text style={styles.modalBold}>2. User Responsibilities{'\n'}</Text>
+            You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.{'\n\n'}
+            
+            <Text style={styles.modalBold}>3. Health Disclaimer{'\n'}</Text>
+            The fitness guidance provided is for informational purposes only and does not constitute medical advice. Always consult with healthcare professionals before starting any fitness program.{'\n\n'}
+            
+            <Text style={styles.modalBold}>4. User Conduct{'\n'}</Text>
+            You agree not to use the service for any unlawful purpose, harass other users, or post inappropriate content.{'\n\n'}
+            
+            <Text style={styles.modalBold}>5. Consultant Services{'\n'}</Text>
+            Fitness consultants are independent professionals. HealthHub facilitates connections but does not guarantee specific results.{'\n\n'}
+            
+            <Text style={styles.modalBold}>6. Intellectual Property{'\n'}</Text>
+            All content, features, and functionality are owned by HealthHub and protected by copyright and trademark laws.{'\n\n'}
+            
+            <Text style={styles.modalBold}>7. Account Termination{'\n'}</Text>
+            We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.{'\n\n'}
+            
+            <Text style={styles.modalBold}>8. Limitation of Liability{'\n'}</Text>
+            HealthHub is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
+            
+            <Text style={styles.modalBold}>9. Changes to Terms{'\n'}</Text>
+            We may modify these terms at any time. Continued use after changes constitutes acceptance of new terms.{'\n\n'}
+            
+            <Text style={styles.modalBold}>10. Contact Information{'\n'}</Text>
+            For questions about these terms, contact us at support@healthhub.com
+          </Text>
+        </ScrollView>
+        
+        <TouchableOpacity 
+          style={styles.modalButton}
+          onPress={() => setShowTermsModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Close</Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
-  );
+    </View>
+  </Modal>
+);
 
   return (
     <KeyboardAvoidingView 
@@ -842,6 +854,7 @@ scrollContainer: {
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 6,
   },
   passwordInput: {
     flex: 1,
@@ -872,18 +885,23 @@ scrollContainer: {
   roleCardContent: {
     alignItems: 'center',
   },
-  modalOverlay: {
+// Replace your modal styles with these corrected versions
+
+modalOverlay: {
   flex: 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+  backgroundColor: 'rgba(0, 0, 0, 0.85)',
   justifyContent: 'center',
-  alignItems: 'center',
-  padding: 20,
+  alignItems: 'flex-start',
+  paddingHorizontal: 24, // Horizontal padding only
+  paddingVertical: 40, // Vertical padding to keep modal away from edges
 },
+
 modalContainer: {
-  backgroundColor: '#1F2937',
+  backgroundColor: 'rgba(31, 41, 55, 0.95)',
   borderRadius: 16,
-  width: '100%',
-  maxHeight: '80%',
+  width: '70%',
+  maxHeight: '100%', // Changed from 80% to 100%
+  overflow: 'hidden', // Prevent content overflow
   borderWidth: 1,
   borderColor: '#374151',
   shadowColor: '#000',
@@ -892,52 +910,74 @@ modalContainer: {
   shadowRadius: 8,
   elevation: 10,
 },
+
 modalHeader: {
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: 20,
+  paddingHorizontal: 24,
+  paddingVertical: 16, // Reduced from 20
   borderBottomWidth: 1,
   borderBottomColor: '#374151',
+  backgroundColor: 'transparent',
+  borderTopLeftRadius: 16,
+  borderTopRightRadius: 16,
 },
+
 modalTitle: {
   fontSize: 20,
   fontWeight: 'bold',
   color: '#10B981',
 },
+
 modalClose: {
   fontSize: 28,
   color: '#9CA3AF',
   fontWeight: '300',
+  padding: 4,
 },
+
 modalContent: {
-  padding: 20,
-  maxHeight: 400,
+  paddingHorizontal: 24,
+  paddingTop: 16, // Reduced from 20
+  paddingBottom: 16, // Reduced from 20
+  flex: 1, // Takes remaining space
 },
+
 modalText: {
   fontSize: 14,
   color: '#D1D5DB',
   lineHeight: 22,
+  paddingBottom: 20,
 },
+
 modalBold: {
   fontWeight: 'bold',
   color: '#E5E7EB',
   fontSize: 15,
 },
+
 modalButton: {
   backgroundColor: '#10B981',
-  margin: 20,
-  marginTop: 0,
-  paddingVertical: 14,
+  marginHorizontal: 24,
+  marginTop: 12, // Reduced from 20
+  marginBottom: 16, // Reduced from 20
+  paddingVertical: 16,
   borderRadius: 12,
   alignItems: 'center',
+  shadowColor: '#10B981',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.4,
+  shadowRadius: 4,
+  elevation: 5,
 },
+
 modalButtonText: {
   color: '#FFFFFF',
   fontSize: 16,
   fontWeight: 'bold',
 },
- 
+
   eyeIconButton: {
     backgroundColor: 'transparent',
     paddingHorizontal: 16,

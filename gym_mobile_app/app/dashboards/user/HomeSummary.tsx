@@ -647,7 +647,7 @@ useEffect(() => {
 </View>
 
         {/* Upcoming Session */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Upcoming Session</Text>
           <View style={styles.sessionCard}>
             <View style={styles.sessionInfo}>
@@ -664,10 +664,10 @@ useEffect(() => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </View> */}
 
         {/* Classes Banner - Updated with API data */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Upcoming Classes</Text>
             {error && (
@@ -724,10 +724,10 @@ useEffect(() => {
               })}
             </ScrollView>
           )}
-        </View>
+        </View> */}
 
         {/* Weekly Overview */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>This Week</Text>
           <View style={styles.weeklyCard}>
             <View style={styles.weeklyStats}>
@@ -748,10 +748,10 @@ useEffect(() => {
               <Text style={styles.viewProgressText}>View Full Progress →</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
 
         {/* Achievement Badge */}
-        <View style={styles.achievementCard}>
+        {/* <View style={styles.achievementCard}>
           <View style={styles.badge}>
             <Text style={styles.badgeIcon}>🏆</Text>
           </View>
@@ -759,7 +759,10 @@ useEffect(() => {
             <Text style={styles.achievementTitle}>Streak Master!</Text>
             <Text style={styles.achievementDesc}>You've worked out 7 days in a row</Text>
           </View>
-        </View>
+        </View> */}
+
+
+        
       </ScrollView>
     </SafeAreaView>
   );

@@ -60,7 +60,7 @@ export default function Consultants() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<'rating' | 'price' | 'experience'>('rating');
 
-  const specialties = ["All", "Nutrition", "Training", "Therapy", "Yoga", "Cardio"];
+  // const specialties = ["All", "Nutrition", "Training", "Therapy", "Yoga", "Cardio"];
 
   useEffect(() => {
     fetchConsultants();
@@ -92,41 +92,37 @@ export default function Consultants() {
     }
   };
 
-  // Enhanced filtering logic
   const filteredAndSortedConsultants = useMemo(() => {
     let filtered = consultants;
 
-    // Filter by search query across multiple fields
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(consultant => {
         return (
           // Search in name
-          consultant.name.toLowerCase().includes(query) ||
+          (consultant.name?.toLowerCase() || '').includes(query) ||
           // Search in specialty
-          consultant.specialty.toLowerCase().includes(query) ||
+          (consultant.specialty?.toLowerCase() || '').includes(query) ||
           // Search in description
-          consultant.description.toLowerCase().includes(query) ||
+          (consultant.description?.toLowerCase() || '').includes(query) ||
           // Search in badges
-          consultant.badges.some(badge => badge.toLowerCase().includes(query)) ||
+          (consultant.badges && consultant.badges.some(badge => badge?.toLowerCase().includes(query))) ||
           // Search in certifications
-          consultant.certifications.some(cert => cert.toLowerCase().includes(query)) ||
+          (consultant.certifications && consultant.certifications.some(cert => cert?.toLowerCase().includes(query))) ||
           // Search in mode of training
-          consultant.modeOfTraining.toLowerCase().includes(query) ||
+          (consultant.modeOfTraining?.toLowerCase() || '').includes(query) ||
           // Search in availability status
-          consultant.availability.status.toLowerCase().includes(query)
+          (consultant.availability?.status?.toLowerCase() || '').includes(query)
         );
       });
     }
 
-    // Filter by specialty
     if (selectedSpecialty !== "All") {
       filtered = filtered.filter(consultant => 
         consultant.specialty.toLowerCase() === selectedSpecialty.toLowerCase()
       );
     }
 
-    // Sort consultants
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'rating':
@@ -299,83 +295,85 @@ export default function Consultants() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Find a Consultant</Text>
-          <Text style={styles.subtitle}>Expert guidance for your fitness journey</Text>
-        </View>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterIcon}>🔍</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Enhanced Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, specialty, skills..."
-            placeholderTextColor="#94A3B8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <Text style={styles.clearButtonText}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        {searchQuery.length > 0 && (
-          <Text style={styles.searchHint}>
-            Searching across name, specialty, description, badges & skills
-          </Text>
-        )}
-      </View>
-
-      {/* Specialty Filter */}
-      <View style={styles.specialtyContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.specialtyList}>
-            {specialties.map((specialty, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.specialtyChip,
-                  specialty === selectedSpecialty && styles.specialtyChipActive
-                ]}
-                onPress={() => handleSpecialtyPress(specialty)}
-              >
-                <Text style={[
-                  styles.specialtyText,
-                  specialty === selectedSpecialty && styles.specialtyTextActive
-                ]}>
-                  {specialty}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* Results Header with Enhanced Sort */}
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsText}>
-          {filteredAndSortedConsultants.length} consultant{filteredAndSortedConsultants.length !== 1 ? 's' : ''} found
-          {searchQuery && ` for "${searchQuery}"`}
-        </Text>
-        <TouchableOpacity style={styles.sortButton} onPress={handleSortPress}>
-          <Text style={styles.sortText}>{getSortText()}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Consultants List */}
+      {/* MAIN SCROLLVIEW - Everything scrolls together now */}
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
+        stickyHeaderIndices={[]} // Remove if you don't want any sticky headers
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Find a Consultant</Text>
+            <Text style={styles.subtitle}>Expert guidance for your fitness journey</Text>
+          </View>
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterIcon}>🔍</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Enhanced Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name, specialty, skills..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {searchQuery.length > 0 && (
+            <Text style={styles.searchHint}>
+              Searching across name, specialty, description, badges & skills
+            </Text>
+          )}
+        </View>
+
+        {/* Specialty Filter */}
+        {/* <View style={styles.specialtyContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.specialtyList}>
+              {specialties.map((specialty, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.specialtyChip,
+                    specialty === selectedSpecialty && styles.specialtyChipActive
+                  ]}
+                  onPress={() => handleSpecialtyPress(specialty)}
+                >
+                  <Text style={[
+                    styles.specialtyText,
+                    specialty === selectedSpecialty && styles.specialtyTextActive
+                  ]}>
+                    {specialty}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View> */}
+
+        {/* Results Header with Enhanced Sort */}
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsText}>
+            {filteredAndSortedConsultants.length} consultant{filteredAndSortedConsultants.length !== 1 ? 's' : ''} found
+            {searchQuery && ` for "${searchQuery}"`}
+          </Text>
+          <TouchableOpacity style={styles.sortButton} onPress={handleSortPress}>
+            <Text style={styles.sortText}>{getSortText()}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Consultants List */}
         {filteredAndSortedConsultants.length === 0 ? (
           <View style={styles.noResultsContainer}>
             <Text style={styles.noResultsEmoji}>🔍</Text>
@@ -440,6 +438,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
+  },
+  scrollContainer: {
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -563,9 +564,6 @@ const styles = StyleSheet.create({
     color: '#10B981',
     fontSize: 12,
     fontWeight: '500',
-  },
-  scrollContainer: {
-    paddingBottom: 20,
   },
   consultantCard: {
     backgroundColor: '#1E293B',
@@ -775,7 +773,6 @@ const styles = StyleSheet.create({
   bookButtonTextDisabled: {
     color: '#94A3B8',
   },
-  // New styles for no results state
   noResultsContainer: {
     flex: 1,
     alignItems: 'center',
@@ -813,5 +810,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-
