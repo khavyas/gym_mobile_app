@@ -420,6 +420,7 @@ export default function Login() {
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Your wellness journey starts here</Text>
         </View>
+        <View style={{ height: 100 }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -437,15 +438,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#111827',
   },
-  // Gradient Background
-  gradientBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#111827',
-  },
+ 
+gradientBackground: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  minHeight: '200%',
+  backgroundColor: '#111827',
+},
   blob: {
     position: 'absolute',
     borderRadius: 9999,
@@ -489,12 +491,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     opacity: 0.3,
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: 60,
-    zIndex: 2,
-  },
+ scrollContent: {
+  flexGrow: 1,
+  padding: 24,
+  paddingTop: 60,
+  paddingBottom: 40, 
+  zIndex: 2,
+  minHeight: '100%', 
+},
   // Brand Section Styles
   brandContainer: {
     alignItems: 'center',
