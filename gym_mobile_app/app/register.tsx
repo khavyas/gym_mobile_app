@@ -7,7 +7,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Animated ,
+  Animated,
   Modal
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
 import { EyeIcon, EyeSlashIcon } from "react-native-heroicons/outline";
+import Svg, { Circle, Path, G, Defs, LinearGradient, Stop } from "react-native-svg";
 
 // Toast Component Props Interface
 interface ToastProps {
@@ -22,6 +23,124 @@ interface ToastProps {
   message: string;
   onHide: () => void;
 }
+
+// Floating Wellness Icon Component
+const FloatingIcon = ({ delay = 0, icon }: { delay?: number; icon: string }) => {
+  const [animation] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animation, {
+          toValue: 1,
+          duration: 3000,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animation, {
+          toValue: 0,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const translateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -20],
+  });
+
+  return (
+    <Animated.Text
+      style={[
+        styles.floatingIcon,
+        {
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      {icon}
+    </Animated.Text>
+  );
+};
+
+// Fitness Illustration SVG
+const FitnessIllustration = () => {
+  return (
+    <Svg width="180" height="180" viewBox="0 0 200 200" style={styles.illustration}>
+      <Defs>
+        <LinearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor="#10B981" stopOpacity="0.8" />
+          <Stop offset="100%" stopColor="#059669" stopOpacity="0.9" />
+        </LinearGradient>
+      </Defs>
+      
+      {/* Background circle */}
+      <Circle cx="100" cy="100" r="80" fill="url(#grad1)" opacity="0.2" />
+      
+      {/* Person doing exercise */}
+      <G>
+        {/* Head */}
+        <Circle cx="100" cy="50" r="18" fill="#10B981" />
+        
+        {/* Body */}
+        <Path
+          d="M 100 68 L 100 110"
+          stroke="#10B981"
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+        
+        {/* Left arm raised */}
+        <Path
+          d="M 100 75 Q 80 70 70 55"
+          stroke="#10B981"
+          strokeWidth="10"
+          strokeLinecap="round"
+          fill="none"
+        />
+        
+        {/* Right arm raised */}
+        <Path
+          d="M 100 75 Q 120 70 130 55"
+          stroke="#10B981"
+          strokeWidth="10"
+          strokeLinecap="round"
+          fill="none"
+        />
+        
+        {/* Left leg */}
+        <Path
+          d="M 100 110 L 85 145"
+          stroke="#10B981"
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+        
+        {/* Right leg */}
+        <Path
+          d="M 100 110 L 115 145"
+          stroke="#10B981"
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+        
+        {/* Dumbbell in left hand */}
+        <Circle cx="70" cy="55" r="6" fill="#10B981" />
+        
+        {/* Dumbbell in right hand */}
+        <Circle cx="130" cy="55" r="6" fill="#10B981" />
+      </G>
+      
+      {/* Energy particles */}
+      <Circle cx="65" cy="40" r="3" fill="#10B981" opacity="0.6" />
+      <Circle cx="135" cy="40" r="2.5" fill="#10B981" opacity="0.5" />
+      <Circle cx="125" cy="30" r="2" fill="#10B981" opacity="0.7" />
+      <Circle cx="75" cy="30" r="2.5" fill="#10B981" opacity="0.4" />
+    </Svg>
+  );
+};
 
 // Toast Component
 const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
@@ -179,146 +298,173 @@ export default function Register() {
   };
 
   // Privacy Policy Modal Component
-const PrivacyPolicyModal = () => (
-  <Modal
-    visible={showPrivacyModal}
-    animationType="slide"
-    transparent={true}
-    onRequestClose={() => setShowPrivacyModal(false)}
-  >
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Privacy Policy</Text>
-          <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
-            <Text style={styles.modalClose}>✕</Text>
+  const PrivacyPolicyModal = () => (
+    <Modal
+      visible={showPrivacyModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowPrivacyModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Privacy Policy</Text>
+            <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
+              
+              <Text style={styles.modalBold}>1. Information We Collect{'\n'}</Text>
+              We collect personal information including your name, age, phone number, email address, and health-related data that you provide during registration and while using our services.{'\n\n'}
+              
+              <Text style={styles.modalBold}>2. How We Use Your Information{'\n'}</Text>
+              Your information is used to provide personalized fitness guidance, track your wellness journey, connect you with fitness consultants, and improve our services.{'\n\n'}
+              
+              <Text style={styles.modalBold}>3. Data Security{'\n'}</Text>
+              We implement industry-standard security measures to protect your personal and health data. All data transmissions are encrypted using secure protocols.{'\n\n'}
+              
+              <Text style={styles.modalBold}>4. Data Sharing{'\n'}</Text>
+              We do not sell your personal information. Your health data is only shared with assigned fitness consultants to provide you with professional guidance.{'\n\n'}
+              
+              <Text style={styles.modalBold}>5. Your Rights{'\n'}</Text>
+              You have the right to access, modify, or delete your personal data at any time through your profile settings.{'\n\n'}
+              
+              <Text style={styles.modalBold}>6. Cookies and Tracking{'\n'}</Text>
+              We use cookies and similar technologies to enhance your experience and analyze app usage.{'\n\n'}
+              
+              <Text style={styles.modalBold}>7. Contact Us{'\n'}</Text>
+              For privacy concerns, contact us at privacy@healthhub.com
+            </Text>
+          </ScrollView>
+          
+          <TouchableOpacity 
+            style={styles.modalButton}
+            onPress={() => setShowPrivacyModal(false)}
+          >
+            <Text style={styles.modalButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
-        
-        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.modalText}>
-            <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
-            
-            <Text style={styles.modalBold}>1. Information We Collect{'\n'}</Text>
-            We collect personal information including your name, age, phone number, email address, and health-related data that you provide during registration and while using our services.{'\n\n'}
-            
-            <Text style={styles.modalBold}>2. How We Use Your Information{'\n'}</Text>
-            Your information is used to provide personalized fitness guidance, track your wellness journey, connect you with fitness consultants, and improve our services.{'\n\n'}
-            
-            <Text style={styles.modalBold}>3. Data Security{'\n'}</Text>
-            We implement industry-standard security measures to protect your personal and health data. All data transmissions are encrypted using secure protocols.{'\n\n'}
-            
-            <Text style={styles.modalBold}>4. Data Sharing{'\n'}</Text>
-            We do not sell your personal information. Your health data is only shared with assigned fitness consultants to provide you with professional guidance.{'\n\n'}
-            
-            <Text style={styles.modalBold}>5. Your Rights{'\n'}</Text>
-            You have the right to access, modify, or delete your personal data at any time through your profile settings.{'\n\n'}
-            
-            <Text style={styles.modalBold}>6. Cookies and Tracking{'\n'}</Text>
-            We use cookies and similar technologies to enhance your experience and analyze app usage.{'\n\n'}
-            
-            <Text style={styles.modalBold}>7. Contact Us{'\n'}</Text>
-            For privacy concerns, contact us at privacy@healthhub.com
-          </Text>
-        </ScrollView>
-        
-        <TouchableOpacity 
-          style={styles.modalButton}
-          onPress={() => setShowPrivacyModal(false)}
-        >
-          <Text style={styles.modalButtonText}>Close</Text>
-        </TouchableOpacity>
       </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  );
 
-// Terms of Service Modal Component
-const TermsOfServiceModal = () => (
-  <Modal
-    visible={showTermsModal}
-    animationType="slide"
-    transparent={true}
-    onRequestClose={() => setShowTermsModal(false)}
-  >
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Terms of Service</Text>
-          <TouchableOpacity onPress={() => setShowTermsModal(false)}>
-            <Text style={styles.modalClose}>✕</Text>
+  // Terms of Service Modal Component
+  const TermsOfServiceModal = () => (
+    <Modal
+      visible={showTermsModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowTermsModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Terms of Service</Text>
+            <TouchableOpacity onPress={() => setShowTermsModal(false)}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalText}>
+              <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
+              
+              <Text style={styles.modalBold}>1. Acceptance of Terms{'\n'}</Text>
+              By creating an account and using HealthHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
+              
+              <Text style={styles.modalBold}>2. User Responsibilities{'\n'}</Text>
+              You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.{'\n\n'}
+              
+              <Text style={styles.modalBold}>3. Health Disclaimer{'\n'}</Text>
+              The fitness guidance provided is for informational purposes only and does not constitute medical advice. Always consult with healthcare professionals before starting any fitness program.{'\n\n'}
+              
+              <Text style={styles.modalBold}>4. User Conduct{'\n'}</Text>
+              You agree not to use the service for any unlawful purpose, harass other users, or post inappropriate content.{'\n\n'}
+              
+              <Text style={styles.modalBold}>5. Consultant Services{'\n'}</Text>
+              Fitness consultants are independent professionals. HealthHub facilitates connections but does not guarantee specific results.{'\n\n'}
+              
+              <Text style={styles.modalBold}>6. Intellectual Property{'\n'}</Text>
+              All content, features, and functionality are owned by HealthHub and protected by copyright and trademark laws.{'\n\n'}
+              
+              <Text style={styles.modalBold}>7. Account Termination{'\n'}</Text>
+              We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.{'\n\n'}
+              
+              <Text style={styles.modalBold}>8. Limitation of Liability{'\n'}</Text>
+              HealthHub is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
+              
+              <Text style={styles.modalBold}>9. Changes to Terms{'\n'}</Text>
+              We may modify these terms at any time. Continued use after changes constitutes acceptance of new terms.{'\n\n'}
+              
+              <Text style={styles.modalBold}>10. Contact Information{'\n'}</Text>
+              For questions about these terms, contact us at support@healthhub.com
+            </Text>
+          </ScrollView>
+          
+          <TouchableOpacity 
+            style={styles.modalButton}
+            onPress={() => setShowTermsModal(false)}
+          >
+            <Text style={styles.modalButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
-        
-        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.modalText}>
-            <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
-            
-            <Text style={styles.modalBold}>1. Acceptance of Terms{'\n'}</Text>
-            By creating an account and using HealthHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
-            
-            <Text style={styles.modalBold}>2. User Responsibilities{'\n'}</Text>
-            You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.{'\n\n'}
-            
-            <Text style={styles.modalBold}>3. Health Disclaimer{'\n'}</Text>
-            The fitness guidance provided is for informational purposes only and does not constitute medical advice. Always consult with healthcare professionals before starting any fitness program.{'\n\n'}
-            
-            <Text style={styles.modalBold}>4. User Conduct{'\n'}</Text>
-            You agree not to use the service for any unlawful purpose, harass other users, or post inappropriate content.{'\n\n'}
-            
-            <Text style={styles.modalBold}>5. Consultant Services{'\n'}</Text>
-            Fitness consultants are independent professionals. HealthHub facilitates connections but does not guarantee specific results.{'\n\n'}
-            
-            <Text style={styles.modalBold}>6. Intellectual Property{'\n'}</Text>
-            All content, features, and functionality are owned by HealthHub and protected by copyright and trademark laws.{'\n\n'}
-            
-            <Text style={styles.modalBold}>7. Account Termination{'\n'}</Text>
-            We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.{'\n\n'}
-            
-            <Text style={styles.modalBold}>8. Limitation of Liability{'\n'}</Text>
-            HealthHub is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
-            
-            <Text style={styles.modalBold}>9. Changes to Terms{'\n'}</Text>
-            We may modify these terms at any time. Continued use after changes constitutes acceptance of new terms.{'\n\n'}
-            
-            <Text style={styles.modalBold}>10. Contact Information{'\n'}</Text>
-            For questions about these terms, contact us at support@healthhub.com
-          </Text>
-        </ScrollView>
-        
-        <TouchableOpacity 
-          style={styles.modalButton}
-          onPress={() => setShowTermsModal(false)}
-        >
-          <Text style={styles.modalButtonText}>Close</Text>
-        </TouchableOpacity>
       </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  );
 
   return (
-  <KeyboardAvoidingView 
-    style={styles.container} 
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-  >
-    <Toast 
-      visible={showToast} 
-      message={toastMessage} 
-      onHide={() => setShowToast(false)} 
-    />
-    
-    <PrivacyPolicyModal />
-    <TermsOfServiceModal />
-    
-    <ScrollView 
-      contentContainerStyle={styles.scrollContainer}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join our wellness community</Text>
+      {/* Gradient Background */}
+      <View style={styles.gradientBackground}>
+        {/* Decorative Blobs */}
+        <View style={[styles.blob, styles.blob1]} />
+        <View style={[styles.blob, styles.blob2]} />
+        <View style={[styles.blob, styles.blob3]} />
       </View>
+
+      {/* Floating Icons */}
+      <View style={styles.floatingIconsContainer}>
+        <View style={[styles.iconPosition, { top: 80, left: 20 }]}>
+          <FloatingIcon icon="💪" delay={0} />
+        </View>
+        <View style={[styles.iconPosition, { top: 120, right: 30 }]}>
+          <FloatingIcon icon="🏃" delay={500} />
+        </View>
+        <View style={[styles.iconPosition, { top: 200, left: 40 }]}>
+          <FloatingIcon icon="🌟" delay={1000} />
+        </View>
+        <View style={[styles.iconPosition, { top: 300, right: 25 }]}>
+          <FloatingIcon icon="❤️" delay={1500} />
+        </View>
+      </View>
+
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        onHide={() => setShowToast(false)} 
+      />
+      
+      <PrivacyPolicyModal />
+      <TermsOfServiceModal />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerContainer}>
+          <View style={styles.illustrationContainer}>
+            <FitnessIllustration />
+          </View>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join our wellness community</Text>
+        </View>
 
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
@@ -562,8 +708,167 @@ const TermsOfServiceModal = () => (
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
+    container: {
+    flex: 1,
+    backgroundColor: '#111827',
+  },
+  // Gradient Background
+  gradientBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#111827',
+  },
+  blob: {
+    position: 'absolute',
+    borderRadius: 9999,
+    opacity: 0.1,
+  },
+  blob1: {
+    width: 300,
+    height: 300,
+    backgroundColor: '#10B981',
+    top: -100,
+    right: -100,
+  },
+  blob2: {
+    width: 250,
+    height: 250,
+    backgroundColor: '#059669',
+    bottom: -50,
+    left: -80,
+  },
+  blob3: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#34D399',
+    top: '40%',
+    left: -50,
+  },
+  // Floating Icons
+  floatingIconsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    pointerEvents: 'none',
+  },
+  iconPosition: {
+    position: 'absolute',
+  },
+  floatingIcon: {
+    fontSize: 24,
+    opacity: 0.3,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 24,
+    paddingTop: 60,
+    zIndex: 2,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  illustrationContainer: {
+    marginBottom: 16,
+  },
+  illustration: {
+    opacity: 0.8,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#10B981',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#D1D5DB',
+    textAlign: 'center',
+  },
+  formContainer: {
+    backgroundColor: 'rgba(31, 41, 55, 0.8)',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E5E7EB',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    backgroundColor: '#111827',
+    padding: 16,
+    borderRadius: 12,
+    fontSize: 16,
+    color: '#F9FAFB',
+    fontWeight: '500',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    paddingRight: 12,
+  },
+  eyeButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: '#F9FAFB',
+    fontWeight: '500',
+  },
+  roleCardsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  roleCard: {
+    flex: 1,
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    position: 'relative',
+    minHeight: 140,
+  },
+  activeRoleCard: {
+    borderColor: '#10B981',
+    backgroundColor: '#065F46',
+  },
+  roleCardContent: {
+    alignItems: 'center',
+  },
   modalOverlay: {
   flex: 1,
   backgroundColor: 'rgba(0, 0, 0, 0.75)',
@@ -629,86 +934,7 @@ modalButtonText: {
   fontSize: 16,
   fontWeight: 'bold',
 },
-  passwordContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderWidth: 1.5,
-  borderColor: '#374151',
-  backgroundColor: '#111827',
-  borderRadius: 12,
-  paddingRight: 12,
-},
-eyeButton: {
-  padding: 8,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-  container: {
-    flex: 1,
-    backgroundColor: '#111827',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#10B981',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#D1D5DB',
-    textAlign: 'center',
-  },
-  formContainer: {
-    backgroundColor: '#1F2937',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#E5E7EB',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: '#374151',
-    backgroundColor: '#111827',
-    padding: 16,
-    borderRadius: 12,
-    fontSize: 16,
-    color: '#F9FAFB',
-    fontWeight: '500',
-  },
-
-  passwordInput: {
-    flex: 1,
-    padding: 16,
-    fontSize: 16,
-    color: '#F9FAFB',
-    fontWeight: '500',
-  },
+ 
   eyeIconButton: {
     backgroundColor: 'transparent',
     paddingHorizontal: 16,
@@ -719,28 +945,6 @@ eyeButton: {
   eyeIcon: {
     fontSize: 20,
     color: '#9CA3AF',
-  },
-  roleCardsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleCard: {
-    flex: 1,
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#374151',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    position: 'relative',
-    minHeight: 140,
-  },
-  activeRoleCard: {
-    borderColor: '#10B981',
-    backgroundColor: '#065F46',
-  },
-  roleCardContent: {
-    alignItems: 'center',
   },
   roleIcon: {
     width: 48,

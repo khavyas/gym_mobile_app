@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   TextInput, 
   StyleSheet, 
-  Alert 
+  Alert,
+  Animated 
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -25,7 +26,6 @@ import { router } from "expo-router";
 // API Configuration
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
-
 interface PasswordValidationResult {
   isValid: boolean;
   message: string;
@@ -38,6 +38,82 @@ interface PasswordValidationResult {
   };
 }
 
+// Toast Component Props Interface
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+  type?: 'success' | 'error'; 
+}
+
+// Toast Component
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide, type = 'success' }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+  const isError = type === 'error';
+  
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={[
+        styles.toastContent,
+        isError && styles.toastError
+      ]}>
+        <Text style={[
+          styles.toastIcon,
+          isError && styles.toastErrorIcon
+        ]}>
+          {isError ? '✗' : '✓'}
+        </Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function ChangePassword() {
   const navigation = useNavigation();
   const [newPassword, setNewPassword] = useState("");
@@ -45,6 +121,11 @@ export default function ChangePassword() {
   const [loading, setLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Toast states
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   
   // Validation states
   const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult>({
@@ -146,7 +227,9 @@ export default function ChangePassword() {
       // Validate form
       const validation = validateForm();
       if (!validation.isValid) {
-        Alert.alert("Validation Error", validation.message);
+        setToastType('error');
+        setToastMessage(validation.message);
+        setShowToast(true);
         return;
       }
 
@@ -155,13 +238,16 @@ export default function ChangePassword() {
       // Get userId from AsyncStorage
       const userId = await AsyncStorage.getItem("userId");
       if (!userId) {
-        Alert.alert("Error", "User not found. Please log in again.");
+        setToastType('error');
+        setToastMessage("User not found. Please log in again.");
+        setShowToast(true);
+        setLoading(false);
         return;
       }
 
       // Call change password API
       const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -173,27 +259,32 @@ export default function ChangePassword() {
 
       const data = await response.json();
 
-    if (response.ok) {
-      Alert.alert(
-        "Success",
-        "Password changed successfully!",
-        [
-          {
-            text: "OK",
-            onPress: () => router.push("/dashboards/user/ProfileSettings"),
-          },
-        ]
-      );
-      // Clear form
-      setNewPassword("");
-      setConfirmPassword("");
+      if (response.ok) {
+        // Show success toast
+        setToastType('success');
+        setToastMessage(data.message || "Password changed successfully!");
+        setShowToast(true);
+        
+        // Clear form
+        setNewPassword("");
+        setConfirmPassword("");
+        
+        // Navigate after toast is shown
+        setTimeout(() => {
+          router.push("/dashboards/user/ProfileSettings");
+        }, 1100);
       } else {
-        Alert.alert("Error", data.message || "Failed to change password");
+        // Show error toast
+        setToastType('error');
+        setToastMessage(data.message || "Failed to change password");
+        setShowToast(true);
       }
 
     } catch (error) {
       console.error('Error changing password:', error);
-      Alert.alert("Error", "Network error while changing password");
+      setToastType('error');
+      setToastMessage("Network error while changing password");
+      setShowToast(true);
     } finally {
       setLoading(false);
     }
@@ -201,11 +292,9 @@ export default function ChangePassword() {
 
   // Handle forgot password
   const handleForgotPassword = () => {
-    Alert.alert(
-      "Forgot Password",
-      "This feature will be implemented soon. Please contact support for password reset assistance.",
-      [{ text: "OK" }]
-    );
+    setToastType('error');
+    setToastMessage("This feature will be implemented soon. Please contact support.");
+    setShowToast(true);
   };
 
   // Render password criteria item
@@ -224,16 +313,24 @@ export default function ChangePassword() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
+      
+      {/* Toast Component */}
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        type={toastType}
+        onHide={() => setShowToast(false)} 
+      />
       
       {/* Header */}
       <View style={styles.header}>
-<TouchableOpacity 
-  style={styles.backButton} 
-  onPress={() => router.back()}
->
-  <ChevronLeftIcon size={24} color="#FFFFFF" />
-</TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <ChevronLeftIcon size={24} color="#FFFFFF" />
+        </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Change Password</Text>
@@ -277,6 +374,7 @@ export default function ChangePassword() {
                   secureTextEntry={!showNewPassword}
                   placeholder="Enter new password"
                   placeholderTextColor="#6B7280"
+                  editable={!loading}
                 />
                 <TouchableOpacity 
                   style={styles.eyeButton}
@@ -317,6 +415,7 @@ export default function ChangePassword() {
                   secureTextEntry={!showConfirmPassword}
                   placeholder="Confirm new password"
                   placeholderTextColor="#6B7280"
+                  editable={!loading}
                 />
                 <TouchableOpacity 
                   style={styles.eyeButton}
@@ -341,7 +440,7 @@ export default function ChangePassword() {
                   ) : (
                     <View style={styles.matchError}>
                       <XCircleIcon size={16} color="#EF4444" />
-                      <Text style={styles.matchErrorText}>Password mismatch happened</Text>
+                      <Text style={styles.matchErrorText}>Passwords do not match</Text>
                     </View>
                   )}
                 </View>
@@ -584,5 +683,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastError: {
+    backgroundColor: '#7F1D1D',
+    borderLeftColor: '#EF4444',
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastErrorIcon: {
+    color: '#EF4444',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

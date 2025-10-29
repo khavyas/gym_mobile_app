@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { EyeIcon, EyeSlashIcon } from "react-native-heroicons/outline";
+import Svg, { Circle, Path, G, Defs, LinearGradient, Stop } from "react-native-svg";
 
 // Toast Component Props Interface
 interface ToastProps {
@@ -22,6 +23,102 @@ interface ToastProps {
   onHide: () => void;
   type?: 'success' | 'error'; 
 }
+
+// Floating Wellness Icon Component
+const FloatingIcon = ({ delay = 0, icon }: { delay?: number; icon: string }) => {
+  const [animation] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animation, {
+          toValue: 1,
+          duration: 3000,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animation, {
+          toValue: 0,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const translateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -20],
+  });
+
+  return (
+    <Animated.Text
+      style={[
+        styles.floatingIcon,
+        {
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      {icon}
+    </Animated.Text>
+  );
+};
+
+// Meditation Illustration SVG
+const MeditationIllustration = () => {
+  return (
+    <Svg width="200" height="200" viewBox="0 0 200 200" style={styles.illustration}>
+      <Defs>
+        <LinearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor="#10B981" stopOpacity="0.8" />
+          <Stop offset="100%" stopColor="#059669" stopOpacity="0.9" />
+        </LinearGradient>
+      </Defs>
+      
+      {/* Background circle */}
+      <Circle cx="100" cy="100" r="80" fill="url(#grad1)" opacity="0.2" />
+      
+      {/* Person sitting in meditation */}
+      <G>
+        {/* Head */}
+        <Circle cx="100" cy="60" r="20" fill="#10B981" />
+        
+        {/* Body */}
+        <Path
+          d="M 100 80 Q 85 100 85 120 L 85 130 Q 85 135 90 135 L 110 135 Q 115 135 115 130 L 115 120 Q 115 100 100 80 Z"
+          fill="#10B981"
+        />
+        
+        {/* Arms in meditation pose */}
+        <Path
+          d="M 85 95 Q 70 95 65 105 Q 60 110 65 115 Q 70 120 75 115 L 85 105"
+          fill="#10B981"
+        />
+        <Path
+          d="M 115 95 Q 130 95 135 105 Q 140 110 135 115 Q 130 120 125 115 L 115 105"
+          fill="#10B981"
+        />
+        
+        {/* Legs crossed */}
+        <Path
+          d="M 85 135 Q 75 140 70 145 L 60 150 Q 55 152 60 155 L 80 155"
+          fill="#10B981"
+        />
+        <Path
+          d="M 115 135 Q 125 140 130 145 L 140 150 Q 145 152 140 155 L 120 155"
+          fill="#10B981"
+        />
+      </G>
+      
+      {/* Floating particles */}
+      <Circle cx="70" cy="50" r="3" fill="#10B981" opacity="0.6" />
+      <Circle cx="130" cy="60" r="2" fill="#10B981" opacity="0.5" />
+      <Circle cx="120" cy="40" r="2.5" fill="#10B981" opacity="0.7" />
+      <Circle cx="80" cy="35" r="2" fill="#10B981" opacity="0.4" />
+    </Svg>
+  );
+};
 
 export default function Login() {
   const router = useRouter();
@@ -193,6 +290,30 @@ export default function Login() {
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* Gradient Background */}
+      <View style={styles.gradientBackground}>
+        {/* Decorative Blobs */}
+        <View style={[styles.blob, styles.blob1]} />
+        <View style={[styles.blob, styles.blob2]} />
+        <View style={[styles.blob, styles.blob3]} />
+      </View>
+
+      {/* Floating Icons */}
+      <View style={styles.floatingIconsContainer}>
+        <View style={[styles.iconPosition, { top: 100, left: 30 }]}>
+          <FloatingIcon icon="🧘" delay={0} />
+        </View>
+        <View style={[styles.iconPosition, { top: 150, right: 40 }]}>
+          <FloatingIcon icon="💚" delay={500} />
+        </View>
+        <View style={[styles.iconPosition, { top: 250, left: 50 }]}>
+          <FloatingIcon icon="🌿" delay={1000} />
+        </View>
+        <View style={[styles.iconPosition, { top: 350, right: 30 }]}>
+          <FloatingIcon icon="✨" delay={1500} />
+        </View>
+      </View>
+
       <Toast 
         visible={showToast} 
         message={toastMessage} 
@@ -205,8 +326,11 @@ export default function Login() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Logo and Brand Section */}
+        {/* Logo and Brand Section with Illustration */}
         <View style={styles.brandContainer}>
+          <View style={styles.illustrationContainer}>
+            <MeditationIllustration />
+          </View>
           <View style={styles.logoContainer}>
             <Text style={styles.heartIcon}>♡</Text>
           </View>
@@ -313,15 +437,74 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#111827',
   },
+  // Gradient Background
+  gradientBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#111827',
+  },
+  blob: {
+    position: 'absolute',
+    borderRadius: 9999,
+    opacity: 0.1,
+  },
+  blob1: {
+    width: 300,
+    height: 300,
+    backgroundColor: '#10B981',
+    top: -100,
+    right: -100,
+  },
+  blob2: {
+    width: 250,
+    height: 250,
+    backgroundColor: '#059669',
+    bottom: -50,
+    left: -80,
+  },
+  blob3: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#34D399',
+    top: '40%',
+    left: -50,
+  },
+  // Floating Icons
+  floatingIconsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    pointerEvents: 'none',
+  },
+  iconPosition: {
+    position: 'absolute',
+  },
+  floatingIcon: {
+    fontSize: 24,
+    opacity: 0.3,
+  },
   scrollContent: {
     flexGrow: 1,
     padding: 24,
     paddingTop: 60,
+    zIndex: 2,
   },
   // Brand Section Styles
   brandContainer: {
     alignItems: 'center',
     marginBottom: 32,
+  },
+  illustrationContainer: {
+    marginBottom: 16,
+  },
+  illustration: {
+    opacity: 0.8,
   },
   logoContainer: {
     width: 80,
@@ -331,6 +514,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   heartIcon: {
     fontSize: 36,
@@ -359,21 +547,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#9CA3AF',
   },
-  formContainer: {
-    backgroundColor: '#1F2937',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: '#374151',
+formContainer: {
+  backgroundColor: 'rgba(31, 41, 55, 0.8)',
+  borderRadius: 16,
+  padding: 24,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 4,
   },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 10,
+  borderWidth: 1,
+  borderColor: '#374151',
+},
   inputContainer: {
     marginBottom: 20,
   },
