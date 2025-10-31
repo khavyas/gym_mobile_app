@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-// Import the NotificationModal component
 import NotificationModal, { Notification } from './ui/NotificationModal';
+// import WearablesModal from '../app/dashboards/user/WearablesModal';
 
 interface HeaderProps {
   title?: string;
@@ -107,6 +107,7 @@ export default function Header({
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showWearables, setShowWearables] = useState(false);
 
   // Load notifications on mount
   useEffect(() => {
@@ -132,6 +133,10 @@ export default function Header({
   const handleRemoveNotification = (id: string) => {
     setNotifications((prev) => prev.filter((notif) => notif.id !== id));
   };
+
+  const handlewatchPress = () => {
+  router.push('/dashboards/user/WearablesModal');
+};
 
   const handleMarkAllRead = () => {
     setNotifications([]);
@@ -166,8 +171,8 @@ export default function Header({
           <TouchableOpacity style={styles.iconButton} onPress={handleWellBeingPress}>
             <Ionicons name="fitness-outline" size={18} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="watch-outline" size={18} color="#fff" />
+          <TouchableOpacity style={styles.iconButton} onPress={handlewatchPress}>
+                <Ionicons name="watch-outline" size={18} color="#fff" />
           </TouchableOpacity>
           
           {/* Notification Button */}
@@ -188,6 +193,12 @@ export default function Header({
           </TouchableOpacity>
         </View>
       </View>
+
+{/* 
+      <WearablesModal
+        visible={showWearables}
+        onClose={() => setShowWearables(false)}
+      /> */}
 
       {/* Notification Modal */}
       <NotificationModal

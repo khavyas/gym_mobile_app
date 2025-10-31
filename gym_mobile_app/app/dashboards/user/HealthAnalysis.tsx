@@ -44,71 +44,70 @@ export default function HealthAnalysis() {
     loadHealthData();
   }, []);
 
-  const loadHealthData = async () => {
-    try {
-      const userId = await AsyncStorage.getItem('userId');
-      const token = await AsyncStorage.getItem('userToken');
+const loadHealthData = async () => {
+  try {
+    const userId = await AsyncStorage.getItem('userId');
+    const token = await AsyncStorage.getItem('userToken');
 
-      if (userId && token) {
-        // Simulated data - replace with actual API call
-        setTimeout(() => {
-          setHealthData({
-            dataProcessing: {
-              status: 'Complete',
-              daysAnalyzed: 30,
+    if (userId && token) {
+      // Simulated data - replace with actual API call
+      setTimeout(() => {
+        setHealthData({
+          dataProcessing: {
+            status: 'Complete',
+            daysAnalyzed: 30,
+          },
+          patternRecognition: {
+            confidence: 94,
+          },
+          lastUpdated: '2 hours ago',
+          nextAnalysis: 'Tomorrow',
+          riskSignals: [
+            {
+              title: 'Recurring Digestive Issues',
+              level: 'HIGH RISK',
+              description: 'Strong correlation detected between dairy consumption and digestive symptoms over the past 3 weeks.',
+              color: 'rgba(127, 29, 29, 0.3)',
             },
-            patternRecognition: {
-              confidence: 94,
+            {
+              title: 'Irregular Sleep Pattern',
+              level: 'MEDIUM RISK',
+              description: 'Sleep quality has decreased by 23% over the last 14 days. Consider adjusting bedtime routine.',
+              color: 'rgba(120, 53, 15, 0.3)',
             },
-            lastUpdated: '2 hours ago',
-            nextAnalysis: 'Tomorrow',
-            riskSignals: [
-              {
-                title: 'Recurring Digestive Issues',
-                level: 'HIGH RISK',
-                description: 'Strong correlation detected between dairy consumption and digestive symptoms over the past 3 weeks.',
-                color: '#7F1D1D',
-              },
-              {
-                title: 'Irregular Sleep Pattern',
-                level: 'MEDIUM RISK',
-                description: 'Sleep quality has decreased by 23% over the last 14 days. Consider adjusting bedtime routine.',
-                color: '#78350F',
-              },
-              {
-                title: 'Hydration Levels',
-                level: 'LOW RISK',
-                description: 'Water intake is slightly below recommended levels. Aim for 8-10 glasses daily.',
-                color: '#1E3A8A',
-              },
-            ],
-            recommendations: [
-              {
-                title: 'Dietary Adjustment',
-                description: 'Consider reducing dairy intake and monitor symptoms',
-                priority: 'high',
-              },
-              {
-                title: 'Sleep Hygiene',
-                description: 'Establish consistent sleep schedule with 30-min wind-down routine',
-                priority: 'high',
-              },
-              {
-                title: 'Hydration Goal',
-                description: 'Set reminders to drink water throughout the day',
-                priority: 'medium',
-              },
-            ],
-          });
-          setLoading(false);
-        }, 1000);
-      }
-    } catch (error) {
-      console.error('Error loading health data:', error);
-      setLoading(false);
+            {
+              title: 'Hydration Levels',
+              level: 'LOW RISK',
+              description: 'Water intake is slightly below recommended levels. Aim for 8-10 glasses daily.',
+              color: 'rgba(30, 58, 138, 0.3)',
+            },
+          ],
+          recommendations: [
+            {
+              title: 'Dietary Adjustment',
+              description: 'Consider reducing dairy intake and monitor symptoms',
+              priority: 'high',
+            },
+            {
+              title: 'Sleep Hygiene',
+              description: 'Establish consistent sleep schedule with 30-min wind-down routine',
+              priority: 'high',
+            },
+            {
+              title: 'Hydration Goal',
+              description: 'Set reminders to drink water throughout the day',
+              priority: 'medium',
+            },
+          ],
+        });
+        setLoading(false);
+      }, 1000);
     }
-  };
-
+  } catch (error) {
+    console.error('Error loading health data:', error);
+    setLoading(false);
+  }
+};
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'HIGH RISK':
@@ -269,6 +268,92 @@ export default function HealthAnalysis() {
 }
 
 const styles = StyleSheet.create({
+  disclaimerCard: {
+  backgroundColor: 'rgba(120, 53, 15, 0.2)', // Much more subtle brown/orange
+  marginHorizontal: 16,
+  marginBottom: 20,
+  padding: 16,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: 'rgba(251, 191, 36, 0.3)', // Softer border
+},
+
+// Update disclaimer text colors:
+disclaimerTitle: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#FCD34D', // Softer yellow
+  marginLeft: 8,
+},
+
+disclaimerText: {
+  fontSize: 14,
+  color: '#FDE68A', // Lighter, more readable yellow
+  lineHeight: 20,
+},
+
+
+riskCard: {
+  padding: 16,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: 'rgba(255, 255, 255, 0.1)',
+  
+},
+
+// Update risk title color for better contrast:
+riskTitle: {
+  fontSize: 18,
+  fontWeight: '600',
+  color: '#FFFFFF', // Changed from #FCA5A5 to white for better readability
+  marginLeft: 8,
+  flex: 1,
+},
+
+// Update risk badge styling:
+riskBadge: {
+  backgroundColor: 'rgba(220, 38, 38, 0.2)', // Even more subtle
+  alignSelf: 'flex-start',
+  paddingHorizontal: 12,
+  paddingVertical: 4,
+  borderRadius: 12,
+  marginBottom: 12,
+  borderWidth: 1,
+  borderColor: 'rgba(252, 165, 165, 0.3)', // Add subtle border
+},
+
+riskBadgeText: {
+  fontSize: 11,
+  fontWeight: '700',
+  color: '#FCA5A5',
+  letterSpacing: 0.5,
+},
+
+// Update risk description for better readability:
+riskDescription: {
+  fontSize: 14,
+  color: '#E2E8F0', // Changed from #FCA5A5 to light gray for better readability
+  lineHeight: 20,
+},
+
+// Add action buttons to risk cards (optional enhancement):
+riskAction: {
+  marginTop: 12,
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  backgroundColor: 'rgba(14, 165, 233, 0.15)',
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: 'rgba(14, 165, 233, 0.3)',
+  alignSelf: 'flex-start',
+},
+
+riskActionText: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#0EA5E9',
+},
+
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -300,31 +385,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#94A3B8',
   },
-  disclaimerCard: {
-    backgroundColor: '#78350F',
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#92400E',
-  },
+
   disclaimerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
-  disclaimerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FDE68A',
-    marginLeft: 8,
-  },
-  disclaimerText: {
-    fontSize: 14,
-    color: '#FEF3C7',
-    lineHeight: 20,
-  },
+
   card: {
     backgroundColor: '#1E293B',
     marginHorizontal: 16,
@@ -419,42 +486,10 @@ const styles = StyleSheet.create({
   riskSignalsContainer: {
     gap: 16,
   },
-  riskCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
   riskHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  riskTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FCA5A5',
-    marginLeft: 8,
-    flex: 1,
-  },
-  riskBadge: {
-    backgroundColor: 'rgba(220, 38, 38, 0.3)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  riskBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FCA5A5',
-    letterSpacing: 0.5,
-  },
-  riskDescription: {
-    fontSize: 14,
-    color: '#FCA5A5',
-    lineHeight: 20,
   },
   recommendationsContainer: {
     gap: 16,

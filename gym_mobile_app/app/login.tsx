@@ -21,7 +21,7 @@ interface ToastProps {
   visible: boolean;
   message: string;
   onHide: () => void;
-  type?: 'success' | 'error'; 
+  type?: 'success' | 'error';   
 }
 
 // Floating Wellness Icon Component
