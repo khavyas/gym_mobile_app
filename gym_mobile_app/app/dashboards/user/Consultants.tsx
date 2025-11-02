@@ -312,6 +312,26 @@ export default function Consultants() {
           </TouchableOpacity>
         </View>
 
+        {/* View My Appointments Button */}
+        <View style={styles.appointmentsButtonContainer}>
+          <TouchableOpacity 
+            style={styles.appointmentsButton}
+            onPress={() => router.push('/dashboards/user/Appointments')}
+          >
+            <View style={styles.appointmentsButtonContent}>
+              <View style={styles.appointmentsIconContainer}>
+                <Text style={styles.appointmentsIcon}>📅</Text>
+              </View>
+              <View style={styles.appointmentsTextContainer}>
+                <Text style={styles.appointmentsButtonTitle}>My Appointments</Text>
+                <Text style={styles.appointmentsButtonSubtitle}>View your scheduled sessions</Text>
+              </View>
+              <Text style={styles.appointmentsArrow}>→</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+
         {/* Enhanced Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
@@ -402,6 +422,56 @@ export default function Consultants() {
 }
 
 const styles = StyleSheet.create({
+  appointmentsButtonContainer: {
+  paddingHorizontal: 20,
+  marginBottom: 20,
+},
+appointmentsButton: {
+  backgroundColor: '#1E293B',
+  borderRadius: 16,
+  padding: 16,
+  borderWidth: 1,
+  borderColor: '#10B981',
+  shadowColor: '#10B981',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 4,
+},
+appointmentsButtonContent: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 12,
+},
+appointmentsIconContainer: {
+  width: 48,
+  height: 48,
+  borderRadius: 12,
+  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+appointmentsIcon: {
+  fontSize: 24,
+},
+appointmentsTextContainer: {
+  flex: 1,
+},
+appointmentsButtonTitle: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#FFFFFF',
+  marginBottom: 2,
+},
+appointmentsButtonSubtitle: {
+  fontSize: 13,
+  color: '#94A3B8',
+},
+appointmentsArrow: {
+  fontSize: 20,
+  color: '#10B981',
+  fontWeight: '600',
+},
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -19,16 +19,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
-type TabParamList = {
-  Home: undefined;
-  Fitness: undefined;
-  Consultants: undefined;
-  Appointments: undefined;
-  Shop: undefined;
-  Challenges: undefined;
-  Health: undefined;
-  Profile: undefined;
-};
+// type TabParamList = {
+//   Home: undefined;
+//   Fitness: undefined;
+//   Consultants: undefined;
+//   Appointments: undefined;
+//   Shop: undefined;
+//   Challenges: undefined;
+//   Health: undefined;
+//   Profile: undefined;
+// };
 
 // Define Event type based on your backend Event model
 interface Event {
@@ -74,7 +74,7 @@ export default function HomeSummary() {
   const [waterLoading, setWaterLoading] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
-  const navigation = useNavigation<NavigationProp<TabParamList>>();
+  // const navigation = useNavigation<NavigationProp<TabParamList>>();
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
   const [recommendedVideo, setRecommendedVideo] = useState<VideoRecommendation | null>(null);
   const [featuredBlogs, setFeaturedBlogs] = useState<BlogPost[]>([]);
@@ -105,7 +105,7 @@ export default function HomeSummary() {
     setRecommendedVideo(video);
   }, []);
 useEffect(() => {
-  const blogs = getRandomBlogPosts(2);
+  const blogs = getRandomBlogPosts(1);
   setFeaturedBlogs(blogs);
 }, []);
 

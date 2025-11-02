@@ -5,26 +5,28 @@ import {
   HomeIcon, 
   UserGroupIcon, 
   ShoppingBagIcon, 
-  ChartPieIcon
+  ChartPieIcon,
+  ChatBubbleLeftRightIcon
 } from 'react-native-heroicons/outline';
 import { 
   HomeIcon as HomeIconSolid, 
   UserGroupIcon as UserGroupIconSolid, 
   ShoppingBagIcon as ShoppingBagIconSolid, 
-  ChartPieIcon as ChartPieIconSolid
+  ChartPieIcon as ChartPieIconSolid,
+  ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid
 } from 'react-native-heroicons/solid';
 
-// Import your screens - adjusted paths for components folder
+// Import your screens
 import HomeSummary from '../app/dashboards/user/HomeSummary';
 import ProgressOverview from '../app/dashboards/user/ProgressOverview';
 import StatsOverview from '../app/dashboards/user/StatsOverview';
 import MyPlans from '../app/dashboards/user/MyPlans';
 import Consultants from '../app/dashboards/user/Consultants';
 import Shop from '../app/dashboards/user/Shop';
+import Messages from '../app/dashboards/user/Messages';
 
 const Tab = createBottomTabNavigator();
 
-// Props type for custom tab icon
 type TabBarIconProps = {
   focused: boolean;
   icon: React.ComponentType<{ size?: number; color?: string }>;
@@ -41,7 +43,6 @@ const TabBarIcon: React.FC<TabBarIconProps> = ({ focused, icon: Icon, solidIcon:
   );
 };
 
-// Fitness Tab Group - nested navigation
 function FitnessTabGroup() {
   return (
     <Tab.Navigator
@@ -63,23 +64,11 @@ export default function FooterNavigation() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: { 
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
           backgroundColor: '#111827',
           borderTopWidth: 0,
           height: 70,
           paddingTop: 8,
           paddingBottom: 8,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: -2,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
         },
         tabBarActiveTintColor: '#10B981',
         tabBarInactiveTintColor: '#9CA3AF',
@@ -114,7 +103,7 @@ export default function FooterNavigation() {
         }}
       />
       <Tab.Screen 
-        name="Consultants" 
+        name="Sessions" 
         component={Consultants}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -136,6 +125,20 @@ export default function FooterNavigation() {
               focused={focused} 
               icon={ShoppingBagIcon} 
               solidIcon={ShoppingBagIconSolid} 
+              label="" 
+            />
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="Messages" 
+        component={Messages}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon 
+              focused={focused} 
+              icon={ChatBubbleLeftRightIcon} 
+              solidIcon={ChatBubbleLeftRightIconSolid} 
               label="" 
             />
           ),

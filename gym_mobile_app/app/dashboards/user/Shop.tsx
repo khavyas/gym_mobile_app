@@ -35,7 +35,7 @@ export default function Shop() {
       originalPrice: 59.99,
       rating: 4.8,
       reviews: 1250,
-      image: "https://via.placeholder.com/200x200/4F46E5/FFFFFF?text=Protein",
+      image: "https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=400&h=400&fit=crop",
       category: "Supplements",
       inStock: true,
       featured: true,
@@ -47,7 +47,7 @@ export default function Shop() {
       price: 299.99,
       rating: 4.9,
       reviews: 892,
-      image: "https://via.placeholder.com/200x200/10B981/FFFFFF?text=Dumbbells",
+      image: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=400&fit=crop",
       category: "Equipment",
       inStock: true,
       description: "Space-saving adjustable dumbbells 5-50lbs"
@@ -59,7 +59,7 @@ export default function Shop() {
       originalPrice: 34.99,
       rating: 4.6,
       reviews: 567,
-      image: "https://via.placeholder.com/200x200/EF4444/FFFFFF?text=T-Shirt",
+      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
       category: "Apparel",
       inStock: true,
       featured: true,
@@ -71,7 +71,7 @@ export default function Shop() {
       price: 19.99,
       rating: 4.7,
       reviews: 1034,
-      image: "https://via.placeholder.com/200x200/F59E0B/FFFFFF?text=Bands",
+      image: "https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=400&h=400&fit=crop",
       category: "Equipment",
       inStock: true,
       description: "5-piece resistance band set with handles"
@@ -82,7 +82,7 @@ export default function Shop() {
       price: 34.99,
       rating: 4.5,
       reviews: 789,
-      image: "https://via.placeholder.com/200x200/8B5CF6/FFFFFF?text=Pre-Work",
+      image: "https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=400&h=400&fit=crop",
       category: "Supplements",
       inStock: false,
       description: "Energy boost for intense workouts"
@@ -93,7 +93,7 @@ export default function Shop() {
       price: 39.99,
       rating: 4.8,
       reviews: 445,
-      image: "https://via.placeholder.com/200x200/06B6D4/FFFFFF?text=Yoga+Mat",
+      image: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&h=400&fit=crop",
       category: "Equipment",
       inStock: true,
       description: "Non-slip premium yoga mat"
@@ -105,7 +105,7 @@ export default function Shop() {
       originalPrice: 129.99,
       rating: 4.4,
       reviews: 2103,
-      image: "https://via.placeholder.com/200x200/1F2937/FFFFFF?text=Earbuds",
+      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
       category: "Accessories",
       inStock: true,
       description: "Sweat-proof wireless earbuds"
@@ -116,10 +116,101 @@ export default function Shop() {
       price: 15.99,
       rating: 4.3,
       reviews: 334,
-      image: "https://via.placeholder.com/200x200/7C2D12/FFFFFF?text=Gloves",
+      image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=400&fit=crop",
       category: "Accessories",
       inStock: true,
       description: "Anti-slip workout gloves"
+    },
+    {
+      id: 9,
+      name: "Foam Roller",
+      price: 29.99,
+      rating: 4.6,
+      reviews: 678,
+      image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=400&h=400&fit=crop",
+      category: "Equipment",
+      inStock: true,
+      description: "Deep tissue massage roller"
+    },
+    {
+      id: 10,
+      name: "Protein Shaker Bottle",
+      price: 12.99,
+      rating: 4.5,
+      reviews: 892,
+      image: "https://images.unsplash.com/photo-1616671276441-2f2c277b8bf6?w=400&h=400&fit=crop",
+      category: "Accessories",
+      inStock: true,
+      description: "Leak-proof shaker with mixer ball"
+    },
+    {
+      id: 11,
+      name: "Sports Water Bottle",
+      price: 18.99,
+      rating: 4.7,
+      reviews: 1205,
+      image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop",
+      category: "Accessories",
+      inStock: true,
+      description: "Insulated stainless steel bottle"
+    },
+    {
+      id: 12,
+      name: "Compression Shorts",
+      price: 34.99,
+      originalPrice: 44.99,
+      rating: 4.4,
+      reviews: 523,
+      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
+      category: "Apparel",
+      inStock: true,
+      featured: true,
+      description: "Performance compression wear"
+    },
+    {
+      id: 13,
+      name: "Jump Rope",
+      price: 14.99,
+      rating: 4.6,
+      reviews: 745,
+      image: "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=400&h=400&fit=crop",
+      category: "Equipment",
+      inStock: true,
+      description: "Speed jump rope for cardio"
+    },
+    {
+      id: 14,
+      name: "Creatine Monohydrate",
+      price: 27.99,
+      rating: 4.8,
+      reviews: 1567,
+      image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&h=400&fit=crop",
+      category: "Supplements",
+      inStock: true,
+      description: "Pure creatine for strength gains"
+    },
+    {
+      id: 15,
+      name: "Training Sneakers",
+      price: 89.99,
+      originalPrice: 119.99,
+      rating: 4.7,
+      reviews: 934,
+      image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop",
+      category: "Apparel",
+      inStock: true,
+      description: "Lightweight training shoes"
+    },
+    {
+      id: 16,
+      name: "Kettlebell Set",
+      price: 129.99,
+      rating: 4.9,
+      reviews: 456,
+      image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=400&fit=crop",
+      category: "Equipment",
+      inStock: true,
+      description: "Cast iron kettlebells 10-35lbs"
     }
   ];
 
@@ -208,14 +299,16 @@ export default function Shop() {
         </TouchableOpacity>
 
         <View style={styles.productImageContainer}>
-          <View style={[styles.productImagePlaceholder, { backgroundColor: product.image.includes('4F46E5') ? '#4F46E5' : product.image.includes('10B981') ? '#10B981' : '#6B7280' }]}>
-            <Text style={styles.productImageText}>{product.category}</Text>
-          </View>
+          <Image 
+            source={{ uri: product.image }}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
         </View>
 
         <View style={styles.productInfo}>
-          <Text style={styles.productName}>{product.name}</Text>
-          <Text style={styles.productDescription}>{product.description}</Text>
+          <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+          <Text style={styles.productDescription} numberOfLines={2}>{product.description}</Text>
           
           <View style={styles.ratingContainer}>
             <View style={styles.starsContainer}>
@@ -257,22 +350,22 @@ export default function Shop() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Fitness Shop</Text>
-          <Text style={styles.subtitle}>Everything you need for your fitness journey</Text>
-        </View>
-        <TouchableOpacity style={styles.cartButton}>
-          <ShoppingCartIcon size={24} color="#FFFFFF" />
-          <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>3</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
         
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Fitness Shop</Text>
+            <Text style={styles.subtitle}>Everything you need for your fitness journey</Text>
+          </View>
+          <TouchableOpacity style={styles.cartButton}>
+            <ShoppingCartIcon size={24} color="#FFFFFF" />
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>3</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* Featured Products */}
         {featuredProducts.length > 0 && (
           <View style={styles.section}>
@@ -322,7 +415,7 @@ export default function Shop() {
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>50+</Text>
+            <Text style={styles.statNumber}>{products.length}+</Text>
             <Text style={styles.statLabel}>Products</Text>
           </View>
           <View style={styles.statCard}>
@@ -344,6 +437,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
+  },
+  scrollContainer: {
+    paddingBottom: 90,
   },
   header: {
     flexDirection: 'row',
@@ -384,9 +480,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '600',
-  },
-  scrollContainer: {
-    paddingBottom: 20,
   },
   section: {
     marginBottom: 24,
@@ -478,7 +571,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
     padding: 8,
     zIndex: 1,
@@ -487,19 +580,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     marginTop: 8,
-  },
-  productImagePlaceholder: {
-    width: 80,
-    height: 80,
+    width: '100%',
+    height: 120,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
+    backgroundColor: '#374151',
   },
-  productImageText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-    textAlign: 'center',
+  productImage: {
+    width: '100%',
+    height: '100%',
   },
   productInfo: {
     flex: 1,
@@ -509,12 +598,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 4,
+    height: 36,
   },
   productDescription: {
     fontSize: 12,
     color: '#94A3B8',
     marginBottom: 8,
     lineHeight: 16,
+    height: 32,
   },
   ratingContainer: {
     flexDirection: 'row',
