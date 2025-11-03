@@ -163,7 +163,7 @@ const features = [
               <View style={styles.logoContainer}>
                 <Dumbbell size={40} color="#10B981" strokeWidth={2.5} />
               </View>
-              <Text style={styles.appName}>HealthHub</Text>
+              <Text style={styles.appName}>HiWox</Text>
               <Text style={styles.heroTitle}>Transform Your Body,{'\n'}Transform Your Life</Text>
               <Text style={styles.heroSubtitle}>
                 Join thousands of members achieving their fitness goals with personalized workouts and expert guidance
@@ -468,7 +468,7 @@ const features = [
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>© 2025 HealthHub. All rights reserved.</Text>
+          <Text style={styles.footerText}>© 2025 HiWox. All rights reserved.</Text>
           <View style={styles.footerLinks}>
             <Text style={styles.footerLink}>Privacy Policy</Text>
             <Text style={styles.footerDivider}>•</Text>
