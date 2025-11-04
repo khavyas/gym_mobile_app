@@ -99,7 +99,7 @@ const defaultNotifications: Notification[] = [
 ];
 
 export default function Header({
-  title = 'HealthHub',
+  title = 'HiWox',
   subtitle = 'User Portal',
   showBackButton = false,
   onBackPress,
