@@ -318,9 +318,9 @@ export default function Shop() {
           </View>
 
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>${product.price}</Text>
+            <Text style={styles.price}>₹{product.price}</Text>
             {product.originalPrice && (
-              <Text style={styles.originalPrice}>${product.originalPrice}</Text>
+              <Text style={styles.originalPrice}>₹{product.originalPrice}</Text>
             )}
           </View>
 
