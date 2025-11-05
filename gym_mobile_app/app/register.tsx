@@ -343,7 +343,7 @@ const PrivacyPolicyModal = () => (
             We use cookies and similar technologies to enhance your experience and analyze app usage.{'\n\n'}
             
             <Text style={styles.modalBold}>7. Contact Us{'\n'}</Text>
-            For privacy concerns, contact us at privacy@healthhub.com
+            For privacy concerns, contact us at privacy@HiWox.com
           </Text>
         </ScrollView>
         
@@ -387,7 +387,7 @@ const TermsOfServiceModal = () => (
             <Text style={styles.modalBold}>Last Updated:</Text> October 26, 2025{'\n\n'}
             
             <Text style={styles.modalBold}>1. Acceptance of Terms{'\n'}</Text>
-            By creating an account and using HealthHub, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
+            By creating an account and using HiWox, you agree to be bound by these Terms of Service and all applicable laws and regulations.{'\n\n'}
             
             <Text style={styles.modalBold}>2. User Responsibilities{'\n'}</Text>
             You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.{'\n\n'}
@@ -399,22 +399,22 @@ const TermsOfServiceModal = () => (
             You agree not to use the service for any unlawful purpose, harass other users, or post inappropriate content.{'\n\n'}
             
             <Text style={styles.modalBold}>5. Consultant Services{'\n'}</Text>
-            Fitness consultants are independent professionals. HealthHub facilitates connections but does not guarantee specific results.{'\n\n'}
+            Fitness consultants are independent professionals. HiWox facilitates connections but does not guarantee specific results.{'\n\n'}
             
             <Text style={styles.modalBold}>6. Intellectual Property{'\n'}</Text>
-            All content, features, and functionality are owned by HealthHub and protected by copyright and trademark laws.{'\n\n'}
+            All content, features, and functionality are owned by HiWox and protected by copyright and trademark laws.{'\n\n'}
             
             <Text style={styles.modalBold}>7. Account Termination{'\n'}</Text>
             We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.{'\n\n'}
             
             <Text style={styles.modalBold}>8. Limitation of Liability{'\n'}</Text>
-            HealthHub is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
+            HiWox is not liable for any indirect, incidental, or consequential damages arising from your use of the service.{'\n\n'}
             
             <Text style={styles.modalBold}>9. Changes to Terms{'\n'}</Text>
             We may modify these terms at any time. Continued use after changes constitutes acceptance of new terms.{'\n\n'}
             
             <Text style={styles.modalBold}>10. Contact Information{'\n'}</Text>
-            For questions about these terms, contact us at support@healthhub.com
+            For questions about these terms, contact us at support@HiWox.com
           </Text>
         </ScrollView>
         
