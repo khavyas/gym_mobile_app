@@ -306,7 +306,13 @@ export default function StartWorkout() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
+
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
+
+              {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -320,10 +326,7 @@ export default function StartWorkout() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
+
         {/* Active Workout Timer with Background Image */}
         <View style={styles.timerSection}>
           <View style={styles.timerCard}>

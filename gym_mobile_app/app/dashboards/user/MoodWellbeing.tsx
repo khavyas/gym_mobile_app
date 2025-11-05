@@ -101,16 +101,40 @@ const moods = [
               </View>
           </View>
 
-          <View style={styles.sliderContainer}>
-            <View style={styles.sliderTrack}>
-              <View style={[styles.sliderFill, { width: `${(moodRating / 10) * 100}%` }]} />
-              <View style={[styles.sliderThumb, { left: `${(moodRating / 10) * 100}%` }]} />
-            </View>
-            <View style={styles.sliderLabels}>
-              <Text style={styles.sliderLabel}>Very Low</Text>
-              <Text style={styles.sliderLabel}>Excellent</Text>
-            </View>
-          </View>
+<View style={styles.sliderContainer}>
+  <View 
+    onStartShouldSetResponder={() => true}
+    onResponderGrant={(e) => {
+      const locationX = e.nativeEvent.locationX;
+      const sliderWidth = screenWidth - 112;
+      const newRating = Math.round((locationX / sliderWidth) * 10);
+      setMoodRating(Math.max(1, Math.min(10, newRating)));
+      
+      // Update selected mood based on rating
+      const mood = moods.find(m => Math.abs(m.rating - newRating) <= 2) || moods[1];
+      setSelectedMood(mood.id);
+    }}
+    onResponderMove={(e) => {
+      const locationX = e.nativeEvent.locationX;
+      const sliderWidth = screenWidth - 112;
+      const newRating = Math.round((locationX / sliderWidth) * 10);
+      setMoodRating(Math.max(1, Math.min(10, newRating)));
+      
+      // Update selected mood based on rating
+      const mood = moods.find(m => Math.abs(m.rating - newRating) <= 2) || moods[1];
+      setSelectedMood(mood.id);
+    }}
+  >
+    <View style={styles.sliderTrack}>
+      <View style={[styles.sliderFill, { width: `${(moodRating / 10) * 100}%` }]} />
+      <View style={[styles.sliderThumb, { left: `${(moodRating / 10) * 100}%` }]} />
+    </View>
+  </View>
+  <View style={styles.sliderLabels}>
+    <Text style={styles.sliderLabel}>Very Low</Text>
+    <Text style={styles.sliderLabel}>Excellent</Text>
+  </View>
+</View>
 
           <Text style={styles.factorsTitle}>What's affecting your mood today?</Text>
 
@@ -421,14 +445,7 @@ const moods = [
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'tips' && styles.activeTab]}
-          onPress={() => setActiveTab('tips')}
-        >
-          <Text style={[styles.tabText, activeTab === 'tips' && styles.activeTabText]}>
-            AI Tips
-          </Text>
-        </TouchableOpacity>
+    
         
 
         <TouchableOpacity
@@ -436,7 +453,7 @@ const moods = [
           onPress={() => setActiveTab('recommendations')}
         >
           <Text style={[styles.tabText, activeTab === 'recommendations' && styles.activeTabText]}>
-            Recommendations
+            Insights
           </Text>
         </TouchableOpacity>
       </View>
