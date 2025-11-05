@@ -8,7 +8,14 @@ import { Utensils, Coffee, Pizza, Apple, Moon, Drumstick, Camera, Search } from 
 import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from 'expo-image-picker'; // ← KEEP THIS for camera/gallery
+import { 
+  processImage, 
+  validateImage, 
+  formatFileSize,
+  getWebFileSize,
+  needsCompression 
+} from '../../utils/imageCompressionUtils';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const CALORIE_NINJA_API_KEY = '40zvAZsDb7q/yMbKodGj1A==6ddAOLV8qB4sxUUg';
@@ -191,8 +198,34 @@ export default function LogMeal() {
         
         input.onchange = async (e: any) => {
           const file = e.target.files?.[0];
-          if (file) {
-            await analyzeImageWithLogMeal(file);
+          if (!file) return;
+
+          try {
+            // Step 1: Validate the image
+            const validation = validateImage(file);
+            if (!validation.valid) {
+              Alert.alert('Invalid Image', validation.message || 'Please select a valid image');
+              return;
+            }
+
+            // Step 2: Check size and log it
+            const originalSize = getWebFileSize(file);
+            console.log(`📸 Original image size: ${formatFileSize(originalSize)}`);
+
+            // Step 3: Process (compress if needed)
+            const processedFile = await processImage(file, true);
+            
+            if (processedFile instanceof File) {
+              const newSize = getWebFileSize(processedFile);
+              console.log(`📸 Processed image size: ${formatFileSize(newSize)}`);
+            }
+
+            // Step 4: Analyze with LogMeal
+            await analyzeImageWithLogMeal(processedFile as File);
+            
+          } catch (error) {
+            console.error('Error processing image:', error);
+            Alert.alert('Error', 'Failed to process image. Please try a different photo.');
           }
         };
         
@@ -209,7 +242,21 @@ export default function LogMeal() {
     setIsAnalyzingImage(true);
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      
+      // Ensure the file has proper JPEG extension and type
+      if (file instanceof File) {
+        // Web platform - create new file with proper .jpg extension
+        const properFile = new File([file], 'meal_photo.jpg', {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        });
+        formData.append('image', properFile);
+      } else {
+        // This shouldn't happen, but handle it
+        formData.append('image', file);
+      }
+
+      console.log('📤 Uploading to LogMeal API...');
 
       // IMPORTANT: Include language and country preferences in the request
       const response = await axios.post<LogMealResponse>(
@@ -256,12 +303,17 @@ export default function LogMeal() {
       if (error.response?.status === 401) {
         Alert.alert(
           'Authentication Error', 
-          'Invalid API token. Please verify your LogMeal API credentials.\n\nToken: ' + LOGMEAL_API_TOKEN.substring(0, 10) + '...'
+          'Invalid API token. Please verify your LogMeal API credentials.'
         );
       } else if (error.response?.status === 429) {
         Alert.alert('Rate Limit', 'Too many requests. Please try again in a few moments.');
-      } else if (error.response?.status === 413) {
-        Alert.alert('Image Too Large', 'Please use a smaller image (recommended: under 5MB).');
+      } else if (error.response?.status === 413 || error.response?.data?.code === 715) {
+        Alert.alert('Image Too Large', 'Please use a smaller image (recommended: under 1MB).');
+      } else if (error.response?.data?.code === 711) {
+        Alert.alert(
+          'Invalid Image Format',
+          'The image format is not supported. Please try:\n• Taking a new photo\n• Using a different image\n• Ensuring the image is a valid JPEG'
+        );
       } else {
         Alert.alert(
           'Analysis Error',
@@ -272,6 +324,7 @@ export default function LogMeal() {
       setIsAnalyzingImage(false);
     }
   };
+
 
   // Fetch nutrition info for detected dishes using CalorieNinjas
   const fetchNutritionForDetectedDishes = async (dishes: LogMealFoodItem[]) => {
@@ -359,18 +412,31 @@ export default function LogMeal() {
   const analyzeImageNative = async (imageUri: string) => {
     setIsAnalyzingImage(true);
     try {
+      // Step 1: Validate the image URI
+      const validation = validateImage(imageUri);
+      if (!validation.valid) {
+        Alert.alert('Invalid Image', validation.message || 'Please select a valid image');
+        return;
+      }
+
+      // Step 2: Process (compress) the image
+      console.log(`📸 Processing native image: ${imageUri}`);
+      const processedUri = await processImage(imageUri, true);
+
+      // Step 3: Prepare FormData
       const formData = new FormData();
-      const filename = imageUri.split('/').pop() || 'image.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      const filename = (processedUri as string).split('/').pop() || 'image.jpg';
+      const type = 'image/jpeg'; // Always JPEG after compression
 
       formData.append('image', {
-        uri: imageUri,
+        uri: processedUri,
         name: filename,
         type: type,
       } as any);
 
-      // IMPORTANT: Include language and country preferences
+      console.log('📤 Uploading compressed image to LogMeal API...');
+
+      // Step 4: Upload to LogMeal API
       const response = await axios.post<LogMealResponse>(
         `${LOGMEAL_API_BASE_URL}/image/segmentation/complete`,
         formData,
@@ -405,14 +471,30 @@ export default function LogMeal() {
     } catch (error: any) {
       console.error('Error analyzing image:', error);
       console.error('Error details:', error.response?.data);
-      Alert.alert(
-        'Analysis Error', 
-        `Failed to analyze the image. ${error.response?.data?.message || error.message || 'Please try again.'}`
-      );
+      
+      if (error.response?.status === 413 || error.response?.data?.code === 715) {
+        Alert.alert(
+          'Image Too Large',
+          'The image is still too large after compression. Please try:\n• Taking a new photo with lower resolution\n• Choosing a different image\n• Reducing image quality in your camera settings'
+        );
+      } else if (error.response?.status === 401) {
+        Alert.alert(
+          'Authentication Error', 
+          'Invalid API token. Please verify your LogMeal API credentials.'
+        );
+      } else if (error.response?.status === 429) {
+        Alert.alert('Rate Limit', 'Too many requests. Please try again in a few moments.');
+      } else {
+        Alert.alert(
+          'Analysis Error', 
+          `Failed to analyze the image. ${error.response?.data?.message || error.message || 'Please try again.'}`
+        );
+      }
     } finally {
       setIsAnalyzingImage(false);
     }
   };
+
 
   const showImageOptions = () => {
     if (Platform.OS === 'web') {
