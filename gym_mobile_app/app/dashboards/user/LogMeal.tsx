@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Utensils, Coffee, Pizza, Apple, Moon, Drumstick, Camera, Search } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,6 +13,17 @@ import * as ImagePicker from 'expo-image-picker';
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const CALORIE_NINJA_API_KEY = '40zvAZsDb7q/yMbKodGj1A==6ddAOLV8qB4sxUUg';
 const CALORIE_NINJA_BASE_URL = 'https://api.calorieninjas.com/v1';
+
+// LogMeal API Configuration
+const LOGMEAL_API_BASE_URL = 'https://api.logmeal.com/v2';
+const LOGMEAL_API_TOKEN = '092e2e1064a1b9ba117fa6733c5c9c080e447f76';
+
+// LogMeal Preferences (can be customized per user)
+const LOGMEAL_PREFERENCES = {
+  country: 'IN',    // India (use 'US', 'ES', 'GB', etc. for other countries)
+  language: 'eng'   // English (use 'spa' for Spanish, 'hin' for Hindi, etc.)
+};
+
 const { width } = Dimensions.get('window');
 
 interface MealEntry {
@@ -54,6 +65,38 @@ interface NutritionItem {
   potassium_mg?: number;
 }
 
+interface LogMealDishCandidate {
+  id: number;
+  name: string;
+  prob: number;
+}
+
+interface LogMealFoodItem {
+  food_item_position: number;
+  recognition_results: LogMealDishCandidate[];
+  contained_bbox?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  center?: {
+    x: number;
+    y: number;
+  };
+  serving_size?: number;
+}
+
+interface LogMealResponse {
+  imageId: string;
+  occasion?: string;
+  foodType?: {
+    id: number;
+    name: string;
+  };
+  segmentation_results: LogMealFoodItem[];
+}
+
 export default function LogMeal() {
   const router = useRouter();
   const [totalCalories, setTotalCalories] = useState(0);
@@ -67,6 +110,12 @@ export default function LogMeal() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NutritionItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<NutritionItem[]>([]);
+  
+  // LogMeal specific states
+  const [logMealImageId, setLogMealImageId] = useState<string>('');
+  const [detectedDishes, setDetectedDishes] = useState<LogMealFoodItem[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -109,7 +158,9 @@ export default function LogMeal() {
 
   useEffect(() => {
     fetchTodayMealData();
-    requestPermissions();
+    if (Platform.OS !== 'web') {
+      requestPermissions();
+    }
   }, []);
 
   const requestPermissions = async () => {
@@ -125,6 +176,266 @@ export default function LogMeal() {
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;
+    }
+  };
+
+  // WEB: Handle camera/file input for web
+  const handleWebImageCapture = () => {
+    if (Platform.OS === 'web') {
+      if (!fileInputRef.current) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.style.display = 'none';
+        
+        input.onchange = async (e: any) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            await analyzeImageWithLogMeal(file);
+          }
+        };
+        
+        document.body.appendChild(input);
+        fileInputRef.current = input;
+      }
+      
+      fileInputRef.current.click();
+    }
+  };
+
+  // LogMeal Image Analysis (Web & Native) - FIXED VERSION
+  const analyzeImageWithLogMeal = async (file: File | any) => {
+    setIsAnalyzingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // IMPORTANT: Include language and country preferences in the request
+      const response = await axios.post<LogMealResponse>(
+        `${LOGMEAL_API_BASE_URL}/image/segmentation/complete`,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${LOGMEAL_API_TOKEN}`,
+            'Content-Type': 'multipart/form-data',
+          },
+          params: {
+            // Add preferences as query parameters
+            language: LOGMEAL_PREFERENCES.language,
+            country: LOGMEAL_PREFERENCES.country,
+          },
+          timeout: 30000,
+        }
+      );
+
+      const data = response.data;
+      
+      if (data.segmentation_results && data.segmentation_results.length > 0) {
+        setLogMealImageId(data.imageId);
+        setDetectedDishes(data.segmentation_results);
+        
+        // Get nutrition info for detected dishes
+        await fetchNutritionForDetectedDishes(data.segmentation_results);
+        
+        Alert.alert(
+          'Food Detected! 🍽️',
+          `Found ${data.segmentation_results.length} food item(s) in your meal. Review and confirm below.`,
+          [{ text: 'Review', style: 'default' }]
+        );
+      } else {
+        Alert.alert(
+          'No Food Detected',
+          'Could not detect any food items in the image. Please try:\n• Taking a clearer photo\n• Ensuring good lighting\n• Capturing the entire dish'
+        );
+      }
+    } catch (error: any) {
+      console.error('Error analyzing image with LogMeal:', error);
+      console.error('Error details:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        Alert.alert(
+          'Authentication Error', 
+          'Invalid API token. Please verify your LogMeal API credentials.\n\nToken: ' + LOGMEAL_API_TOKEN.substring(0, 10) + '...'
+        );
+      } else if (error.response?.status === 429) {
+        Alert.alert('Rate Limit', 'Too many requests. Please try again in a few moments.');
+      } else if (error.response?.status === 413) {
+        Alert.alert('Image Too Large', 'Please use a smaller image (recommended: under 5MB).');
+      } else {
+        Alert.alert(
+          'Analysis Error',
+          `Failed to analyze the image. ${error.response?.data?.message || error.message || 'Please try again.'}`
+        );
+      }
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  // Fetch nutrition info for detected dishes using CalorieNinjas
+  const fetchNutritionForDetectedDishes = async (dishes: LogMealFoodItem[]) => {
+    try {
+      const nutritionPromises = dishes.map(async (dish) => {
+        const topDish = dish.recognition_results[0];
+        if (!topDish) return null;
+
+        try {
+          const response = await axios.get(
+            `${CALORIE_NINJA_BASE_URL}/nutrition?query=${encodeURIComponent(topDish.name)}`,
+            {
+              headers: {
+                'X-Api-Key': CALORIE_NINJA_API_KEY,
+              },
+            }
+          );
+
+          if (response.data.items && response.data.items.length > 0) {
+            const item = response.data.items[0];
+            return {
+              ...item,
+              dishId: topDish.id,
+              dishName: topDish.name,
+              probability: topDish.prob,
+              position: dish.food_item_position,
+            };
+          }
+        } catch (error) {
+          console.error(`Error fetching nutrition for ${topDish.name}:`, error);
+        }
+        return null;
+      });
+
+      const nutritionResults = await Promise.all(nutritionPromises);
+      const validResults = nutritionResults.filter(r => r !== null) as NutritionItem[];
+      
+      if (validResults.length > 0) {
+        setSearchResults(validResults);
+        setSelectedItems(validResults);
+      }
+    } catch (error) {
+      console.error('Error fetching nutrition info:', error);
+    }
+  };
+
+  // NATIVE: Scan meal from camera
+  const scanMealFromImage = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await analyzeImageNative(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to capture image. Please try again.');
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await analyzeImageNative(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  // Analyze image for native platforms - FIXED VERSION
+  const analyzeImageNative = async (imageUri: string) => {
+    setIsAnalyzingImage(true);
+    try {
+      const formData = new FormData();
+      const filename = imageUri.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append('image', {
+        uri: imageUri,
+        name: filename,
+        type: type,
+      } as any);
+
+      // IMPORTANT: Include language and country preferences
+      const response = await axios.post<LogMealResponse>(
+        `${LOGMEAL_API_BASE_URL}/image/segmentation/complete`,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${LOGMEAL_API_TOKEN}`,
+            'Content-Type': 'multipart/form-data',
+          },
+          params: {
+            language: LOGMEAL_PREFERENCES.language,
+            country: LOGMEAL_PREFERENCES.country,
+          },
+          timeout: 30000,
+        }
+      );
+
+      const data = response.data;
+      
+      if (data.segmentation_results && data.segmentation_results.length > 0) {
+        setLogMealImageId(data.imageId);
+        setDetectedDishes(data.segmentation_results);
+        
+        await fetchNutritionForDetectedDishes(data.segmentation_results);
+        
+        Alert.alert(
+          'Food Detected! 🍽️',
+          `Found ${data.segmentation_results.length} food item(s). Review below.`
+        );
+      } else {
+        Alert.alert('No Food Detected', 'Could not detect any food items. Please try a different image.');
+      }
+    } catch (error: any) {
+      console.error('Error analyzing image:', error);
+      console.error('Error details:', error.response?.data);
+      Alert.alert(
+        'Analysis Error', 
+        `Failed to analyze the image. ${error.response?.data?.message || error.message || 'Please try again.'}`
+      );
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const showImageOptions = () => {
+    if (Platform.OS === 'web') {
+      handleWebImageCapture();
+    } else {
+      Alert.alert(
+        'Scan Meal',
+        'Choose an option:',
+        [
+          {
+            text: 'Take Photo',
+            onPress: scanMealFromImage,
+          },
+          {
+            text: 'Choose from Gallery',
+            onPress: pickImageFromGallery,
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
     }
   };
 
@@ -149,7 +460,7 @@ export default function LogMeal() {
       if (response.data.items && response.data.items.length > 0) {
         const items: NutritionItem[] = response.data.items;
         setSearchResults(items);
-        setSelectedItems(items); // Auto-select all items
+        setSelectedItems(items);
         Alert.alert('Success', `Found ${items.length} item(s). Review the details below.`);
       } else {
         Alert.alert('Not Found', 'No nutrition information found for this food item. Try a different query.');
@@ -164,117 +475,6 @@ export default function LogMeal() {
     } finally {
       setIsSearching(false);
     }
-  };
-
-  // Scan meal from image using CalorieNinjas Image API
-  const scanMealFromImage = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await analyzeMealImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to capture image. Please try again.');
-    }
-  };
-
-  const pickImageFromGallery = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await analyzeMealImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
-    }
-  };
-
-  const analyzeMealImage = async (imageUri: string) => {
-    setIsAnalyzingImage(true);
-    try {
-      // Create form data for image upload
-      const formData = new FormData();
-      const filename = imageUri.split('/').pop() || 'image.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-      formData.append('media', {
-        uri: imageUri,
-        name: filename,
-        type: type,
-      } as any);
-
-      const response = await axios.post(
-        `${CALORIE_NINJA_BASE_URL}/imagetextnutrition`,
-        formData,
-        {
-          headers: {
-            'X-Api-Key': CALORIE_NINJA_API_KEY,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      if (response.data.items && response.data.items.length > 0) {
-        const items: NutritionItem[] = response.data.items;
-        setSearchResults(items);
-        setSelectedItems(items); // Auto-select all items
-        
-        const totalCals = items.reduce((sum, item) => sum + item.calories, 0);
-        Alert.alert(
-          'Image Analyzed!',
-          `Detected ${items.length} item(s). Total: ${Math.round(totalCals)} calories`
-        );
-      } else {
-        Alert.alert(
-          'No Food Detected',
-          'Could not detect any food items in the image. Please try:\n• Taking a clearer photo\n• Ensuring good lighting\n• Capturing food items with visible text/labels'
-        );
-      }
-    } catch (error: any) {
-      console.error('Error analyzing image:', error);
-      Alert.alert(
-        'Analysis Error',
-        'Failed to analyze the image. Please ensure the image contains visible food text or labels.'
-      );
-    } finally {
-      setIsAnalyzingImage(false);
-    }
-  };
-
-  const showImageOptions = () => {
-    Alert.alert(
-      'Scan Meal',
-      'Choose an option:',
-      [
-        {
-          text: 'Take Photo',
-          onPress: scanMealFromImage,
-        },
-        {
-          text: 'Choose from Gallery',
-          onPress: pickImageFromGallery,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
   };
 
   const logMealToAPI = async (mealData: Omit<MealEntry, 'id' | 'time'>): Promise<boolean> => {
@@ -361,7 +561,6 @@ export default function LogMeal() {
     setIsSaving(true);
     
     try {
-      // Calculate totals
       const totalNutrition = selectedItems.reduce((acc, item) => ({
         calories: acc.calories + item.calories,
         protein: acc.protein + item.protein_g,
@@ -415,6 +614,8 @@ export default function LogMeal() {
     setSearchResults([]);
     setSelectedItems([]);
     setSearchQuery('');
+    setDetectedDishes([]);
+    setLogMealImageId('');
   };
 
   const toggleItemSelection = (item: NutritionItem) => {
@@ -557,7 +758,7 @@ export default function LogMeal() {
           </View>
         </View>
 
-        {/* Quick Action Buttons */}
+        {/* Quick Action Button */}
         <View style={styles.quickActionsSection}>
           <TouchableOpacity 
             style={styles.quickActionButton}
@@ -574,7 +775,7 @@ export default function LogMeal() {
                 <Camera size={24} color="#FFFFFF" strokeWidth={2.5} />
               )}
               <Text style={styles.quickActionText}>
-                {isAnalyzingImage ? 'Analyzing...' : 'Scan Meal'}
+                {isAnalyzingImage ? 'Analyzing with LogMeal AI...' : Platform.OS === 'web' ? 'Upload Meal Photo 📸' : 'Scan Meal with AI 🤖'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -582,7 +783,7 @@ export default function LogMeal() {
 
         {/* Food Search Section */}
         <View style={styles.searchSection}>
-          <Text style={styles.sectionTitle}>Search Food Nutrition</Text>
+          <Text style={styles.sectionTitle}>Or Search Food Manually</Text>
           <View style={styles.searchCard}>
             <View style={styles.searchInputContainer}>
               <Search size={20} color="#94A3B8" strokeWidth={2.5} />
@@ -621,7 +822,9 @@ export default function LogMeal() {
         {searchResults.length > 0 && (
           <View style={styles.resultsSection}>
             <View style={styles.resultsSectionHeader}>
-              <Text style={styles.sectionTitle}>Nutrition Information</Text>
+              <Text style={styles.sectionTitle}>
+                {detectedDishes.length > 0 ? '🤖 AI Detected Foods' : 'Nutrition Information'}
+              </Text>
               <TouchableOpacity onPress={clearSearchResults}>
                 <Text style={styles.clearButton}>Clear</Text>
               </TouchableOpacity>
@@ -708,7 +911,7 @@ export default function LogMeal() {
               })}
             </ScrollView>
 
-            {/* Meal Type Selection (Only when results exist) */}
+            {/* Meal Type Selection */}
             <View style={styles.mealTypeCompactSection}>
               <Text style={styles.compactLabel}>Select Meal Type:</Text>
               <View style={styles.mealTypeCompact}>
