@@ -334,7 +334,7 @@ export default function Login() {
           <View style={styles.logoContainer}>
             <Text style={styles.heartIcon}>♡</Text>
           </View>
-          <Text style={styles.brandName}>HealthHub</Text>
+          <Text style={styles.brandName}>HiWox</Text>
           <Text style={styles.brandTagline}>Your wellness companion</Text>
         </View>
 
