@@ -1,15 +1,18 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Utensils, Coffee, Pizza, Apple, Moon, Drumstick } from 'lucide-react-native';
+import { Utensils, Coffee, Pizza, Apple, Moon, Drumstick, Camera, Search } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
+const CALORIE_NINJA_API_KEY = '40zvAZsDb7q/yMbKodGj1A==6ddAOLV8qB4sxUUg';
+const CALORIE_NINJA_BASE_URL = 'https://api.calorieninjas.com/v1';
 const { width } = Dimensions.get('window');
 
 interface MealEntry {
@@ -36,18 +39,34 @@ interface APIMealEntry {
   updatedAt: string;
 }
 
+interface NutritionItem {
+  name: string;
+  calories: number;
+  protein_g: number;
+  carbohydrates_total_g: number;
+  fat_total_g: number;
+  serving_size_g: number;
+  fiber_g: number;
+  sugar_g: number;
+  sodium_mg: number;
+  cholesterol_mg?: number;
+  saturated_fat_g?: number;
+  potassium_mg?: number;
+}
+
 export default function LogMeal() {
   const router = useRouter();
   const [totalCalories, setTotalCalories] = useState(0);
   const [dailyGoal, setDailyGoal] = useState(2000);
   const [mealHistory, setMealHistory] = useState<MealEntry[]>([]);
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
-  const [foodName, setFoodName] = useState('');
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fats, setFats] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<NutritionItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<NutritionItem[]>([]);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -90,7 +109,15 @@ export default function LogMeal() {
 
   useEffect(() => {
     fetchTodayMealData();
+    requestPermissions();
   }, []);
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera permission is needed to scan meals.');
+    }
+  };
 
   const getAuthToken = async (): Promise<string | null> => {
     try {
@@ -99,6 +126,155 @@ export default function LogMeal() {
       console.error('Error getting auth token:', error);
       return null;
     }
+  };
+
+  // Search food nutrition using CalorieNinjas API
+  const searchFoodNutrition = async (query: string) => {
+    if (!query.trim()) {
+      Alert.alert('Empty Query', 'Please enter a food item to search.');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.get(
+        `${CALORIE_NINJA_BASE_URL}/nutrition?query=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'X-Api-Key': CALORIE_NINJA_API_KEY,
+          },
+        }
+      );
+
+      if (response.data.items && response.data.items.length > 0) {
+        const items: NutritionItem[] = response.data.items;
+        setSearchResults(items);
+        setSelectedItems(items); // Auto-select all items
+        Alert.alert('Success', `Found ${items.length} item(s). Review the details below.`);
+      } else {
+        Alert.alert('Not Found', 'No nutrition information found for this food item. Try a different query.');
+        setSearchResults([]);
+        setSelectedItems([]);
+      }
+    } catch (error: any) {
+      console.error('Error searching nutrition:', error);
+      Alert.alert('Search Error', 'Failed to fetch nutrition data. Please try again.');
+      setSearchResults([]);
+      setSelectedItems([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Scan meal from image using CalorieNinjas Image API
+  const scanMealFromImage = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await analyzeMealImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to capture image. Please try again.');
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await analyzeMealImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  const analyzeMealImage = async (imageUri: string) => {
+    setIsAnalyzingImage(true);
+    try {
+      // Create form data for image upload
+      const formData = new FormData();
+      const filename = imageUri.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append('media', {
+        uri: imageUri,
+        name: filename,
+        type: type,
+      } as any);
+
+      const response = await axios.post(
+        `${CALORIE_NINJA_BASE_URL}/imagetextnutrition`,
+        formData,
+        {
+          headers: {
+            'X-Api-Key': CALORIE_NINJA_API_KEY,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.items && response.data.items.length > 0) {
+        const items: NutritionItem[] = response.data.items;
+        setSearchResults(items);
+        setSelectedItems(items); // Auto-select all items
+        
+        const totalCals = items.reduce((sum, item) => sum + item.calories, 0);
+        Alert.alert(
+          'Image Analyzed!',
+          `Detected ${items.length} item(s). Total: ${Math.round(totalCals)} calories`
+        );
+      } else {
+        Alert.alert(
+          'No Food Detected',
+          'Could not detect any food items in the image. Please try:\n• Taking a clearer photo\n• Ensuring good lighting\n• Capturing food items with visible text/labels'
+        );
+      }
+    } catch (error: any) {
+      console.error('Error analyzing image:', error);
+      Alert.alert(
+        'Analysis Error',
+        'Failed to analyze the image. Please ensure the image contains visible food text or labels.'
+      );
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Scan Meal',
+      'Choose an option:',
+      [
+        {
+          text: 'Take Photo',
+          onPress: scanMealFromImage,
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: pickImageFromGallery,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
   const logMealToAPI = async (mealData: Omit<MealEntry, 'id' | 'time'>): Promise<boolean> => {
@@ -176,40 +352,80 @@ export default function LogMeal() {
     }
   };
 
-  const addMeal = async () => {
-    if (!foodName.trim() || !calories) {
-      Alert.alert('Required Fields', 'Please enter at least food name and calories.');
+  const saveSelectedItems = async () => {
+    if (selectedItems.length === 0) {
+      Alert.alert('No Items', 'Please search and select food items to save.');
       return;
     }
 
-    const mealData = {
-      mealType: selectedMealType,
-      foodName: foodName.trim(),
-      calories: parseInt(calories) || 0,
-      protein: parseInt(protein) || 0,
-      carbs: parseInt(carbs) || 0,
-      fats: parseInt(fats) || 0,
-    };
-
-    const success = await logMealToAPI(mealData);
+    setIsSaving(true);
     
-    if (!success) {
-      Alert.alert(
-        'Connection Error',
-        'Failed to sync with server. Do you want to track locally?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Track Locally', 
-            onPress: () => addMealLocally(mealData)
-          }
-        ]
-      );
-      return;
-    }
+    try {
+      // Calculate totals
+      const totalNutrition = selectedItems.reduce((acc, item) => ({
+        calories: acc.calories + item.calories,
+        protein: acc.protein + item.protein_g,
+        carbs: acc.carbs + item.carbohydrates_total_g,
+        fats: acc.fats + item.fat_total_g,
+      }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
 
-    addMealLocally(mealData);
-    clearForm();
+      const foodNames = selectedItems.map(item => item.name).join(', ');
+
+      const mealData = {
+        mealType: selectedMealType,
+        foodName: foodNames,
+        calories: Math.round(totalNutrition.calories),
+        protein: Math.round(totalNutrition.protein),
+        carbs: Math.round(totalNutrition.carbs),
+        fats: Math.round(totalNutrition.fats),
+      };
+
+      const success = await logMealToAPI(mealData);
+      
+      if (!success) {
+        Alert.alert(
+          'Connection Error',
+          'Failed to sync with server. Do you want to track locally?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Track Locally', 
+              onPress: () => {
+                addMealLocally(mealData);
+                clearSearchResults();
+              }
+            }
+          ]
+        );
+        return;
+      }
+
+      addMealLocally(mealData);
+      clearSearchResults();
+      Alert.alert('Success', 'Meal logged successfully!');
+    } catch (error) {
+      console.error('Error saving items:', error);
+      Alert.alert('Error', 'Failed to save meal. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const clearSearchResults = () => {
+    setSearchResults([]);
+    setSelectedItems([]);
+    setSearchQuery('');
+  };
+
+  const toggleItemSelection = (item: NutritionItem) => {
+    setSelectedItems(prev => {
+      const isSelected = prev.some(i => i.name === item.name);
+      if (isSelected) {
+        return prev.filter(i => i.name !== item.name);
+      } else {
+        return [...prev, item];
+      }
+    });
   };
 
   const addMealLocally = (mealData: Omit<MealEntry, 'id' | 'time'>) => {
@@ -233,14 +449,6 @@ export default function LogMeal() {
         [{ text: "Great!", style: "default" }]
       );
     }
-  };
-
-  const clearForm = () => {
-    setFoodName('');
-    setCalories('');
-    setProtein('');
-    setCarbs('');
-    setFats('');
   };
 
   const removeMealEntry = (id: string) => {
@@ -277,15 +485,12 @@ export default function LogMeal() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-      
-  
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
-
-            {/* Header */}
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -299,7 +504,7 @@ export default function LogMeal() {
           </TouchableOpacity>
         </View>
 
-        {/* Calorie Progress Card with Background Image */}
+        {/* Calorie Progress Card */}
         <View style={styles.progressSection}>
           <View style={styles.calorieCard}>
             <Image 
@@ -328,7 +533,6 @@ export default function LogMeal() {
                 {getEncouragementMessage()}
               </Text>
 
-              {/* Macro Summary */}
               <View style={styles.macroSummary}>
                 <View style={styles.macroItem}>
                   <Text style={styles.macroValue}>
@@ -353,142 +557,205 @@ export default function LogMeal() {
           </View>
         </View>
 
-        {/* Meal Type Selection */}
-        <View style={styles.mealTypeSection}>
-          <Text style={styles.sectionTitle}>Select Meal Type</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.mealTypeScroll}
+        {/* Quick Action Buttons */}
+        <View style={styles.quickActionsSection}>
+          <TouchableOpacity 
+            style={styles.quickActionButton}
+            onPress={showImageOptions}
+            disabled={isAnalyzingImage}
           >
-            {mealTypes.map((meal) => {
-              const IconComponent = meal.icon;
-              const isSelected = selectedMealType === meal.value;
-              return (
-                <TouchableOpacity
-                  key={meal.value}
-                  style={[
-                    styles.mealTypeButton,
-                    isSelected && styles.mealTypeButtonSelected
-                  ]}
-                  onPress={() => setSelectedMealType(meal.value)}
-                >
-                  <View style={[
-                    styles.mealTypeIconContainer,
-                    { backgroundColor: isSelected ? meal.color : '#374151' }
-                  ]}>
-                    <IconComponent size={24} color="#FFFFFF" strokeWidth={2.5} />
-                  </View>
-                  <Text style={[
-                    styles.mealTypeLabel,
-                    isSelected && styles.mealTypeLabelSelected
-                  ]}>
-                    {meal.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+            <LinearGradient
+              colors={['#8B5CF6', '#7C3AED']}
+              style={styles.quickActionGradient}
+            >
+              {isAnalyzingImage ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Camera size={24} color="#FFFFFF" strokeWidth={2.5} />
+              )}
+              <Text style={styles.quickActionText}>
+                {isAnalyzingImage ? 'Analyzing...' : 'Scan Meal'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
-        {/* Add Meal Form */}
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Log Your Meal</Text>
-          <View style={styles.formCard}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Food Name *</Text>
+        {/* Food Search Section */}
+        <View style={styles.searchSection}>
+          <Text style={styles.sectionTitle}>Search Food Nutrition</Text>
+          <View style={styles.searchCard}>
+            <View style={styles.searchInputContainer}>
+              <Search size={20} color="#94A3B8" strokeWidth={2.5} />
               <TextInput
-                style={styles.input}
-                placeholder="e.g., Grilled Chicken Salad"
+                style={styles.searchInput}
+                placeholder="e.g., 2 eggs and toast, 100g chicken breast"
                 placeholderTextColor="#64748B"
-                value={foodName}
-                onChangeText={setFoodName}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={() => searchFoodNutrition(searchQuery)}
               />
             </View>
-
-            <View style={styles.inputRow}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Calories *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  placeholderTextColor="#64748B"
-                  value={calories}
-                  onChangeText={setCalories}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
-                <Text style={styles.inputLabel}>Protein (g)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  placeholderTextColor="#64748B"
-                  value={protein}
-                  onChangeText={setProtein}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputRow}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Carbs (g)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  placeholderTextColor="#64748B"
-                  value={carbs}
-                  onChangeText={setCarbs}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
-                <Text style={styles.inputLabel}>Fats (g)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0"
-                  placeholderTextColor="#64748B"
-                  value={fats}
-                  onChangeText={setFats}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
             <TouchableOpacity 
-              style={styles.addMealButton}
-              onPress={addMeal}
+              style={styles.searchButton}
+              onPress={() => searchFoodNutrition(searchQuery)}
+              disabled={isSearching}
             >
               <LinearGradient
-                colors={['#10B981', '#059669']}
-                style={styles.addButtonGradient}
+                colors={['#3B82F6', '#2563EB']}
+                style={styles.searchButtonGradient}
               >
-                <Ionicons name="add-circle" size={24} color="#FFFFFF" />
-                <Text style={styles.addButtonText}>Log Meal</Text>
+                {isSearching ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.searchButtonText}>Search</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
+          <Text style={styles.searchHint}>
+            💡 Tip: You can specify quantities like "3 tomatoes" or "1lb beef"
+          </Text>
         </View>
 
-        {/* Nutrition Tips Card */}
-        <View style={styles.tipsSection}>
-          <View style={styles.tipsCard}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&q=80' }}
-              style={styles.tipsImage}
-            />
-            <View style={styles.tipsOverlay}>
-              <View style={styles.tipsContent}>
-                <Utensils size={32} color="#FFFFFF" strokeWidth={2} />
-                <Text style={styles.tipsTitle}>Balanced Nutrition</Text>
-                <Text style={styles.tipsText}>
-                  Track your macros to ensure you're getting the right balance of protein, carbs, and fats for optimal health.
-                </Text>
+        {/* Nutrition Results Display */}
+        {searchResults.length > 0 && (
+          <View style={styles.resultsSection}>
+            <View style={styles.resultsSectionHeader}>
+              <Text style={styles.sectionTitle}>Nutrition Information</Text>
+              <TouchableOpacity onPress={clearSearchResults}>
+                <Text style={styles.clearButton}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.resultsContainer}>
+              {searchResults.map((item, index) => {
+                const isSelected = selectedItems.some(i => i.name === item.name);
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.nutritionCard, isSelected && styles.nutritionCardSelected]}
+                    onPress={() => toggleItemSelection(item)}
+                  >
+                    <View style={styles.nutritionHeader}>
+                      <Text style={styles.nutritionName}>{item.name}</Text>
+                      <View style={styles.checkboxContainer}>
+                        {isSelected && (
+                          <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                        )}
+                        {!isSelected && (
+                          <Ionicons name="ellipse-outline" size={24} color="#64748B" />
+                        )}
+                      </View>
+                    </View>
+                    
+                    <Text style={styles.servingSize}>
+                      Serving: {Math.round(item.serving_size_g)}g
+                    </Text>
+                    
+                    <View style={styles.nutritionGrid}>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>{Math.round(item.calories)}</Text>
+                        <Text style={styles.nutritionLabel}>Calories</Text>
+                      </View>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>{item.protein_g.toFixed(1)}g</Text>
+                        <Text style={styles.nutritionLabel}>Protein</Text>
+                      </View>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>{item.carbohydrates_total_g.toFixed(1)}g</Text>
+                        <Text style={styles.nutritionLabel}>Carbs</Text>
+                      </View>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>{item.fat_total_g.toFixed(1)}g</Text>
+                        <Text style={styles.nutritionLabel}>Fat</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.additionalNutrition}>
+                      <View style={styles.nutritionRow}>
+                        <Text style={styles.nutritionRowLabel}>Fiber</Text>
+                        <Text style={styles.nutritionRowValue}>{item.fiber_g.toFixed(1)}g</Text>
+                      </View>
+                      <View style={styles.nutritionRow}>
+                        <Text style={styles.nutritionRowLabel}>Sugar</Text>
+                        <Text style={styles.nutritionRowValue}>{item.sugar_g.toFixed(1)}g</Text>
+                      </View>
+                      <View style={styles.nutritionRow}>
+                        <Text style={styles.nutritionRowLabel}>Sodium</Text>
+                        <Text style={styles.nutritionRowValue}>{Math.round(item.sodium_mg)}mg</Text>
+                      </View>
+                      {item.cholesterol_mg !== undefined && (
+                        <View style={styles.nutritionRow}>
+                          <Text style={styles.nutritionRowLabel}>Cholesterol</Text>
+                          <Text style={styles.nutritionRowValue}>{Math.round(item.cholesterol_mg)}mg</Text>
+                        </View>
+                      )}
+                      {item.saturated_fat_g !== undefined && (
+                        <View style={styles.nutritionRow}>
+                          <Text style={styles.nutritionRowLabel}>Saturated Fat</Text>
+                          <Text style={styles.nutritionRowValue}>{item.saturated_fat_g.toFixed(1)}g</Text>
+                        </View>
+                      )}
+                      {item.potassium_mg !== undefined && (
+                        <View style={styles.nutritionRow}>
+                          <Text style={styles.nutritionRowLabel}>Potassium</Text>
+                          <Text style={styles.nutritionRowValue}>{Math.round(item.potassium_mg)}mg</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Meal Type Selection (Only when results exist) */}
+            <View style={styles.mealTypeCompactSection}>
+              <Text style={styles.compactLabel}>Select Meal Type:</Text>
+              <View style={styles.mealTypeCompact}>
+                {mealTypes.map((meal) => {
+                  const IconComponent = meal.icon;
+                  const isSelected = selectedMealType === meal.value;
+                  return (
+                    <TouchableOpacity
+                      key={meal.value}
+                      style={[
+                        styles.mealTypeCompactButton,
+                        isSelected && { backgroundColor: meal.color }
+                      ]}
+                      onPress={() => setSelectedMealType(meal.value)}
+                    >
+                      <IconComponent size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={styles.mealTypeCompactLabel}>{meal.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
+
+            {/* Save Button */}
+            <TouchableOpacity 
+              style={styles.saveButton}
+              onPress={saveSelectedItems}
+              disabled={isSaving || selectedItems.length === 0}
+            >
+              <LinearGradient
+                colors={selectedItems.length > 0 ? ['#10B981', '#059669'] : ['#64748B', '#475569']}
+                style={styles.saveButtonGradient}
+              >
+                {isSaving ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="save" size={24} color="#FFFFFF" />
+                    <Text style={styles.saveButtonText}>
+                      Save to Meal Log ({selectedItems.length})
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
-        </View>
+        )}
 
         {/* Today's Meals History */}
         <View style={styles.historySection}>
@@ -620,7 +887,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   progressSection: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   calorieCard: {
     borderRadius: 24,
@@ -712,147 +979,205 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 4,
   },
-  mealTypeSection: {
-    marginBottom: 32,
+  quickActionsSection: {
+    marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
-  mealTypeScroll: {
-    flexDirection: 'row',
-  },
-  mealTypeButton: {
-    alignItems: 'center',
-    marginRight: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#1E293B',
+  quickActionButton: {
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#374151',
-  },
-  mealTypeButtonSelected: {
-    borderColor: '#10B981',
-    backgroundColor: '#065F46',
-  },
-  mealTypeIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  mealTypeLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  mealTypeLabelSelected: {
-    color: '#FFFFFF',
-  },
-  formSection: {
-    marginBottom: 32,
-  },
-  formCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#CBD5E1',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#0F172A',
-    borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  inputRow: {
-    flexDirection: 'row',
-  },
-  addMealButton: {
-    borderRadius: 12,
     overflow: 'hidden',
-    marginTop: 8,
   },
-  addButtonGradient: {
+  quickActionGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    gap: 8,
+    gap: 12,
   },
-  addButtonText: {
+  quickActionText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  tipsSection: {
-    marginBottom: 32,
+  searchSection: {
+    marginBottom: 24,
   },
-  tipsCard: {
-    borderRadius: 20,
+  searchCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#FFFFFF',
+    marginLeft: 12,
+  },
+  searchButton: {
+    borderRadius: 12,
     overflow: 'hidden',
-    height: 220,
-    position: 'relative',
+  },
+  searchButtonGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  searchHint: {
+    fontSize: 13,
+    color: '#94A3B8',
+    marginTop: 12,
+    fontStyle: 'italic',
+  },
+  resultsSection: {
+    marginBottom: 24,
+  },
+  resultsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  clearButton: {
+    fontSize: 14,
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  resultsContainer: {
+    maxHeight: 400,
+  },
+  nutritionCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 2,
     borderColor: '#334155',
   },
-  tipsImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
+  nutritionCardSelected: {
+    borderColor: '#10B981',
+    backgroundColor: '#064E3B',
   },
-  tipsOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    justifyContent: 'center',
+  nutritionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 24,
+    marginBottom: 8,
   },
-  tipsContent: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    maxWidth: '90%',
-  },
-  tipsTitle: {
-    fontSize: 26,
-    fontWeight: '800',
+  nutritionName: {
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
+    flex: 1,
+  },
+  checkboxContainer: {
+    marginLeft: 12,
+  },
+  servingSize: {
+    fontSize: 13,
+    color: '#94A3B8',
+    marginBottom: 16,
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  nutritionItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  nutritionValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  nutritionLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  additionalNutrition: {
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+    paddingTop: 12,
+    gap: 8,
+  },
+  nutritionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  nutritionRowLabel: {
+    fontSize: 14,
+    color: '#CBD5E1',
+  },
+  nutritionRowValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  mealTypeCompactSection: {
     marginTop: 16,
-    marginBottom: 12,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    marginBottom: 16,
   },
-  tipsText: {
-    fontSize: 15,
+  compactLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#CBD5E1',
+    marginBottom: 12,
+  },
+  mealTypeCompact: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mealTypeCompactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    gap: 8,
+  },
+  mealTypeCompactLabel: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 22,
-    fontWeight: '500',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  },
+  saveButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  saveButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 12,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   historySection: {
     marginBottom: 32,
@@ -861,6 +1186,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
     marginBottom: 16,
   },
   historyCount: {
