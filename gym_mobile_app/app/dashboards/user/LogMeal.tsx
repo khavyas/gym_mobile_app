@@ -278,24 +278,27 @@ export default function LogMeal() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Meal Tracker</Text>
-          <Text style={styles.headerSubtitle}>{currentDate}</Text>
-        </View>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+  
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
+
+            {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Meal Tracker</Text>
+            <Text style={styles.headerSubtitle}>{currentDate}</Text>
+          </View>
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
         {/* Calorie Progress Card with Background Image */}
         <View style={styles.progressSection}>
           <View style={styles.calorieCard}>

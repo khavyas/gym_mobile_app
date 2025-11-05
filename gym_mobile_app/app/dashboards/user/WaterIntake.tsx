@@ -230,7 +230,12 @@ export default function WaterIntake() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
+
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
+          {/* Header - Now inside ScrollView */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -243,11 +248,7 @@ export default function WaterIntake() {
           <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
+      
         {/* Water Progress Visualization with Background Image */}
         <View style={styles.progressSection}>
           <View style={styles.waterCard}>
