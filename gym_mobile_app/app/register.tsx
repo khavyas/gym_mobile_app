@@ -725,6 +725,7 @@ const styles = StyleSheet.create({
     container: {
     flex: 1,
     backgroundColor: '#111827',
+    overflow: 'hidden',
   },
 gradientBackground: {
   position: 'absolute',

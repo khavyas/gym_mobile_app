@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,7 +17,7 @@ interface WearableDevice {
   battery: number;
   lastSync: string;
   connected: boolean;
-  image?: any;
+  image?: string;
   metrics: Array<{
     icon: string;
     label: string;
@@ -32,6 +33,7 @@ const connectedDevices: WearableDevice[] = [
     battery: 78,
     lastSync: '2 minutes ago',
     connected: true,
+    image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=200&h=200&fit=crop',
     metrics: [
       { icon: 'heart', label: 'Heart Rate', color: '#ef4444' },
       { icon: 'footsteps', label: 'Steps', color: '#3b82f6' },
@@ -48,6 +50,7 @@ const connectedDevices: WearableDevice[] = [
     battery: 92,
     lastSync: '5 minutes ago',
     connected: true,
+    image: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=200&h=200&fit=crop',
     metrics: [
       { icon: 'heart', label: 'Heart Rate', color: '#ef4444' },
       { icon: 'moon', label: 'Sleep', color: '#8b5cf6' },
@@ -63,6 +66,7 @@ const connectedDevices: WearableDevice[] = [
     battery: 65,
     lastSync: '1 minute ago',
     connected: true,
+    image: 'https://images.unsplash.com/photo-1584515933487-779824d29309?w=200&h=200&fit=crop',
     metrics: [
       { icon: 'water', label: 'Glucose', color: '#10b981' },
       { icon: 'trending-up', label: 'Trends', color: '#3b82f6' },
@@ -98,7 +102,15 @@ export default function WearablesModal() {
           <View style={styles.deviceHeader}>
             <View style={styles.deviceInfo}>
               <View style={styles.deviceImagePlaceholder}>
-                <Ionicons name="watch" size={32} color="#64748b" />
+                {device.image ? (
+                  <Image 
+                    source={{ uri: device.image }} 
+                    style={styles.deviceImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="watch" size={32} color="#64748b" />
+                )}
               </View>
               <View style={styles.deviceDetails}>
                 <View style={styles.deviceNameRow}>
@@ -561,6 +573,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  deviceImage: {
+    width: '100%',
+    height: '100%',
   },
   deviceDetails: {
     flex: 1,
