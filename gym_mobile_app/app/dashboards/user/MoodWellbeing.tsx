@@ -436,6 +436,16 @@ const moods = [
           </Text>
         </TouchableOpacity>
 
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'recommendations' && styles.activeTab]}
+          onPress={() => setActiveTab('recommendations')}
+        >
+          <Text style={[styles.tabText, activeTab === 'recommendations' && styles.activeTabText]}>
+            Insights
+          </Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity
           style={[styles.tab, activeTab === 'analysis' && styles.activeTab]}
           onPress={() => setActiveTab('analysis')}
@@ -448,14 +458,6 @@ const moods = [
     
         
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'recommendations' && styles.activeTab]}
-          onPress={() => setActiveTab('recommendations')}
-        >
-          <Text style={[styles.tabText, activeTab === 'recommendations' && styles.activeTabText]}>
-            Insights
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Tab Content */}
