@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 // Type definitions
 interface WellnessRange {
@@ -33,6 +33,10 @@ interface PatternAnalysis {
   highCount: number;
   focusArea: WellnessArea;
   keyFocusSuggestion: string;
+}
+
+interface WellnessRecommendationProps {
+  wellnessParams: Scores;
 }
 
 // Data
@@ -244,25 +248,14 @@ const BarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
   );
 };
 
-// Main Component
-const WellnessRecommendation: React.FC = () => {
-  const [scores, setScores] = useState<Scores>({
-    physical: 5,
-    mental: 5,
-    emotional: 5,
-    nutritional: 5,
-    sleep: 5,
-  });
-  const [showResults, setShowResults] = useState(false);
-
-  const sliders: WellnessArea[] = Object.keys(scores) as WellnessArea[];
-  const { avgScore, lowCount, highCount, focusArea, keyFocusSuggestion } = analyzePattern(scores);
+// Main Component - Results Only
+const WellnessRecommendation: React.FC<WellnessRecommendationProps> = ({ wellnessParams }) => {
+  const sliders: WellnessArea[] = Object.keys(wellnessParams) as WellnessArea[];
+  const { avgScore, lowCount, highCount, focusArea, keyFocusSuggestion } = analyzePattern(wellnessParams);
 
   const recommendations = Object.fromEntries(
-    sliders.map(area => [area, getRecommendation(area, scores[area])])
+    sliders.map(area => [area, getRecommendation(area, wellnessParams[area])])
   ) as Record<WellnessArea, WellnessRange | undefined>;
-
-  const handleGenerate = () => setShowResults(true);
 
   const getLevelBadgeStyle = (level: string) => {
     switch (level.toLowerCase()) {
@@ -290,142 +283,81 @@ const WellnessRecommendation: React.FC = () => {
     }
   };
 
-  const renderSlider = (area: WellnessArea) => {
-    const score = scores[area];
-    const percentage = ((score - 1) / 9) * 100;
-    const sliderRef = React.useRef<View>(null);
-
-    const handleSliderPress = (event: any) => {
-      if (sliderRef.current) {
-        sliderRef.current.measure((fx: number, fy: number, width: number, height: number, px: number, py: number) => {
-          const locationX = event.nativeEvent.pageX - px;
-          
-          if (locationX >= 0 && width > 0) {
-            const newPercentage = Math.max(0, Math.min(100, (locationX / width) * 100));
-            const newScore = Math.round((newPercentage / 100) * 9 + 1);
-            setScores({ ...scores, [area]: Math.max(1, Math.min(10, newScore)) });
-          }
-        });
-      }
-    };
-
-    return (
-      <View style={styles.inputGroup} key={area}>
-        <Text style={styles.label}>{areaLabels[area]}</Text>
-        
-        <TouchableOpacity 
-          style={styles.sliderContainer}
-          activeOpacity={1}
-          onPress={handleSliderPress}
-        >
-          <View ref={sliderRef} style={styles.sliderTrack}>
-            <View style={[styles.sliderFill, { width: `${percentage}%` }]} />
-            <View style={[styles.sliderThumb, { left: `${percentage}%` }]} />
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.scoreDisplay}>
-          <Text style={styles.scoreLabel}>Low</Text>
-          <Text style={styles.scoreValue}>{score}</Text>
-          <Text style={styles.scoreLabel}>High</Text>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.headerSection}>
-        <Text style={styles.headerTitle}>Wellness Recommendation & Pattern Analysis</Text>
-        <Text style={styles.headerSubtitle}>
-          Rate your wellness across five key areas to receive visual insights and domain-specific recommendations
-        </Text>
-      </View>
-
-      <View style={styles.inputSection}>
-        <View style={styles.wellnessInputs}>
-          {sliders.map(area => renderSlider(area))}
+      <View style={styles.resultsSection}>
+        <View style={styles.summarySection}>
+          <Text style={styles.summaryTitle}>Wellness Overview</Text>
+          <Text style={styles.summaryDescription}>
+            Your personalized wellness assessment based on your scores
+          </Text>
+          <View style={styles.summaryStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Average Score</Text>
+              <Text style={styles.statValue}>{avgScore}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Areas Needing Focus</Text>
+              <Text style={styles.statValue}>{lowCount}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>High Wellness Areas</Text>
+              <Text style={styles.statValue}>{highCount}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Primary Focus Area</Text>
+              <Text style={styles.statValue}>{areaLabels[focusArea].replace(' Wellness', '')}</Text>
+            </View>
+          </View>
+          <View style={styles.focusAdvice}>
+            <Text style={styles.focusAdviceLabel}>Expert Tip: </Text>
+            <Text style={styles.focusAdviceText}>{keyFocusSuggestion}</Text>
+          </View>
         </View>
-        <TouchableOpacity style={styles.btn} onPress={handleGenerate}>
-          <Text style={styles.btnText}>Show My Wellness Results</Text>
-        </TouchableOpacity>
-      </View>
 
-      {showResults && (
-        <View style={styles.resultsSection}>
-          <View style={styles.summarySection}>
-            <Text style={styles.summaryTitle}>Wellness Overview</Text>
-            <Text style={styles.summaryDescription}>
-              Your personalized wellness assessment based on your scores
-            </Text>
-            <View style={styles.summaryStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Average Score</Text>
-                <Text style={styles.statValue}>{avgScore}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Areas Needing Focus</Text>
-                <Text style={styles.statValue}>{lowCount}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>High Wellness Areas</Text>
-                <Text style={styles.statValue}>{highCount}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Primary Focus Area</Text>
-                <Text style={styles.statValue}>{areaLabels[focusArea].replace(' Wellness', '')}</Text>
-              </View>
-            </View>
-            <View style={styles.focusAdvice}>
-              <Text style={styles.focusAdviceLabel}>Expert Tip: </Text>
-              <Text style={styles.focusAdviceText}>{keyFocusSuggestion}</Text>
-            </View>
-          </View>
+        {/* Charts */}
+        <View style={styles.chartsContainer}>
+          <RadarChart scores={wellnessParams} />
+          <BarChart scores={wellnessParams} />
+        </View>
 
-          {/* Charts */}
-          <View style={styles.chartsContainer}>
-            <RadarChart scores={scores} />
-            <BarChart scores={scores} />
-          </View>
+        <View style={styles.recommendationsContainer}>
+          {sliders.map(area => {
+            const rec = recommendations[area];
+            const score = wellnessParams[area];
+            if (!rec) return null;
 
-          <View style={styles.recommendationsContainer}>
-            {sliders.map(area => {
-              const rec = recommendations[area];
-              const score = scores[area];
-              if (!rec) return null;
-
-              return (
-                <View style={styles.recommendationCard} key={area}>
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>{areaLabels[area]}</Text>
-                    <View style={[styles.levelBadge, getLevelBadgeStyle(rec.level)]}>
-                      <Text style={[styles.levelBadgeText, getLevelTextStyle(rec.level)]}>
-                        {rec.level}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.cardContent}>
-                    <View style={styles.contentRow}>
-                      <Text style={styles.contentLabel}>Your Score:</Text>
-                      <Text style={styles.contentValue}>{score}/10</Text>
-                    </View>
-                    <View style={styles.contentRow}>
-                      <Text style={styles.contentLabel}>Status:</Text>
-                      <Text style={styles.contentValue}>{rec.interpretation}</Text>
-                    </View>
-                    <View style={styles.recommendationText}>
-                      <Text style={styles.recommendationContent}>
-                        <Text style={styles.recommendationLabel}>Recommendation: </Text>
-                        {rec.recommendation}
-                      </Text>
-                    </View>
+            return (
+              <View style={styles.recommendationCard} key={area}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{areaLabels[area]}</Text>
+                  <View style={[styles.levelBadge, getLevelBadgeStyle(rec.level)]}>
+                    <Text style={[styles.levelBadgeText, getLevelTextStyle(rec.level)]}>
+                      {rec.level}
+                    </Text>
                   </View>
                 </View>
-              );
-            })}
-          </View>
+                <View style={styles.cardContent}>
+                  <View style={styles.contentRow}>
+                    <Text style={styles.contentLabel}>Your Score:</Text>
+                    <Text style={styles.contentValue}>{score}/10</Text>
+                  </View>
+                  <View style={styles.contentRow}>
+                    <Text style={styles.contentLabel}>Status:</Text>
+                    <Text style={styles.contentValue}>{rec.interpretation}</Text>
+                  </View>
+                  <View style={styles.recommendationText}>
+                    <Text style={styles.recommendationContent}>
+                      <Text style={styles.recommendationLabel}>Recommendation: </Text>
+                      {rec.recommendation}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
         </View>
-      )}
+      </View>
     </ScrollView>
   );
 };
@@ -435,99 +367,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     backgroundColor: '#0F172A',
-  },
-  headerSection: {
-    marginBottom: 24,
-    marginTop: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    lineHeight: 20,
-  },
-  inputSection: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-  },
-  wellnessInputs: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 24,
-    marginBottom: 24,
-  },
-  inputGroup: {
-    gap: 12,
-    width: '48%',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  sliderContainer: {
-    paddingVertical: 8,
-  },
-  sliderTrack: {
-    height: 8,
-    backgroundColor: '#334155',
-    borderRadius: 4,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  sliderFill: {
-    height: '100%',
-    backgroundColor: '#06b6d4',
-    borderRadius: 4,
-  },
-  sliderThumb: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    backgroundColor: '#06b6d4',
-    borderRadius: 10,
-    top: -6,
-    marginLeft: -10,
-    borderWidth: 3,
-    borderColor: '#1E293B',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  scoreDisplay: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  scoreLabel: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  scoreValue: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#06b6d4',
-  },
-  btn: {
-    backgroundColor: '#06b6d4',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  btnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
   },
   resultsSection: {
     marginBottom: 32,

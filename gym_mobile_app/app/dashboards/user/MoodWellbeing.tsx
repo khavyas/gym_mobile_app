@@ -10,7 +10,6 @@ import {
   SunIcon,
   FireIcon,
   SparklesIcon,
-  PhoneIcon,
   ExclamationTriangleIcon,
 } from 'react-native-heroicons/outline';
 import { LineChart } from 'react-native-chart-kit';
@@ -19,20 +18,38 @@ import WellnessRecommendation from './WellnessRecommendation';
 
 const screenWidth = Dimensions.get('window').width;
 
+interface WellnessParams {
+  physical: number;
+  mental: number;
+  emotional: number;
+  nutritional: number;
+  sleep: number;
+}
+
 export default function MoodWellbeing() {
- const [activeTab, setActiveTab] = useState<'log' | 'analysis' | 'tips' | 'recommendations'>('log');
+  const [activeTab, setActiveTab] = useState<'log' | 'analysis' | 'insights'>('log');
   const [selectedMood, setSelectedMood] = useState<string>('good');
   const [moodRating, setMoodRating] = useState(7);
   const [selectedFactors, setSelectedFactors] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
+  const [hasRatedWellness, setHasRatedWellness] = useState(false);
   
-const moods = [
-  { id: 'great', label: 'Great', emoji: '😄', color: '#10B981', rating: 10 },
-  { id: 'good', label: 'Good', emoji: '🙂', color: '#06b6d4', rating: 7 },
-  { id: 'okay', label: 'Okay', emoji: '😐', color: '#F59E0B', rating: 5 },
-  { id: 'low', label: 'Low', emoji: '😔', color: '#F97316', rating: 3 },
-  { id: 'anxious', label: 'Anxious', emoji: '😰', color: '#8B5CF6', rating: 2 },
-];
+  // Wellness parameters state
+  const [wellnessParams, setWellnessParams] = useState<WellnessParams>({
+    physical: 5,
+    mental: 5,
+    emotional: 5,
+    nutritional: 5,
+    sleep: 5,
+  });
+
+  const moods = [
+    { id: 'great', label: 'Great', emoji: '😄', color: '#10B981', rating: 10 },
+    { id: 'good', label: 'Good', emoji: '🙂', color: '#06b6d4', rating: 7 },
+    { id: 'okay', label: 'Okay', emoji: '😐', color: '#F59E0B', rating: 5 },
+    { id: 'low', label: 'Low', emoji: '😔', color: '#F97316', rating: 3 },
+    { id: 'anxious', label: 'Anxious', emoji: '😰', color: '#8B5CF6', rating: 2 },
+  ];
 
   const factors = [
     { id: 'sleep', label: 'Sleep Quality', icon: MoonIcon, color: '#8B5CF6' },
@@ -43,11 +60,78 @@ const moods = [
     { id: 'nutrition', label: 'Nutrition', icon: HeartIcon, color: '#EC4899' },
   ];
 
+  const wellnessParameters = [
+    { id: 'physical', label: 'Physical Wellness', color: '#10B981' },
+    { id: 'mental', label: 'Mental Wellness', color: '#06b6d4' },
+    { id: 'emotional', label: 'Emotional Wellness', color: '#8B5CF6' },
+    { id: 'nutritional', label: 'Nutritional Wellness', color: '#F59E0B' },
+    { id: 'sleep', label: 'Sleep Wellness', color: '#EC4899' },
+  ];
+
   const toggleFactor = (factorId: string) => {
     setSelectedFactors(prev =>
       prev.includes(factorId)
         ? prev.filter(f => f !== factorId)
         : [...prev, factorId]
+    );
+  };
+
+  const updateWellnessParam = (param: string, value: number) => {
+    setWellnessParams(prev => ({
+      ...prev,
+      [param]: value,
+    }));
+  };
+
+  const handleShowResults = () => {
+    setHasRatedWellness(true);
+    setActiveTab('insights');
+  };
+
+  const renderWellnessSlider = (param: { id: string; label: string; color: string }) => {
+    const value = wellnessParams[param.id as keyof typeof wellnessParams];
+    
+    return (
+      <View key={param.id} style={styles.wellnessParamContainer}>
+        <Text style={styles.wellnessParamLabel}>{param.label}</Text>
+        
+        <View 
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={(e) => {
+            const locationX = e.nativeEvent.locationX;
+            const sliderWidth = screenWidth - 112;
+            const newValue = Math.round((locationX / sliderWidth) * 10);
+            updateWellnessParam(param.id, Math.max(1, Math.min(10, newValue)));
+          }}
+          onResponderMove={(e) => {
+            const locationX = e.nativeEvent.locationX;
+            const sliderWidth = screenWidth - 112;
+            const newValue = Math.round((locationX / sliderWidth) * 10);
+            updateWellnessParam(param.id, Math.max(1, Math.min(10, newValue)));
+          }}
+        >
+          <View style={styles.wellnessSliderTrack}>
+            <View 
+              style={[
+                styles.wellnessSliderFill, 
+                { width: `${(value / 10) * 100}%`, backgroundColor: param.color }
+              ]} 
+            />
+            <View 
+              style={[
+                styles.wellnessSliderThumb, 
+                { left: `${(value / 10) * 100}%`, backgroundColor: param.color }
+              ]} 
+            />
+          </View>
+        </View>
+
+        <View style={styles.wellnessSliderLabels}>
+          <Text style={styles.wellnessSliderLabel}>Low</Text>
+          <Text style={[styles.wellnessSliderValue, { color: param.color }]}>{value}</Text>
+          <Text style={styles.wellnessSliderLabel}>High</Text>
+        </View>
+      </View>
     );
   };
 
@@ -73,7 +157,7 @@ const moods = [
               ]}
               onPress={() => {
                 setSelectedMood(mood.id);
-                setMoodRating(mood.rating); // Add this line
+                setMoodRating(mood.rating);
               }}
             >
               <Text style={styles.moodEmoji}>{mood.emoji}</Text>
@@ -93,48 +177,46 @@ const moods = [
         <View style={styles.detailedSection}>
           <View style={styles.ratingHeader}>
             <Text style={styles.ratingQuestion}>How are you feeling?</Text>
-              <View style={styles.ratingBadge}>
-                <Text style={styles.ratingEmoji}>
-                  {moods.find(m => m.id === selectedMood)?.emoji || '🙂'}
-                </Text>
-                <Text style={styles.ratingValue}>{moodRating}/10</Text>
-              </View>
+            <View style={styles.ratingBadge}>
+              <Text style={styles.ratingEmoji}>
+                {moods.find(m => m.id === selectedMood)?.emoji || '🙂'}
+              </Text>
+              <Text style={styles.ratingValue}>{moodRating}/10</Text>
+            </View>
           </View>
 
-<View style={styles.sliderContainer}>
-  <View 
-    onStartShouldSetResponder={() => true}
-    onResponderGrant={(e) => {
-      const locationX = e.nativeEvent.locationX;
-      const sliderWidth = screenWidth - 112;
-      const newRating = Math.round((locationX / sliderWidth) * 10);
-      setMoodRating(Math.max(1, Math.min(10, newRating)));
-      
-      // Update selected mood based on rating
-      const mood = moods.find(m => Math.abs(m.rating - newRating) <= 2) || moods[1];
-      setSelectedMood(mood.id);
-    }}
-    onResponderMove={(e) => {
-      const locationX = e.nativeEvent.locationX;
-      const sliderWidth = screenWidth - 112;
-      const newRating = Math.round((locationX / sliderWidth) * 10);
-      setMoodRating(Math.max(1, Math.min(10, newRating)));
-      
-      // Update selected mood based on rating
-      const mood = moods.find(m => Math.abs(m.rating - newRating) <= 2) || moods[1];
-      setSelectedMood(mood.id);
-    }}
-  >
-    <View style={styles.sliderTrack}>
-      <View style={[styles.sliderFill, { width: `${(moodRating / 10) * 100}%` }]} />
-      <View style={[styles.sliderThumb, { left: `${(moodRating / 10) * 100}%` }]} />
-    </View>
-  </View>
-  <View style={styles.sliderLabels}>
-    <Text style={styles.sliderLabel}>Very Low</Text>
-    <Text style={styles.sliderLabel}>Excellent</Text>
-  </View>
-</View>
+          <View style={styles.sliderContainer}>
+            <View 
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={(e) => {
+                const locationX = e.nativeEvent.locationX;
+                const sliderWidth = screenWidth - 112;
+                const newRating = Math.round((locationX / sliderWidth) * 10);
+                setMoodRating(Math.max(1, Math.min(10, newRating)));
+                
+                const mood = moods.find(m => Math.abs(m.rating - newRating) <= 2) || moods[1];
+                setSelectedMood(mood.id);
+              }}
+              onResponderMove={(e) => {
+                const locationX = e.nativeEvent.locationX;
+                const sliderWidth = screenWidth - 112;
+                const newRating = Math.round((locationX / sliderWidth) * 10);
+                setMoodRating(Math.max(1, Math.min(10, newRating)));
+                
+                const mood = moods.find(m => Math.abs(m.rating - newRating) <= 2) || moods[1];
+                setSelectedMood(mood.id);
+              }}
+            >
+              <View style={styles.sliderTrack}>
+                <View style={[styles.sliderFill, { width: `${(moodRating / 10) * 100}%` }]} />
+                <View style={[styles.sliderThumb, { left: `${(moodRating / 10) * 100}%` }]} />
+              </View>
+            </View>
+            <View style={styles.sliderLabels}>
+              <Text style={styles.sliderLabel}>Very Low</Text>
+              <Text style={styles.sliderLabel}>Excellent</Text>
+            </View>
+          </View>
 
           <Text style={styles.factorsTitle}>What's affecting your mood today?</Text>
 
@@ -177,6 +259,29 @@ const moods = [
             <Text style={styles.logButtonText}>Log Mood Entry</Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Wellness Parameters Section - Moved from Insights */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <HeartIcon size={20} color="#EC4899" />
+          <Text style={styles.cardTitle}>Rate Your Wellness</Text>
+        </View>
+
+        <Text style={styles.wellnessDescription}>
+          Rate each wellness dimension to get personalized insights
+        </Text>
+
+        <View style={styles.wellnessParamsWrapper}>
+          {wellnessParameters.map(param => renderWellnessSlider(param))}
+        </View>
+
+        <TouchableOpacity 
+          style={styles.showResultsButton}
+          onPress={handleShowResults}
+        >
+          <Text style={styles.showResultsButtonText}>Show My Wellness Results</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -322,96 +427,29 @@ const moods = [
     </ScrollView>
   );
 
-  const renderAITipsTab = () => (
-    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-      {/* Quick Mood Boost */}
-      <View style={styles.tipCard}>
-        <View style={styles.tipHeader}>
-          <BoltIcon size={20} color="#F59E0B" />
-          <Text style={styles.tipTitle}>Quick Mood Boost</Text>
-          <View style={styles.timeBadge}>
-            <Text style={styles.timeText}>Immediate</Text>
+  const renderInsightsTab = () => {
+    if (!hasRatedWellness) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <View style={styles.emptyStateCard}>
+            <HeartIcon size={64} color="#64748B" />
+            <Text style={styles.emptyStateTitle}>No Wellness Data Yet</Text>
+            <Text style={styles.emptyStateDescription}>
+              Rate your wellness dimensions in the "Log Mood" tab to see personalized insights and recommendations.
+            </Text>
+            <TouchableOpacity 
+              style={styles.emptyStateButton}
+              onPress={() => setActiveTab('log')}
+            >
+              <Text style={styles.emptyStateButtonText}>Go to Log Mood</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.tipDescription}>
-          Try a 5-minute breathing exercise or step outside for fresh air
-        </Text>
-        <TouchableOpacity style={styles.tipButton}>
-          <Text style={styles.tipButtonText}>Start Exercise</Text>
-        </TouchableOpacity>
-      </View>
+      );
+    }
 
-      {/* Sleep Optimization */}
-      <View style={styles.tipCard}>
-        <View style={styles.tipHeader}>
-          <MoonIcon size={20} color="#8B5CF6" />
-          <Text style={styles.tipTitle}>Sleep Optimization</Text>
-          <View style={[styles.timeBadge, { backgroundColor: '#1E3A8A' }]}>
-            <Text style={styles.timeText}>Daily</Text>
-          </View>
-        </View>
-        <Text style={styles.tipDescription}>
-          Your mood correlates strongly with sleep. Aim for bed by 10 PM tonight
-        </Text>
-        <TouchableOpacity style={[styles.tipButton, { backgroundColor: '#334155' }]}>
-          <Text style={styles.tipButtonText}>Set Reminder</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Social Connection */}
-      <View style={styles.tipCard}>
-        <View style={styles.tipHeader}>
-          <HeartIcon size={20} color="#EC4899" />
-          <Text style={styles.tipTitle}>Social Connection</Text>
-          <View style={[styles.timeBadge, { backgroundColor: '#581C87' }]}>
-            <Text style={styles.timeText}>Weekly</Text>
-          </View>
-        </View>
-        <Text style={styles.tipDescription}>
-          Plan a coffee date or call a friend this week to boost mood
-        </Text>
-        <TouchableOpacity style={[styles.tipButton, { backgroundColor: '#334155' }]}>
-          <Text style={styles.tipButtonText}>Schedule</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Consider Support */}
-      <View style={styles.tipCard}>
-        <View style={styles.tipHeader}>
-          <ExclamationTriangleIcon size={20} color="#F97316" />
-          <Text style={styles.tipTitle}>Consider Support</Text>
-          <View style={[styles.timeBadge, { backgroundColor: '#7C2D12' }]}>
-            <Text style={styles.timeText}>Professional</Text>
-          </View>
-        </View>
-        <Text style={styles.tipDescription}>
-          Your mood has been consistently low. Consider talking to Dr. Chen
-        </Text>
-        <TouchableOpacity style={[styles.tipButton, { backgroundColor: '#334155' }]}>
-          <Text style={styles.tipButtonText}>Book Session</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Crisis Support */}
-      <View style={styles.crisisCard}>
-        <View style={styles.crisisHeader}>
-          <ExclamationTriangleIcon size={24} color="#F59E0B" />
-          <Text style={styles.crisisTitle}>Need Additional Support?</Text>
-        </View>
-        <Text style={styles.crisisText}>
-          If you're experiencing persistent low mood or thoughts of self-harm, please reach out to a healthcare professional immediately.
-        </Text>
-        <View style={styles.crisisButtons}>
-          <TouchableOpacity style={styles.contactButton}>
-            <Text style={styles.contactButtonText}>Contact Care Team</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.crisisHelplineButton}>
-            <Text style={styles.crisisHelplineText}>Crisis Helpline</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
-  );
+    return <WellnessRecommendation wellnessParams={wellnessParams} />;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -436,12 +474,11 @@ const moods = [
           </Text>
         </TouchableOpacity>
 
-
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'recommendations' && styles.activeTab]}
-          onPress={() => setActiveTab('recommendations')}
+          style={[styles.tab, activeTab === 'insights' && styles.activeTab]}
+          onPress={() => setActiveTab('insights')}
         >
-          <Text style={[styles.tabText, activeTab === 'recommendations' && styles.activeTabText]}>
+          <Text style={[styles.tabText, activeTab === 'insights' && styles.activeTabText]}>
             Insights
           </Text>
         </TouchableOpacity>
@@ -454,17 +491,12 @@ const moods = [
             Analysis
           </Text>
         </TouchableOpacity>
-
-    
-        
-
       </View>
 
       {/* Tab Content */}
       {activeTab === 'log' && renderLogMoodTab()}
       {activeTab === 'analysis' && renderAnalysisTab()}
-      {activeTab === 'tips' && renderAITipsTab()}
-      {activeTab === 'recommendations' && <WellnessRecommendation />} 
+      {activeTab === 'insights' && renderInsightsTab()}
     </SafeAreaView>
   );
 }
@@ -673,6 +705,67 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  wellnessDescription: {
+    fontSize: 14,
+    color: '#94A3B8',
+    marginBottom: 20,
+  },
+  wellnessParamsWrapper: {
+    gap: 24,
+    marginBottom: 24,
+  },
+  wellnessParamContainer: {
+    gap: 12,
+  },
+  wellnessParamLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  wellnessSliderTrack: {
+    height: 8,
+    backgroundColor: '#334155',
+    borderRadius: 4,
+    position: 'relative',
+  },
+  wellnessSliderFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  wellnessSliderThumb: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    top: -6,
+    marginLeft: -10,
+    borderWidth: 3,
+    borderColor: '#1E293B',
+  },
+  wellnessSliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  wellnessSliderLabel: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  wellnessSliderValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  showResultsButton: {
+    backgroundColor: '#00c48c',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  showResultsButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   moodStatusContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -809,105 +902,43 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'right',
   },
-  tipCard: {
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyStateCard: {
     backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-  },
-  tipHeader: {
-    flexDirection: 'row',
+    borderRadius: 16,
+    padding: 32,
     alignItems: 'center',
-    marginBottom: 12,
+    width: '100%',
   },
-  tipTitle: {
-    fontSize: 16,
+  emptyStateTitle: {
+    fontSize: 24,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginLeft: 10,
-    flex: 1,
+    marginTop: 20,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  timeBadge: {
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  timeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#60A5FA',
-  },
-  tipDescription: {
-    fontSize: 14,
+  emptyStateDescription: {
+    fontSize: 16,
     color: '#94A3B8',
-    lineHeight: 20,
-    marginBottom: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
   },
-  tipButton: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  tipButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  crisisCard: {
-    backgroundColor: '#7C2D12',
+  emptyStateButton: {
+    backgroundColor: '#06b6d4',
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: '#92400E',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
   },
-  crisisHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  crisisTitle: {
+  emptyStateButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FEF3C7',
-    marginLeft: 10,
-  },
-  crisisText: {
-    fontSize: 14,
-    color: '#FEF3C7',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  crisisButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  contactButton: {
-    flex: 1,
-    backgroundColor: '#06b6d4',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  contactButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
     color: '#FFFFFF',
-  },
-  crisisHelplineButton: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-  },
-  crisisHelplineText: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#FFFFFF',
   },
 });
