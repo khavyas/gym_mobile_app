@@ -1,7 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 
-const wellnessData = {
+// Type definitions
+interface WellnessRange {
+  range: [number, number];
+  level: string;
+  interpretation: string;
+  recommendation: string;
+}
+
+interface WellnessDataType {
+  physical: WellnessRange[];
+  mental: WellnessRange[];
+  emotional: WellnessRange[];
+  nutritional: WellnessRange[];
+  sleep: WellnessRange[];
+}
+
+interface Scores {
+  physical: number;
+  mental: number;
+  emotional: number;
+  nutritional: number;
+  sleep: number;
+}
+
+type WellnessArea = keyof Scores;
+
+interface PatternAnalysis {
+  avgScore: string;
+  lowCount: number;
+  highCount: number;
+  focusArea: WellnessArea;
+  keyFocusSuggestion: string;
+}
+
+// Data
+const wellnessData: WellnessDataType = {
   physical: [
     { range: [1, 4], level: 'Low', interpretation: 'Low activity or energy', recommendation: 'Start with a 10–15 min daily walk; stretch for 5 min every morning.' },
     { range: [5, 7], level: 'Moderate', interpretation: 'Fairly active', recommendation: 'Maintain your routine; add one strength or flexibility session weekly.' },
@@ -29,7 +64,7 @@ const wellnessData = {
   ]
 };
 
-const areaLabels = {
+const areaLabels: Record<WellnessArea, string> = {
   physical: 'Physical Wellness',
   mental: 'Mental Wellness',
   emotional: 'Emotional Wellness',
@@ -37,14 +72,181 @@ const areaLabels = {
   sleep: 'Sleep Wellness',
 };
 
-type WellnessArea = keyof typeof wellnessData;
-
-function getRecommendation(area: WellnessArea, score: number) {
+// Helper functions
+function getRecommendation(area: WellnessArea, score: number): WellnessRange | undefined {
   return wellnessData[area].find(rec => score >= rec.range[0] && score <= rec.range[1]);
 }
 
-const WellnessRecommendation = () => {
-  const [scores, setScores] = useState({
+function analyzePattern(scores: Scores): PatternAnalysis {
+  const values = Object.values(scores);
+  const avgScore = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+  const lowCount = values.filter(v => v <= 4).length;
+  const highCount = values.filter(v => v >= 8).length;
+  const focusArea = (Object.keys(scores) as WellnessArea[]).reduce((a, b) => 
+    (scores[a] < scores[b] ? a : b)
+  );
+
+  const suggestions: Record<WellnessArea, string> = {
+    physical: 'Add moderate physical activity daily — like brisk walking.',
+    mental: 'Try brief mindfulness breaks and limit screen exposure.',
+    emotional: 'Do one joyful or creative thing daily to lift your mood.',
+    nutritional: 'Hydrate more and keep veggies in at least two meals.',
+    sleep: 'Standardize your bedtime; practice good sleep hygiene.'
+  };
+
+  const keyFocusSuggestion = suggestions[focusArea];
+
+  return { avgScore, lowCount, highCount, focusArea, keyFocusSuggestion };
+}
+
+// Simple Radar Chart Component
+const RadarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
+  const areas = Object.keys(scores) as WellnessArea[];
+  const size = 200;
+  const center = size / 2;
+  const radius = 70;
+  const levels = 5;
+
+  // Calculate points for pentagon
+  const getPoint = (index: number, value: number) => {
+    const angle = (Math.PI * 2 * index) / areas.length - Math.PI / 2;
+    const r = (value / 10) * radius;
+    return {
+      x: center + r * Math.cos(angle),
+      y: center + r * Math.sin(angle)
+    };
+  };
+
+  // Create path for score polygon
+  const scorePoints = areas.map((area, i) => getPoint(i, scores[area]));
+  const scorePath = scorePoints.map((p, i) => 
+    `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
+  ).join(' ') + ' Z';
+
+  // Create grid lines
+  const gridPaths = Array.from({ length: levels }, (_, i) => {
+    const levelRadius = radius * ((i + 1) / levels);
+    const points = areas.map((_, idx) => {
+      const angle = (Math.PI * 2 * idx) / areas.length - Math.PI / 2;
+      return {
+        x: center + levelRadius * Math.cos(angle),
+        y: center + levelRadius * Math.sin(angle)
+      };
+    });
+    return points.map((p, idx) => 
+      `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
+    ).join(' ') + ' Z';
+  });
+
+  return (
+    <View style={styles.chartContainer}>
+      <Text style={styles.chartTitle}>Wellness Radar</Text>
+      <View style={styles.svgContainer}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Grid */}
+          {gridPaths.map((path, i) => (
+            <path
+              key={i}
+              d={path}
+              fill="none"
+              stroke="#334155"
+              strokeWidth="1"
+            />
+          ))}
+          
+          {/* Axis lines */}
+          {areas.map((_, i) => {
+            const angle = (Math.PI * 2 * i) / areas.length - Math.PI / 2;
+            return (
+              <line
+                key={i}
+                x1={center}
+                y1={center}
+                x2={center + radius * Math.cos(angle)}
+                y2={center + radius * Math.sin(angle)}
+                stroke="#334155"
+                strokeWidth="1"
+              />
+            );
+          })}
+          
+          {/* Score polygon */}
+          <path
+            d={scorePath}
+            fill="rgba(6, 182, 212, 0.3)"
+            stroke="#06b6d4"
+            strokeWidth="2"
+          />
+          
+          {/* Score points */}
+          {scorePoints.map((p, i) => (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r="4"
+              fill="#06b6d4"
+            />
+          ))}
+        </svg>
+      </View>
+      <View style={styles.chartLabels}>
+        {areas.map(area => (
+          <Text key={area} style={styles.chartLabel}>
+            {areaLabels[area].replace(' Wellness', '')}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+};
+
+// Simple Bar Chart Component
+const BarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
+  const areas = Object.keys(scores) as WellnessArea[];
+  const maxHeight = 150;
+  const benchmark = 7.5;
+
+  return (
+    <View style={styles.chartContainer}>
+      <Text style={styles.chartTitle}>Score Comparison</Text>
+      <View style={styles.barChartContainer}>
+        {areas.map(area => {
+          const score = scores[area];
+          const scoreHeight = (score / 10) * maxHeight;
+          const benchmarkHeight = (benchmark / 10) * maxHeight;
+
+          return (
+            <View key={area} style={styles.barGroup}>
+              <View style={styles.barStack}>
+                <View style={[styles.benchmarkBar, { height: benchmarkHeight }]} />
+                <View style={[styles.scoreBar, { height: scoreHeight }]} />
+              </View>
+              <Text style={styles.barLabel}>
+                {areaLabels[area].replace(' Wellness', '')}
+              </Text>
+              <Text style={styles.barValue}>{score}</Text>
+            </View>
+          );
+        })}
+      </View>
+      <View style={styles.chartLegend}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: '#06b6d4' }]} />
+          <Text style={styles.legendText}>Your Score</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: '#64748B' }]} />
+          <Text style={styles.legendText}>Benchmark (7.5)</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// Main Component
+const WellnessRecommendation: React.FC = () => {
+  const [scores, setScores] = useState<Scores>({
     physical: 5,
     mental: 5,
     emotional: 5,
@@ -54,14 +256,11 @@ const WellnessRecommendation = () => {
   const [showResults, setShowResults] = useState(false);
 
   const sliders: WellnessArea[] = Object.keys(scores) as WellnessArea[];
-
-  const avgScore = (Object.values(scores).reduce((a, b) => a + b, 0) / sliders.length).toFixed(1);
-  const lowCount = Object.values(scores).filter(score => score <= 4).length;
-  const highCount = Object.values(scores).filter(score => score >= 8).length;
+  const { avgScore, lowCount, highCount, focusArea, keyFocusSuggestion } = analyzePattern(scores);
 
   const recommendations = Object.fromEntries(
     sliders.map(area => [area, getRecommendation(area, scores[area])])
-  );
+  ) as Record<WellnessArea, WellnessRange | undefined>;
 
   const handleGenerate = () => setShowResults(true);
 
@@ -137,9 +336,9 @@ const WellnessRecommendation = () => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.headerSection}>
-        <Text style={styles.headerTitle}>Wellness Recommendation System</Text>
+        <Text style={styles.headerTitle}>Wellness Recommendation & Pattern Analysis</Text>
         <Text style={styles.headerSubtitle}>
-          Rate your wellness across five key areas to receive personalized recommendations
+          Rate your wellness across five key areas to receive visual insights and domain-specific recommendations
         </Text>
       </View>
 
@@ -148,7 +347,7 @@ const WellnessRecommendation = () => {
           {sliders.map(area => renderSlider(area))}
         </View>
         <TouchableOpacity style={styles.btn} onPress={handleGenerate}>
-          <Text style={styles.btnText}>Generate Recommendations</Text>
+          <Text style={styles.btnText}>Show My Wellness Results</Text>
         </TouchableOpacity>
       </View>
 
@@ -169,10 +368,24 @@ const WellnessRecommendation = () => {
                 <Text style={styles.statValue}>{lowCount}</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Strengths</Text>
+                <Text style={styles.statLabel}>High Wellness Areas</Text>
                 <Text style={styles.statValue}>{highCount}</Text>
               </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Primary Focus Area</Text>
+                <Text style={styles.statValue}>{areaLabels[focusArea].replace(' Wellness', '')}</Text>
+              </View>
             </View>
+            <View style={styles.focusAdvice}>
+              <Text style={styles.focusAdviceLabel}>Expert Tip: </Text>
+              <Text style={styles.focusAdviceText}>{keyFocusSuggestion}</Text>
+            </View>
+          </View>
+
+          {/* Charts */}
+          <View style={styles.chartsContainer}>
+            <RadarChart scores={scores} />
+            <BarChart scores={scores} />
           </View>
 
           <View style={styles.recommendationsContainer}>
@@ -221,9 +434,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    backgroundColor: '#0F172A',
   },
   headerSection: {
     marginBottom: 24,
+    marginTop: 16,
   },
   headerTitle: {
     fontSize: 24,
@@ -339,6 +554,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 16,
+    marginBottom: 16,
   },
   statItem: {
     flex: 1,
@@ -354,6 +570,119 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#06b6d4',
+  },
+  focusAdvice: {
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#06b6d4',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  focusAdviceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  focusAdviceText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    flex: 1,
+  },
+  chartsContainer: {
+    gap: 16,
+    marginBottom: 16,
+  },
+  chartContainer: {
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 20,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  svgContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  chartLabels: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  chartLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  barChartContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 180,
+    paddingBottom: 30,
+  },
+  barGroup: {
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  barStack: {
+    position: 'relative',
+    width: 40,
+    alignItems: 'center',
+  },
+  scoreBar: {
+    width: 30,
+    backgroundColor: '#06b6d4',
+    borderRadius: 4,
+    position: 'absolute',
+    bottom: 0,
+  },
+  benchmarkBar: {
+    width: 40,
+    backgroundColor: '#64748B',
+    opacity: 0.3,
+    borderRadius: 4,
+    position: 'absolute',
+    bottom: 0,
+  },
+  barLabel: {
+    fontSize: 10,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  barValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#06b6d4',
+  },
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#94A3B8',
   },
   recommendationsContainer: {
     gap: 16,
