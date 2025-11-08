@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +29,72 @@ interface APIWaterEntry {
   __v: number;
 }
 
+// Toast Component Props Interface
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+}
+
+// Toast Component
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+ 
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.toastContent}>
+        <Text style={styles.toastIcon}>✓</Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function WaterIntake() {
   const router = useRouter();
   const [currentIntake, setCurrentIntake] = useState(0);
@@ -37,6 +103,8 @@ export default function WaterIntake() {
   const [selectedAmount, setSelectedAmount] = useState(250);
   const [apiWaterData, setApiWaterData] = useState<APIWaterEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     fetchTodayWaterData();
@@ -109,7 +177,6 @@ export default function WaterIntake() {
       return response.status === 200 || response.status === 201;
     } catch (error) {
       console.error('Error logging water to API:', error);
-      Alert.alert('Error', 'Failed to log water intake. Please try again.');
       return false;
     }
   };
@@ -171,7 +238,11 @@ export default function WaterIntake() {
           { text: 'Cancel', style: 'cancel' },
           { 
             text: 'Track Locally', 
-            onPress: () => addWaterLocally(amount, type)
+            onPress: () => {
+              addWaterLocally(amount, type);
+              setToastMessage(`${amount}ml water logged locally! 💧`);
+              setShowToast(true);
+            }
           }
         ]
       );
@@ -179,6 +250,10 @@ export default function WaterIntake() {
     }
 
     addWaterLocally(amount, type);
+    
+    // Show success toast
+    setToastMessage(`${amount}ml water intake logged successfully! 💧`);
+    setShowToast(true);
   };
 
   const addWaterLocally = (amount: number, type: 'glass' | 'bottle' | 'cup' | 'custom') => {
@@ -197,11 +272,14 @@ export default function WaterIntake() {
     setCurrentIntake(prev => prev + amount);
 
     if (currentIntake + amount >= dailyGoal && currentIntake < dailyGoal) {
-      Alert.alert(
-        "🎉 Goal Achieved!",
-        "Congratulations! You've reached your daily water intake goal!",
-        [{ text: "Awesome!", style: "default" }]
-      );
+      // Delay the goal achievement alert slightly so toast shows first
+      setTimeout(() => {
+        Alert.alert(
+          "🎉 Goal Achieved!",
+          "Congratulations! You've reached your daily water intake goal!",
+          [{ text: "Awesome!", style: "default" }]
+        );
+      }, 500);
     }
   };
 
@@ -210,6 +288,10 @@ export default function WaterIntake() {
     if (entry) {
       setWaterHistory(prev => prev.filter(e => e.id !== id));
       setCurrentIntake(prev => Math.max(0, prev - entry.amount));
+      
+      // Show toast for removal
+      setToastMessage(`${entry.amount}ml water entry removed`);
+      setShowToast(true);
     }
   };
 
@@ -230,24 +312,30 @@ export default function WaterIntake() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
+      {/* Toast Notification */}
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        onHide={() => setShowToast(false)} 
+      />
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
-          {/* Header - Now inside ScrollView */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Water Intake</Text>
-          <Text style={styles.headerSubtitle}>{currentDate}</Text>
+        {/* Header - Now inside ScrollView */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Water Intake</Text>
+            <Text style={styles.headerSubtitle}>{currentDate}</Text>
+          </View>
+          {/* <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity> */}
         </View>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
       
         {/* Water Progress Visualization with Background Image */}
         <View style={styles.progressSection}>
@@ -285,6 +373,25 @@ export default function WaterIntake() {
                 </View>
                 <Text style={styles.encouragementText}>
                   {getEncouragementMessage()}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Hydration Benefits Card with Stock Image */}
+        <View style={styles.benefitsSection}>
+          <View style={styles.benefitsCard}>
+            <Image 
+              source={{ uri: 'https://images.unsplash.com/photo-1523294587484-bae6cc870010?w=800&q=80' }}
+              style={styles.benefitsImage}
+            />
+            <View style={styles.benefitsOverlay}>
+              <View style={styles.benefitsContent}>
+                <Droplet size={32} color="#FFFFFF" strokeWidth={2} />
+                <Text style={styles.benefitsTitle}>Stay Hydrated</Text>
+                <Text style={styles.benefitsText}>
+                  Drinking enough water helps boost energy, improve skin health, and support overall wellness.
                 </Text>
               </View>
             </View>
@@ -351,25 +458,6 @@ export default function WaterIntake() {
                 <Text style={styles.addButtonText}>Add Water</Text>
               </LinearGradient>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Hydration Benefits Card with Stock Image */}
-        <View style={styles.benefitsSection}>
-          <View style={styles.benefitsCard}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1523294587484-bae6cc870010?w=800&q=80' }}
-              style={styles.benefitsImage}
-            />
-            <View style={styles.benefitsOverlay}>
-              <View style={styles.benefitsContent}>
-                <Droplet size={32} color="#FFFFFF" strokeWidth={2} />
-                <Text style={styles.benefitsTitle}>Stay Hydrated</Text>
-                <Text style={styles.benefitsText}>
-                  Drinking enough water helps boost energy, improve skin health, and support overall wellness.
-                </Text>
-              </View>
-            </View>
           </View>
         </View>
 
@@ -451,6 +539,40 @@ export default function WaterIntake() {
 }
 
 const styles = StyleSheet.create({
+   // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0F172A',

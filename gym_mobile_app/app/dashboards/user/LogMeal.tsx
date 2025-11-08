@@ -16,6 +16,7 @@ import {
   getWebFileSize,
   needsCompression 
 } from '../../utils/imageCompressionUtils';
+import { Animated } from 'react-native';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const CALORIE_NINJA_API_KEY = '40zvAZsDb7q/yMbKodGj1A==6ddAOLV8qB4sxUUg';
@@ -42,6 +43,12 @@ interface MealEntry {
   carbs: number;
   fats: number;
   time: string;
+}
+
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
 }
 
 interface APIMealEntry {
@@ -104,6 +111,64 @@ interface LogMealResponse {
   segmentation_results: LogMealFoodItem[];
 }
 
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+ 
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.toastContent}>
+        <Text style={styles.toastIcon}>✓</Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function LogMeal() {
   const router = useRouter();
   const [totalCalories, setTotalCalories] = useState(0);
@@ -117,8 +182,8 @@ export default function LogMeal() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NutritionItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<NutritionItem[]>([]);
-  
-  // LogMeal specific states
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [logMealImageId, setLogMealImageId] = useState<string>('');
   const [detectedDishes, setDetectedDishes] = useState<LogMealFoodItem[]>([]);
 
@@ -661,29 +726,14 @@ export default function LogMeal() {
         fats: Math.round(totalNutrition.fats),
       };
 
-      const success = await logMealToAPI(mealData);
-      
-      if (!success) {
-        Alert.alert(
-          'Connection Error',
-          'Failed to sync with server. Do you want to track locally?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Track Locally', 
-              onPress: () => {
-                addMealLocally(mealData);
-                clearSearchResults();
-              }
-            }
-          ]
-        );
-        return;
-      }
-
+      // Skip backend API call - just log locally and show toast
       addMealLocally(mealData);
       clearSearchResults();
-      Alert.alert('Success', 'Meal logged successfully!');
+      
+      // Show success toast
+      setToastMessage(`Meal logged successfully! 🍽️`);
+      setShowToast(true);
+      
     } catch (error) {
       console.error('Error saving items:', error);
       Alert.alert('Error', 'Failed to save meal. Please try again.');
@@ -691,6 +741,7 @@ export default function LogMeal() {
       setIsSaving(false);
     }
   };
+
 
   const clearSearchResults = () => {
     setSearchResults([]);
@@ -726,19 +777,27 @@ export default function LogMeal() {
     setTotalCalories(prev => prev + mealData.calories);
 
     if (totalCalories + mealData.calories >= dailyGoal && totalCalories < dailyGoal) {
-      Alert.alert(
-        "🎉 Daily Goal Reached!",
-        "You've reached your daily calorie goal!",
-        [{ text: "Great!", style: "default" }]
-      );
+      // Delay the goal achievement alert slightly so toast shows first
+      setTimeout(() => {
+        Alert.alert(
+          "🎉 Daily Goal Reached!",
+          "You've reached your daily calorie goal!",
+          [{ text: "Great!", style: "default" }]
+        );
+      }, 500);
     }
   };
+
 
   const removeMealEntry = (id: string) => {
     const entry = mealHistory.find(e => e.id === id);
     if (entry) {
       setMealHistory(prev => prev.filter(e => e.id !== id));
       setTotalCalories(prev => Math.max(0, prev - entry.calories));
+      
+      // Show toast for removal
+      setToastMessage(`${entry.foodName} removed from log`);
+      setShowToast(true);
     }
   };
 
@@ -769,6 +828,12 @@ export default function LogMeal() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
+    <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        onHide={() => setShowToast(false)} 
+      />
+
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
@@ -782,9 +847,9 @@ export default function LogMeal() {
             <Text style={styles.headerTitle}>Meal Tracker</Text>
             <Text style={styles.headerSubtitle}>{currentDate}</Text>
           </View>
-          <TouchableOpacity style={styles.settingsButton}>
+          {/* <TouchableOpacity style={styles.settingsButton}>
             <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Calorie Progress Card */}
@@ -1132,6 +1197,40 @@ export default function LogMeal() {
 }
 
 const styles = StyleSheet.create({
+   toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#0F172A',

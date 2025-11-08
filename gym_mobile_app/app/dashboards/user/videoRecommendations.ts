@@ -87,7 +87,7 @@ export const videoRecommendations: VideoRecommendation[] = [
   },
   {
     id: '8',
-    youtubeId: '8nGC35uEgGQ', // Meal Prep
+    youtubeId: 'ERysyFbJH7w', // Meal Prep
     title: 'Healthy Meal Prep: 5 Recipes for the Week',
     description: 'Save time and eat healthy with these simple meal prep ideas.',
     duration: '10:30',

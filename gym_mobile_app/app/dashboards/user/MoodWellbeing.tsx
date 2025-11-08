@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -26,6 +26,72 @@ interface WellnessParams {
   sleep: number;
 }
 
+// Toast Component Props Interface
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+}
+
+// Toast Component
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+ 
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.toastContent}>
+        <Text style={styles.toastIcon}>✓</Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function MoodWellbeing() {
   const [activeTab, setActiveTab] = useState<'log' | 'analysis' | 'insights'>('log');
   const [selectedMood, setSelectedMood] = useState<string>('good');
@@ -33,6 +99,8 @@ export default function MoodWellbeing() {
   const [selectedFactors, setSelectedFactors] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [hasRatedWellness, setHasRatedWellness] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   
   // Wellness parameters state
   const [wellnessParams, setWellnessParams] = useState<WellnessParams>({
@@ -86,6 +154,19 @@ export default function MoodWellbeing() {
   const handleShowResults = () => {
     setHasRatedWellness(true);
     setActiveTab('insights');
+    setToastMessage('Wellness assessment completed! 🎉');
+    setShowToast(true);
+  };
+
+  const handleLogMood = () => {
+    // Here you would typically save the mood data to your backend
+    // For now, we'll just show the success message
+    setToastMessage('Mood logged successfully! 📝');
+    setShowToast(true);
+    
+    // Optionally reset the form after logging
+    // setSelectedFactors([]);
+    // setNotes('');
   };
 
   const renderWellnessSlider = (param: { id: string; label: string; color: string }) => {
@@ -255,13 +336,16 @@ export default function MoodWellbeing() {
             />
           </View>
 
-          <TouchableOpacity style={styles.logButton}>
+          <TouchableOpacity 
+            style={styles.logButton}
+            onPress={handleLogMood}
+          >
             <Text style={styles.logButtonText}>Log Mood Entry</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Wellness Parameters Section - Moved from Insights */}
+      {/* Wellness Parameters Section */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <HeartIcon size={20} color="#EC4899" />
@@ -454,6 +538,13 @@ export default function MoodWellbeing() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
+
+      {/* Toast Notification */}
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        onHide={() => setShowToast(false)} 
+      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -940,5 +1031,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

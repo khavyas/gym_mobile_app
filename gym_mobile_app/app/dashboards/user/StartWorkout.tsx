@@ -8,6 +8,7 @@ import { Activity, Dumbbell, Heart, Timer, Flame, TrendingUp, Play, Pause, StopC
 import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { Animated } from 'react-native';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const { width } = Dimensions.get('window');
@@ -34,6 +35,70 @@ interface APIWorkoutEntry {
   updatedAt: string;
 }
 
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+}
+
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+ 
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={styles.toastContent}>
+        <Text style={styles.toastIcon}>✓</Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
 export default function StartWorkout() {
   const router = useRouter();
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
@@ -46,6 +111,8 @@ export default function StartWorkout() {
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -224,32 +291,44 @@ export default function StartWorkout() {
       notes: workoutNotes,
     };
 
-    const success = await logWorkoutToAPI(workoutData);
-    
-    if (!success) {
-      Alert.alert(
-        'Connection Error',
-        'Failed to sync with server. Do you want to track locally?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Track Locally', 
-            onPress: () => saveWorkoutLocally(workoutData)
-          }
-        ]
-      );
-      return;
-    }
-
+    // Skip backend API call - just save locally and show toast
     saveWorkoutLocally(workoutData);
     resetWorkout();
 
-    Alert.alert(
-      '🎉 Workout Complete!',
-      `Great job! You burned ${caloriesBurned} calories in ${durationMinutes} minutes.`,
-      [{ text: 'Awesome!', style: 'default' }]
-    );
+    // Show success toast
+    setToastMessage(`Workout logged successfully! 💪 Burned ${caloriesBurned} calories`);
+    setShowToast(true);
   };
+
+  const logManualWorkout = () => {
+  if (!selectedWorkoutType) {
+    Alert.alert('Missing Info', 'Please select a workout type.');
+    return;
+  }
+
+  // Default to 30 minutes if no active workout
+  const durationMinutes = 30;
+  const workout = workoutTypes.find(w => w.label === selectedWorkoutType);
+  const intensity = intensityLevels.find(i => i.value === selectedIntensity);
+  const caloriesBurned = Math.round(
+    (workout?.calPerMin || 6) * durationMinutes * (intensity?.multiplier || 1)
+  );
+
+  const workoutData = {
+    workoutType: selectedWorkoutType,
+    duration: durationMinutes,
+    caloriesBurned,
+    intensity: selectedIntensity,
+    notes: workoutNotes,
+  };
+
+  saveWorkoutLocally(workoutData);
+  setWorkoutNotes('');
+
+  // Show success toast
+  setToastMessage(`${selectedWorkoutType} workout logged! 💪 ${caloriesBurned} calories burned`);
+  setShowToast(true);
+};
 
   const saveWorkoutLocally = (workoutData: Omit<WorkoutEntry, 'id' | 'time'>) => {
     const newEntry: WorkoutEntry = {
@@ -299,6 +378,10 @@ export default function StartWorkout() {
     if (entry) {
       setWorkoutHistory(prev => prev.filter(e => e.id !== id));
       setTotalCalories(prev => Math.max(0, prev - entry.caloriesBurned));
+      
+      // Show toast for removal
+      setToastMessage(`${entry.workoutType} workout removed from log`);
+      setShowToast(true);
     }
   };
 
@@ -306,6 +389,11 @@ export default function StartWorkout() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
+    <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        onHide={() => setShowToast(false)} 
+      />
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
@@ -321,9 +409,9 @@ export default function StartWorkout() {
           <Text style={styles.headerTitle}>Workout Tracker</Text>
           <Text style={styles.headerSubtitle}>{currentDate}</Text>
         </View>
-        <TouchableOpacity style={styles.settingsButton}>
+        {/* <TouchableOpacity style={styles.settingsButton}>
           <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
 
@@ -517,6 +605,28 @@ export default function StartWorkout() {
           />
         </View>
 
+        {!isWorkoutActive && (
+              <View style={styles.manualLogSection}>
+                <TouchableOpacity 
+                  style={styles.manualLogButton}
+                  onPress={logManualWorkout}
+                >
+                  <LinearGradient
+                    colors={['#10B981', '#059669']}
+                    style={styles.manualLogButtonGradient}
+                  >
+                    <Ionicons name="add-circle" size={24} color="#FFFFFF" />
+                    <Text style={styles.manualLogButtonText}>
+                      Log Quick Workout (30 min)
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                <Text style={styles.manualLogHint}>
+                  💡 Tip: Use this for workouts already completed
+                </Text>
+              </View>
+            )}
+
         {/* Motivation Card with Stock Image */}
         <View style={styles.motivationSection}>
           <View style={styles.motivationCard}>
@@ -603,6 +713,67 @@ export default function StartWorkout() {
 }
 
 const styles = StyleSheet.create({
+  toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  
+  // Manual Log Button Styles
+  manualLogSection: {
+    marginBottom: 24,
+  },
+  manualLogButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  manualLogButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 12,
+  },
+  manualLogButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  manualLogHint: {
+    fontSize: 13,
+    color: '#94A3B8',
+    marginTop: 12,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
