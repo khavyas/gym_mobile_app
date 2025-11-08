@@ -31,8 +31,8 @@ export default function Shop() {
     {
       id: 1,
       name: "Premium Whey Protein",
-      price: 49.99,
-      originalPrice: 59.99,
+      price: 4999.99,
+      originalPrice: 5999.99,
       rating: 4.8,
       reviews: 1250,
       image: "https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=400&h=400&fit=crop",
@@ -44,7 +44,7 @@ export default function Shop() {
     {
       id: 2,
       name: "Adjustable Dumbbells",
-      price: 299.99,
+      price: 2999.99,
       rating: 4.9,
       reviews: 892,
       image: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=400&fit=crop",
@@ -55,8 +55,8 @@ export default function Shop() {
     {
       id: 3,
       name: "Gym Performance T-Shirt",
-      price: 24.99,
-      originalPrice: 34.99,
+      price: 249.99,
+      originalPrice: 349.99,
       rating: 4.6,
       reviews: 567,
       image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
@@ -68,7 +68,7 @@ export default function Shop() {
     {
       id: 4,
       name: "Resistance Band Set",
-      price: 19.99,
+      price: 199.99,
       rating: 4.7,
       reviews: 1034,
       image: "https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=400&h=400&fit=crop",
@@ -79,7 +79,7 @@ export default function Shop() {
     {
       id: 5,
       name: "Pre-Workout Supplement",
-      price: 34.99,
+      price: 3499.99,
       rating: 4.5,
       reviews: 789,
       image: "https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=400&h=400&fit=crop",
@@ -90,7 +90,7 @@ export default function Shop() {
     {
       id: 6,
       name: "Yoga Mat Premium",
-      price: 39.99,
+      price: 399.99,
       rating: 4.8,
       reviews: 445,
       image: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&h=400&fit=crop",
@@ -101,8 +101,8 @@ export default function Shop() {
     {
       id: 7,
       name: "Wireless Earbuds",
-      price: 89.99,
-      originalPrice: 129.99,
+      price: 899.99,
+      originalPrice: 1299.99,
       rating: 4.4,
       reviews: 2103,
       image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
@@ -113,7 +113,7 @@ export default function Shop() {
     {
       id: 8,
       name: "Gym Gloves",
-      price: 15.99,
+      price: 1099.99,
       rating: 4.3,
       reviews: 334,
       image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=400&fit=crop",
@@ -124,7 +124,7 @@ export default function Shop() {
     {
       id: 9,
       name: "Foam Roller",
-      price: 29.99,
+      price: 299.99,
       rating: 4.6,
       reviews: 678,
       image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=400&h=400&fit=crop",
@@ -135,7 +135,7 @@ export default function Shop() {
     {
       id: 10,
       name: "Protein Shaker Bottle",
-      price: 12.99,
+      price: 1299.99,
       rating: 4.5,
       reviews: 892,
       image: "https://images.unsplash.com/photo-1616671276441-2f2c277b8bf6?w=400&h=400&fit=crop",
@@ -146,7 +146,7 @@ export default function Shop() {
     {
       id: 11,
       name: "Sports Water Bottle",
-      price: 18.99,
+      price: 1099.99,
       rating: 4.7,
       reviews: 1205,
       image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop",
@@ -157,8 +157,8 @@ export default function Shop() {
     {
       id: 12,
       name: "Compression Shorts",
-      price: 34.99,
-      originalPrice: 44.99,
+      price: 349.99,
+      originalPrice: 449.99,
       rating: 4.4,
       reviews: 523,
       image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop",
@@ -170,7 +170,7 @@ export default function Shop() {
     {
       id: 13,
       name: "Jump Rope",
-      price: 14.99,
+      price: 149.99,
       rating: 4.6,
       reviews: 745,
       image: "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=400&h=400&fit=crop",
@@ -181,7 +181,7 @@ export default function Shop() {
     {
       id: 14,
       name: "Creatine Monohydrate",
-      price: 27.99,
+      price: 2799.99,
       rating: 4.8,
       reviews: 1567,
       image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&h=400&fit=crop",
@@ -192,8 +192,8 @@ export default function Shop() {
     {
       id: 15,
       name: "Training Sneakers",
-      price: 89.99,
-      originalPrice: 119.99,
+      price: 899.99,
+      originalPrice: 1199.99,
       rating: 4.7,
       reviews: 934,
       image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop",
@@ -204,7 +204,7 @@ export default function Shop() {
     {
       id: 16,
       name: "Kettlebell Set",
-      price: 129.99,
+      price: 1299.99,
       rating: 4.9,
       reviews: 456,
       image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=400&fit=crop",
