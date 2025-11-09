@@ -421,14 +421,16 @@ export default function ProfileSettings() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile Settings</Text>
-        <Text style={styles.headerSubtitle}>
-          Manage your personal information, health metrics, and preferences
-        </Text>
-      </View>
+     
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profile Settings</Text>
+          <Text style={styles.headerSubtitle}>
+            Manage your personal information, health metrics, and preferences
+          </Text>
+        </View>
+       
         {/* Personal Information Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
