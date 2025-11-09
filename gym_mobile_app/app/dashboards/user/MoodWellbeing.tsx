@@ -19,11 +19,11 @@ import WellnessRecommendation from './WellnessRecommendation';
 const screenWidth = Dimensions.get('window').width;
 
 interface WellnessParams {
-  physical: number;
-  mental: number;
-  emotional: number;
-  nutritional: number;
-  sleep: number;
+  physical: 'low' | 'moderate' | 'high';
+  mental: 'low' | 'moderate' | 'high';
+  emotional: 'low' | 'moderate' | 'high';
+  nutritional: 'low' | 'moderate' | 'high';
+  sleep: 'low' | 'moderate' | 'high';
 }
 
 // Toast Component Props Interface
@@ -102,13 +102,13 @@ export default function MoodWellbeing() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   
-  // Wellness parameters state
+  // Wellness parameters state - now with three levels
   const [wellnessParams, setWellnessParams] = useState<WellnessParams>({
-    physical: 5,
-    mental: 5,
-    emotional: 5,
-    nutritional: 5,
-    sleep: 5,
+    physical: 'moderate',
+    mental: 'moderate',
+    emotional: 'moderate',
+    nutritional: 'moderate',
+    sleep: 'moderate',
   });
 
   const moods = [
@@ -136,6 +136,8 @@ export default function MoodWellbeing() {
     { id: 'sleep', label: 'Sleep Wellness', color: '#EC4899' },
   ];
 
+  const wellnessLevels: Array<'low' | 'moderate' | 'high'> = ['low', 'moderate', 'high'];
+
   const toggleFactor = (factorId: string) => {
     setSelectedFactors(prev =>
       prev.includes(factorId)
@@ -144,7 +146,7 @@ export default function MoodWellbeing() {
     );
   };
 
-  const updateWellnessParam = (param: string, value: number) => {
+  const updateWellnessParam = (param: string, value: 'low' | 'moderate' | 'high') => {
     setWellnessParams(prev => ({
       ...prev,
       [param]: value,
@@ -159,58 +161,53 @@ export default function MoodWellbeing() {
   };
 
   const handleLogMood = () => {
-    // Here you would typically save the mood data to your backend
-    // For now, we'll just show the success message
     setToastMessage('Mood logged successfully! 📝');
     setShowToast(true);
-    
-    // Optionally reset the form after logging
-    // setSelectedFactors([]);
-    // setNotes('');
   };
 
-  const renderWellnessSlider = (param: { id: string; label: string; color: string }) => {
+  const renderWellnessSelector = (param: { id: string; label: string; color: string }) => {
     const value = wellnessParams[param.id as keyof typeof wellnessParams];
+    const levelIndex = wellnessLevels.indexOf(value);
     
     return (
       <View key={param.id} style={styles.wellnessParamContainer}>
-        <Text style={styles.wellnessParamLabel}>{param.label}</Text>
+        <View style={styles.wellnessParamHeader}>
+          <Text style={styles.wellnessParamLabel}>{param.label}</Text>
+          <View style={[styles.wellnessLevelBadge, { backgroundColor: `${param.color}20` }]}>
+            <Text style={[styles.wellnessLevelBadgeText, { color: param.color }]}>
+              {value.charAt(0).toUpperCase() + value.slice(1)}
+            </Text>
+          </View>
+        </View>
         
-        <View 
-          onStartShouldSetResponder={() => true}
-          onResponderGrant={(e) => {
-            const locationX = e.nativeEvent.locationX;
-            const sliderWidth = screenWidth - 112;
-            const newValue = Math.round((locationX / sliderWidth) * 10);
-            updateWellnessParam(param.id, Math.max(1, Math.min(10, newValue)));
-          }}
-          onResponderMove={(e) => {
-            const locationX = e.nativeEvent.locationX;
-            const sliderWidth = screenWidth - 112;
-            const newValue = Math.round((locationX / sliderWidth) * 10);
-            updateWellnessParam(param.id, Math.max(1, Math.min(10, newValue)));
-          }}
-        >
-          <View style={styles.wellnessSliderTrack}>
-            <View 
-              style={[
-                styles.wellnessSliderFill, 
-                { width: `${(value / 10) * 100}%`, backgroundColor: param.color }
-              ]} 
-            />
-            <View 
-              style={[
-                styles.wellnessSliderThumb, 
-                { left: `${(value / 10) * 100}%`, backgroundColor: param.color }
-              ]} 
-            />
+        <View style={styles.wellnessTrackContainer}>
+          {/* Track with 3 segments */}
+          <View style={styles.wellnessTrack}>
+            {wellnessLevels.map((level, index) => {
+              const isActive = index <= levelIndex;
+              return (
+                <TouchableOpacity
+                  key={level}
+                  style={[
+                    styles.wellnessSegment,
+                    isActive && { backgroundColor: param.color },
+                    index === 0 && styles.segmentFirst,
+                    index === wellnessLevels.length - 1 && styles.segmentLast,
+                  ]}
+                  onPress={() => updateWellnessParam(param.id, level)}
+                  activeOpacity={0.7}
+                />
+              );
+            })}
           </View>
         </View>
 
-        <View style={styles.wellnessSliderLabels}>
-          <Text style={styles.wellnessSliderLabel}>Low</Text>
-          <Text style={[styles.wellnessSliderValue, { color: param.color }]}>{value}</Text>
-          <Text style={styles.wellnessSliderLabel}>High</Text>
+        <View style={styles.wellnessLabelsContainer}>
+          {wellnessLevels.map((level) => (
+            <Text key={level} style={styles.wellnessLevelLabel}>
+              {level.charAt(0).toUpperCase() + level.slice(1)}
+            </Text>
+          ))}
         </View>
       </View>
     );
@@ -353,11 +350,11 @@ export default function MoodWellbeing() {
         </View>
 
         <Text style={styles.wellnessDescription}>
-          Rate each wellness dimension to get personalized insights
+          Select the level for each wellness dimension to get personalized insights
         </Text>
 
         <View style={styles.wellnessParamsWrapper}>
-          {wellnessParameters.map(param => renderWellnessSlider(param))}
+          {wellnessParameters.map(param => renderWellnessSelector(param))}
         </View>
 
         <TouchableOpacity 
@@ -511,6 +508,28 @@ export default function MoodWellbeing() {
     </ScrollView>
   );
 
+  // Convert wellness levels to numeric scores for the recommendation component
+  const convertLevelToScore = (level: 'low' | 'moderate' | 'high'): number => {
+    switch (level) {
+      case 'low':
+        return 3;
+      case 'moderate':
+        return 6;
+      case 'high':
+        return 9;
+      default:
+        return 6;
+    }
+  };
+
+  const getNumericWellnessParams = () => ({
+    physical: convertLevelToScore(wellnessParams.physical),
+    mental: convertLevelToScore(wellnessParams.mental),
+    emotional: convertLevelToScore(wellnessParams.emotional),
+    nutritional: convertLevelToScore(wellnessParams.nutritional),
+    sleep: convertLevelToScore(wellnessParams.sleep),
+  });
+
   const renderInsightsTab = () => {
     if (!hasRatedWellness) {
       return (
@@ -532,7 +551,7 @@ export default function MoodWellbeing() {
       );
     }
 
-    return <WellnessRecommendation wellnessParams={wellnessParams} />;
+    return <WellnessRecommendation wellnessParams={getNumericWellnessParams()} />;
   };
 
   return (
@@ -808,43 +827,115 @@ const styles = StyleSheet.create({
   wellnessParamContainer: {
     gap: 12,
   },
+  wellnessParamHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   wellnessParamLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  wellnessSliderTrack: {
-    height: 8,
-    backgroundColor: '#334155',
-    borderRadius: 4,
+  wellnessLevelBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  wellnessLevelBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  wellnessTrackContainer: {
     position: 'relative',
+    height: 40,
+    justifyContent: 'center',
   },
-  wellnessSliderFill: {
-    height: '100%',
-    borderRadius: 4,
+  wellnessTrack: {
+    flexDirection: 'row',
+    height: 12,
+    gap: 4,
   },
-  wellnessSliderThumb: {
+  wellnessSegment: {
+    flex: 1,
+    backgroundColor: '#334155',
+  },
+  segmentFirst: {
+    borderTopLeftRadius: 3,
+    borderBottomLeftRadius: 3,
+  },
+  segmentLast: {
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
+  },
+  wellnessTapAreas: {
     position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  wellnessTapArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wellnessIndicator: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#334155',
+    borderWidth: 2,
+    borderColor: '#1E293B',
+  },
+  wellnessLabelsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  wellnessLevelLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  // Remove old button styles
+  wellnessOptionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  wellnessOption: {
+    flex: 1,
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  wellnessRadio: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    top: -6,
-    marginLeft: -10,
-    borderWidth: 3,
-    borderColor: '#1E293B',
-  },
-  wellnessSliderLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderWidth: 2,
+    borderColor: '#64748B',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  wellnessSliderLabel: {
-    fontSize: 12,
-    color: '#64748B',
+  wellnessRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
   },
-  wellnessSliderValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  wellnessOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#94A3B8',
   },
   showResultsButton: {
     backgroundColor: '#00c48c',
