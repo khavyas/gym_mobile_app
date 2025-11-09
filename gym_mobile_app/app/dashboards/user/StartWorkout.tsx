@@ -524,6 +524,25 @@ export default function StartWorkout() {
           </View>
         </View>
 
+         {/* Motivation Card with Stock Image */}
+        <View style={styles.motivationSection}>
+          <View style={styles.motivationCard}>
+            <Image 
+              source={{ uri: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800&q=80' }}
+              style={styles.motivationImage}
+            />
+            <View style={styles.motivationOverlay}>
+              <View style={styles.motivationContent}>
+                <Dumbbell size={32} color="#FFFFFF" strokeWidth={2} />
+                <Text style={styles.motivationTitle}>Push Your Limits</Text>
+                <Text style={styles.motivationText}>
+                  Every workout brings you one step closer to your fitness goals. Stay consistent and track your progress!
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Workout Type Selection */}
         <View style={styles.workoutTypeSection}>
           <Text style={styles.sectionTitle}>Select Workout Type</Text>
@@ -627,24 +646,7 @@ export default function StartWorkout() {
               </View>
             )}
 
-        {/* Motivation Card with Stock Image */}
-        <View style={styles.motivationSection}>
-          <View style={styles.motivationCard}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800&q=80' }}
-              style={styles.motivationImage}
-            />
-            <View style={styles.motivationOverlay}>
-              <View style={styles.motivationContent}>
-                <Dumbbell size={32} color="#FFFFFF" strokeWidth={2} />
-                <Text style={styles.motivationTitle}>Push Your Limits</Text>
-                <Text style={styles.motivationText}>
-                  Every workout brings you one step closer to your fitness goals. Stay consistent and track your progress!
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
+       
 
         {/* Workout History */}
         <View style={styles.historySection}>
