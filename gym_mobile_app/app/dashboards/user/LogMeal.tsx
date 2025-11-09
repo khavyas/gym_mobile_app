@@ -8,7 +8,7 @@ import { Utensils, Coffee, Pizza, Apple, Moon, Drumstick, Camera, Search } from 
 import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import * as ImagePicker from 'expo-image-picker'; // ← KEEP THIS for camera/gallery
+import * as ImagePicker from 'expo-image-picker';
 import { 
   processImage, 
   validateImage, 
@@ -26,10 +26,10 @@ const CALORIE_NINJA_BASE_URL = 'https://api.calorieninjas.com/v1';
 const LOGMEAL_API_BASE_URL = 'https://api.logmeal.com/v2';
 const LOGMEAL_API_TOKEN = '092e2e1064a1b9ba117fa6733c5c9c080e447f76';
 
-// LogMeal Preferences (can be customized per user)
+// LogMeal Preferences
 const LOGMEAL_PREFERENCES = {
-  country: 'IN',    // India (use 'US', 'ES', 'GB', etc. for other countries)
-  language: 'eng'   // English (use 'spa' for Spanish, 'hin' for Hindi, etc.)
+  country: 'IN',
+  language: 'eng'
 };
 
 const { width } = Dimensions.get('window');
@@ -186,6 +186,7 @@ export default function LogMeal() {
   const [toastMessage, setToastMessage] = useState('');
   const [logMealImageId, setLogMealImageId] = useState<string>('');
   const [detectedDishes, setDetectedDishes] = useState<LogMealFoodItem[]>([]);
+  const [uploadedImageUri, setUploadedImageUri] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -266,10 +267,15 @@ export default function LogMeal() {
           if (!file) return;
 
           try {
+            // Create preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setUploadedImageUri(previewUrl);
+
             // Step 1: Validate the image
             const validation = validateImage(file);
             if (!validation.valid) {
               Alert.alert('Invalid Image', validation.message || 'Please select a valid image');
+              setUploadedImageUri(null);
               return;
             }
 
@@ -291,6 +297,7 @@ export default function LogMeal() {
           } catch (error) {
             console.error('Error processing image:', error);
             Alert.alert('Error', 'Failed to process image. Please try a different photo.');
+            setUploadedImageUri(null);
           }
         };
         
@@ -437,23 +444,24 @@ export default function LogMeal() {
   };
 
   // NATIVE: Scan meal from camera
-  const scanMealFromImage = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
+const scanMealFromImage = async () => {
+  try {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
 
-      if (!result.canceled && result.assets[0]) {
-        await analyzeImageNative(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to capture image. Please try again.');
+    if (!result.canceled && result.assets[0]) {
+      setUploadedImageUri(result.assets[0].uri);
+      await analyzeImageNative(result.assets[0].uri);
     }
-  };
+  } catch (error) {
+    console.error('Error picking image:', error);
+    Alert.alert('Error', 'Failed to capture image. Please try again.');
+  }
+};
 
   const pickImageFromGallery = async () => {
     try {
@@ -465,6 +473,7 @@ export default function LogMeal() {
       });
 
       if (!result.canceled && result.assets[0]) {
+        setUploadedImageUri(result.assets[0].uri);
         await analyzeImageNative(result.assets[0].uri);
       }
     } catch (error) {
@@ -749,6 +758,7 @@ export default function LogMeal() {
     setSearchQuery('');
     setDetectedDishes([]);
     setLogMealImageId('');
+    setUploadedImageUri(null); // Clear the uploaded image
   };
 
   const toggleItemSelection = (item: NutritionItem) => {
@@ -927,6 +937,47 @@ export default function LogMeal() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
+
+      {/* Uploaded Image Display */}
+      {uploadedImageUri && (
+        <View style={styles.uploadedImageSection}>
+          <View style={styles.uploadedImageHeader}>
+            <Text style={styles.uploadedImageTitle}>📸 Uploaded Meal Photo</Text>
+            <TouchableOpacity 
+              onPress={() => setUploadedImageUri(null)}
+              style={styles.removeImageButton}
+            >
+              <Ionicons name="close-circle" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.uploadedImageContainer}>
+            <Image 
+              source={{ uri: uploadedImageUri }} 
+              style={styles.uploadedImage}
+              resizeMode="cover"
+            />
+            <View style={styles.imageOverlay}>
+              {isAnalyzingImage && (
+                <View style={styles.analyzingOverlay}>
+                  <ActivityIndicator size="large" color="#FFFFFF" />
+                  <Text style={styles.analyzingText}>Analyzing with AI...</Text>
+                </View>
+              )}
+            </View>
+          </View>
+          
+          {detectedDishes.length > 0 && (
+            <View style={styles.detectionBadge}>
+              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Text style={styles.detectionBadgeText}>
+                {detectedDishes.length} food item{detectedDishes.length > 1 ? 's' : ''} detected
+              </Text>
+            </View>
+          )}
+        </View>
+)}
+
 
         {/* Food Search Section */}
         <View style={styles.searchSection}>
@@ -1197,6 +1248,75 @@ export default function LogMeal() {
 }
 
 const styles = StyleSheet.create({
+   uploadedImageSection: {
+    marginBottom: 24,
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  uploadedImageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  uploadedImageTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  removeImageButton: {
+    padding: 4,
+  },
+  uploadedImageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#0F172A',
+  },
+  uploadedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  analyzingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  analyzingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  detectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderRadius: 20,
+    gap: 8,
+  },
+  detectionBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#10B981',
+  },
    toastContainer: {
     position: 'absolute',
     top: 60,
