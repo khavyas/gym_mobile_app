@@ -11,6 +11,9 @@ import {
   FireIcon,
   SparklesIcon,
   ExclamationTriangleIcon,
+  AcademicCapIcon,
+  FaceSmileIcon,
+  BeakerIcon,
 } from 'react-native-heroicons/outline';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -128,13 +131,43 @@ export default function MoodWellbeing() {
     { id: 'nutrition', label: 'Nutrition', icon: HeartIcon, color: '#EC4899' },
   ];
 
-  const wellnessParameters = [
-    { id: 'physical', label: 'Physical Wellness', color: '#10B981' },
-    { id: 'mental', label: 'Mental Wellness', color: '#06b6d4' },
-    { id: 'emotional', label: 'Emotional Wellness', color: '#8B5CF6' },
-    { id: 'nutritional', label: 'Nutritional Wellness', color: '#F59E0B' },
-    { id: 'sleep', label: 'Sleep Wellness', color: '#EC4899' },
-  ];
+const wellnessParameters = [
+  { 
+    id: 'physical', 
+    label: 'Physical Wellness', 
+    color: '#10B981',
+    icon: BoltIcon,  // Lightning bolt for energy/physical
+    emoji: '💪'
+  },
+  { 
+    id: 'mental', 
+    label: 'Mental Wellness', 
+    color: '#06b6d4',
+    icon: AcademicCapIcon,  // Brain/thinking icon
+    emoji: '🧠'
+  },
+  { 
+    id: 'emotional', 
+    label: 'Emotional Wellness', 
+    color: '#8B5CF6',
+    icon: HeartIcon,  // Heart for emotions
+    emoji: '❤️'
+  },
+  { 
+    id: 'nutritional', 
+    label: 'Nutritional Wellness', 
+    color: '#F59E0B',
+    icon: BeakerIcon,  // Flask for nutrition/chemistry
+    emoji: '🥗'
+  },
+  { 
+    id: 'sleep', 
+    label: 'Sleep Wellness', 
+    color: '#EC4899',
+    icon: MoonIcon,  // Moon for sleep
+    emoji: '😴'
+  },
+];
 
   const wellnessLevels: Array<'low' | 'moderate' | 'high'> = ['low', 'moderate', 'high'];
 
@@ -165,53 +198,66 @@ export default function MoodWellbeing() {
     setShowToast(true);
   };
 
-  const renderWellnessSelector = (param: { id: string; label: string; color: string }) => {
-    const value = wellnessParams[param.id as keyof typeof wellnessParams];
-    const levelIndex = wellnessLevels.indexOf(value);
-    
-    return (
-      <View key={param.id} style={styles.wellnessParamContainer}>
-        <View style={styles.wellnessParamHeader}>
+const renderWellnessSelector = (param: { 
+  id: string; 
+  label: string; 
+  color: string; 
+  icon: any;
+  emoji: string;
+}) => {
+  const value = wellnessParams[param.id as keyof typeof wellnessParams];
+  const levelIndex = wellnessLevels.indexOf(value);
+  const IconComponent = param.icon;
+  
+  return (
+    <View key={param.id} style={styles.wellnessParamContainer}>
+      <View style={styles.wellnessParamHeader}>
+        <View style={styles.wellnessParamTitleContainer}>
+          {/* Icon with colored background */}
+          <View style={[styles.wellnessIconContainer, { backgroundColor: `${param.color}20` }]}>
+            <IconComponent size={20} color={param.color} />
+          </View>
           <Text style={styles.wellnessParamLabel}>{param.label}</Text>
-          <View style={[styles.wellnessLevelBadge, { backgroundColor: `${param.color}20` }]}>
-            <Text style={[styles.wellnessLevelBadgeText, { color: param.color }]}>
-              {value.charAt(0).toUpperCase() + value.slice(1)}
-            </Text>
-          </View>
         </View>
-        
-        <View style={styles.wellnessTrackContainer}>
-          {/* Track with 3 segments */}
-          <View style={styles.wellnessTrack}>
-            {wellnessLevels.map((level, index) => {
-              const isActive = index <= levelIndex;
-              return (
-                <TouchableOpacity
-                  key={level}
-                  style={[
-                    styles.wellnessSegment,
-                    isActive && { backgroundColor: param.color },
-                    index === 0 && styles.segmentFirst,
-                    index === wellnessLevels.length - 1 && styles.segmentLast,
-                  ]}
-                  onPress={() => updateWellnessParam(param.id, level)}
-                  activeOpacity={0.7}
-                />
-              );
-            })}
-          </View>
-        </View>
-
-        <View style={styles.wellnessLabelsContainer}>
-          {wellnessLevels.map((level) => (
-            <Text key={level} style={styles.wellnessLevelLabel}>
-              {level.charAt(0).toUpperCase() + level.slice(1)}
-            </Text>
-          ))}
+        <View style={[styles.wellnessLevelBadge, { backgroundColor: `${param.color}20` }]}>
+          <Text style={[styles.wellnessLevelBadgeText, { color: param.color }]}>
+            {value.charAt(0).toUpperCase() + value.slice(1)}
+          </Text>
         </View>
       </View>
-    );
-  };
+      
+      <View style={styles.wellnessTrackContainer}>
+        {/* Track with 3 segments */}
+        <View style={styles.wellnessTrack}>
+          {wellnessLevels.map((level, index) => {
+            const isActive = index <= levelIndex;
+            return (
+              <TouchableOpacity
+                key={level}
+                style={[
+                  styles.wellnessSegment,
+                  isActive && { backgroundColor: param.color },
+                  index === 0 && styles.segmentFirst,
+                  index === wellnessLevels.length - 1 && styles.segmentLast,
+                ]}
+                onPress={() => updateWellnessParam(param.id, level)}
+                activeOpacity={0.7}
+              />
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={styles.wellnessLabelsContainer}>
+        {wellnessLevels.map((level) => (
+          <Text key={level} style={styles.wellnessLevelLabel}>
+            {level.charAt(0).toUpperCase() + level.slice(1)}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+};
 
   const renderLogMoodTab = () => (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
@@ -612,6 +658,18 @@ export default function MoodWellbeing() {
 }
 
 const styles = StyleSheet.create({
+  wellnessParamTitleContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 12,
+},
+wellnessIconContainer: {
+  width: 36,
+  height: 36,
+  borderRadius: 8,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
