@@ -342,31 +342,8 @@ const renderWellnessSelector = (param: {
             </View>
           </View>
 
-          <Text style={styles.factorsTitle}>What's affecting your mood today?</Text>
-
-          <View style={styles.factorsGrid}>
-            {factors.map((factor) => {
-              const Icon = factor.icon;
-              const isSelected = selectedFactors.includes(factor.id);
-              return (
-                <TouchableOpacity
-                  key={factor.id}
-                  style={[
-                    styles.factorCard,
-                    isSelected && { 
-                      backgroundColor: `${factor.color}20`,
-                      borderColor: factor.color
-                    }
-                  ]}
-                  onPress={() => toggleFactor(factor.id)}
-                >
-                  <Icon size={20} color={factor.color} />
-                  <Text style={styles.factorLabel}>{factor.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
+         
+         
           <View style={styles.notesSection}>
             <Text style={styles.notesLabel}>Notes (optional)</Text>
             <TextInput
