@@ -343,11 +343,7 @@ useEffect(() => {
                   </View>
                 </View>
                 <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
-                <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
-              </View>
-              <TouchableOpacity style={styles.shareButton}>
-                <Share2 size={16} color="#FFFFFF" />
-              </TouchableOpacity>
+              </View>            
             </View>
           </View>
         )}

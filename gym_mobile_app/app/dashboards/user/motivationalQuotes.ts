@@ -2,50 +2,106 @@
 
 export interface Quote {
   text: string;
-  author: string;
 }
 
 export const motivationalQuotes: Quote[] = [
-  {
-    text: "Small, consistent actions create extraordinary health outcomes. Every healthy choice you make today is an investment in your future self.",
-    author: "Dr. James Clear, Behavioral Scientist"
-  },
-  {
-    text: "The only bad workout is the one that didn't happen. Your body keeps an accurate journal regardless of what you write down.",
-    author: "Maya Thompson, Fitness Coach"
-  },
-  {
-    text: "Health is not just about what you're eating. It's also about what you're thinking and saying.",
-    author: "Dr. Susan Reed, Wellness Expert"
-  },
-  {
-    text: "Take care of your body. It's the only place you have to live. Every small step towards health is a victory worth celebrating.",
-    author: "Jim Rohn, Motivational Speaker"
-  },
-  {
-    text: "Your health is an investment, not an expense. The time you spend taking care of yourself today will pay dividends for years to come.",
-    author: "Dr. Michael Chen, Healthcare Advocate"
-  },
-  {
-    text: "Fitness is not about being better than someone else. It's about being better than you used to be.",
-    author: "Sarah Martinez, Personal Trainer"
-  },
-  {
-    text: "The greatest wealth is health. When you have your health, you have everything. Never take it for granted.",
-    author: "Ancient Proverb, Adapted"
-  },
-  {
-    text: "You don't have to be extreme, just consistent. Small daily improvements lead to stunning long-term results.",
-    author: "David Williams, Wellness Coach"
-  },
-  {
-    text: "Your body hears everything your mind says. Stay positive, work hard, and make it happen.",
-    author: "Dr. Lisa Anderson, Sports Psychologist"
-  },
-  {
-    text: "The pain you feel today will be the strength you feel tomorrow. Every challenge is an opportunity to grow stronger.",
-    author: "Robert Chen, Fitness Mentor"
-  }
+  { text: "Breathe deeply, live calmly, and let your thoughts flow like gentle water." },
+  { text: "Health begins with a single mindful choice repeated every single day." },
+  { text: "Wealth flows easily when gratitude and purpose guide every decision you make." },
+  { text: "Stretch your limits, not your stress. Yoga balances both body and mind." },
+  { text: "Dance like no one’s watching, sweat out doubts, and smile through every beat." },
+  { text: "Helping others is the purest path to discovering your true inner peace." },
+  { text: "A calm mind sees clearly; a restless one multiplies imaginary worries endlessly." },
+  { text: "Small steps every day build a life filled with strength and serenity." },
+  { text: "Joy grows when shared; kindness doubles every time it leaves your hands." },
+  { text: "Zumba is not exercise, it’s happiness expressed through movement and rhythm." },
+  { text: "Discipline is the bridge connecting your current self to your dream self." },
+  { text: "Mindfulness isn’t about escaping life, it’s about fully living each moment." },
+  { text: "True wealth lies in good health, peaceful sleep, and meaningful relationships." },
+  { text: "Breathe in positivity, exhale tension, and let gratitude fill your heart." },
+  { text: "Helping hands heal more than words ever could in moments of quiet pain." },
+  { text: "A healthy body reflects a mind that has chosen peace over chaos." },
+  { text: "Move your body joyfully; motion creates emotion and awakens inner energy." },
+  { text: "Silence teaches lessons that noise can never reveal to a restless heart." },
+  { text: "Yoga reminds you that strength and surrender can coexist beautifully together." },
+  { text: "Generosity opens doors that talent and timing alone could never unlock." },
+  { text: "Happiness is not something you chase, but something you create every day." },
+  { text: "Each mindful breath grounds you deeper into the beauty of the present." },
+  { text: "True fitness comes from love for your body, not hatred for flaws." },
+  { text: "Success feels lighter when carried with compassion and shared with others." },
+  { text: "Your body thrives when your mind stops fighting and starts flowing gently." },
+  { text: "Energy flows where focus goes, so focus on peace, not perfection." },
+  { text: "Dancing releases emotions that words can’t express; let rhythm be your therapy." },
+  { text: "Wellness isn’t a goal, it’s a daily choice repeated with kindness." },
+  { text: "Kindness is the music that connects hearts without needing any words." },
+  { text: "When you nurture your mind, your world begins to bloom from within." },
+  { text: "Zumba transforms movement into joy and turns effort into effortless energy." },
+  { text: "Your calm presence can heal more than a thousand comforting words ever could." },
+  { text: "Meditation clears the fog of thoughts and reveals the sunshine of awareness." },
+  { text: "Wealth expands when shared generously and directed toward meaningful purpose." },
+  { text: "Wellbeing begins with rest, respect, and recognizing what truly matters most." },
+  { text: "Art of living is learning to smile through storms and trust the process." },
+  { text: "Helping others uplifts your soul and brings silent peace to your heart." },
+  { text: "Every sunrise offers a new chance to reset, rebuild, and rise again." },
+  { text: "Your breath is your anchor; use it to return to calm whenever needed." },
+  { text: "Strength grows when patience replaces frustration and consistency replaces excuses." },
+  { text: "Happiness blooms naturally when gratitude becomes your everyday state of mind." },
+  { text: "Yoga is the journey from doing to being, from effort to ease." },
+  { text: "Choose foods that fuel your body and thoughts that feed your peace." },
+  { text: "Kind actions leave echoes that reach farther than you could ever imagine." },
+  { text: "Wealth is meaningful only when it brings health, peace, and shared joy." },
+  { text: "Zumba is joy disguised as exercise, rhythm disguised as self-expression." },
+  { text: "Meditate daily to listen to the whispers of your inner wisdom." },
+  { text: "A strong mind builds a strong body, and both need daily care." },
+  { text: "Generosity multiplies happiness in ways numbers can never truly calculate." },
+  { text: "Mindfulness means showing up for yourself fully, without needing perfection." },
+  { text: "True success feels peaceful, not pressured; balanced, not burned out." },
+  { text: "Your energy introduces you before your words do, so guard it carefully." },
+  { text: "Dance until your worries dissolve and your heartbeat matches the rhythm of joy." },
+  { text: "Helping others reminds you that we rise highest when we lift together." },
+  { text: "Peace is not found outside but cultivated quietly within each breath." },
+  { text: "Health is a habit, not a goal. Nurture it with daily care." },
+  { text: "Yoga teaches strength through stillness and movement through mindful surrender." },
+  { text: "Mindful living transforms ordinary moments into extraordinary experiences of awareness." },
+  { text: "Wealth means little without wellness, and wellness thrives on inner contentment." },
+  { text: "Helping others is the fastest route to discovering your truest purpose." },
+  { text: "Zumba energizes the body, awakens the soul, and celebrates the joy of movement." },
+  { text: "Simplicity is the secret ingredient to a healthy, happy, balanced life." },
+  { text: "Take care of your body today so your future self can thank you." },
+  { text: "A grateful heart turns ordinary days into blessings and struggles into strength." },
+  { text: "Kindness costs nothing but has the power to change everything for someone." },
+  { text: "Your thoughts shape your reality, so think in colors of peace and joy." },
+  { text: "Mindful mornings create peaceful days and deeply restful nights of calm clarity." },
+  { text: "Happiness begins where comparison ends and self-acceptance starts to bloom." },
+  { text: "Helping others strengthens the invisible thread that binds all hearts together." },
+  { text: "Movement is medicine; every step you take is healing in motion." },
+  { text: "True abundance is having a mind full of peace, not possessions." },
+  { text: "Breathe gratitude, move with purpose, and let every heartbeat celebrate life." },
+  { text: "Yoga connects the breath of life to the rhythm of the universe." },
+  { text: "Kindness toward yourself creates the foundation for kindness toward others." },
+  { text: "Helping even one soul today plants a seed of light in the world." },
+  { text: "Health improves when you rest as passionately as you work each day." },
+  { text: "Meditation is the art of hearing silence and feeling peace in motion." },
+  { text: "Your wealth grows when your focus shifts from getting to giving more." },
+  { text: "Mindfulness brings awareness to every breath, turning time into timeless presence." },
+  { text: "Helping hearts never run out of strength; compassion replenishes what effort drains." },
+  { text: "Dance, smile, and move — happiness begins where hesitation ends." },
+  { text: "The art of living lies in loving what you already have right now." },
+  { text: "Your health is your harmony; tune it daily through mindful living choices." },
+  { text: "True wellbeing means balance between body, mind, and compassionate intention." },
+  { text: "Helping hands are extensions of hearts that understand silent struggles." },
+  { text: "Meditate not to escape the world but to engage it more peacefully." },
+  { text: "Zumba frees the body while mindfulness frees the mind — together, joy arises." },
+  { text: "Wealth earned with purpose nourishes your spirit as much as your bank." },
+  { text: "Every act of kindness adds color to someone’s otherwise gray day." },
+  { text: "Yoga is the still point in a spinning world of constant motion." },
+  { text: "Mindfulness turns routines into rituals and tasks into opportunities for gratitude." },
+  { text: "True health begins with self-love and radiates outward as peaceful energy." },
+  { text: "Wellbeing is created, not found. Build it through mindful action and rest." },
+  { text: "Help with humility, heal with hope, and live with gentle intention daily." },
+  { text: "Balance effort and ease, ambition and peace, giving and receiving — that’s living." },
+  { text: "A mindful heart transforms chaos into calm and noise into harmony effortlessly." },
+  { text: "Every good deed ripples outward, touching lives you may never even meet." }
 ];
 
 export const getRandomQuote = (): Quote => {
