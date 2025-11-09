@@ -338,9 +338,9 @@ useEffect(() => {
               <View style={styles.thoughtTextContainer}>
                 <View style={styles.thoughtHeader}>
                   <Text style={styles.thoughtLabel}>Thought for the Day</Text>
-                  <View style={styles.motivationBadge}>
+                  {/* <View style={styles.motivationBadge}>
                     <Text style={styles.motivationText}>{"Motivation"}</Text>
-                  </View>
+                  </View> */}
                 </View>
                 <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
               </View>            
@@ -1262,18 +1262,6 @@ thoughtLabel: {
   fontSize: 15,
   fontWeight: '600',
   color: '#FFFFFF',
-},
-motivationBadge: {
-  paddingHorizontal: 8,
-  paddingVertical: 2,
-  borderRadius: 6,
-  borderWidth: 1,
-  borderColor: '#2a3441',
-},
-motivationText: {
-  fontSize: 11,
-  color: '#FFFFFF',
-  fontWeight: '500',
 },
 shareButton: {
   width: 32,
