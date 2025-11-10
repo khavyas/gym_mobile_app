@@ -343,7 +343,7 @@ const handleBookConsultation = () => {
               <Text style={styles.pricingTitle}>Per Session</Text>
               <Text style={styles.pricingDescription}>One-time consultation</Text>
             </View>
-            <Text style={styles.pricingPrice}>${consultant.pricing.perSession}</Text>
+            <Text style={styles.pricingPrice}>₹{consultant.pricing.perSession}</Text>
           </TouchableOpacity>
 
           {/* Per Month */}
@@ -359,7 +359,7 @@ const handleBookConsultation = () => {
                 <Text style={styles.pricingTitle}>Monthly Plan</Text>
                 <Text style={styles.pricingDescription}>Unlimited consultations for a month</Text>
               </View>
-              <Text style={styles.pricingPrice}>${consultant.pricing.perMonth}</Text>
+              <Text style={styles.pricingPrice}>₹{consultant.pricing.perMonth}</Text>
             </TouchableOpacity>
           )}
 
@@ -376,7 +376,7 @@ const handleBookConsultation = () => {
                 <Text style={styles.pricingTitle}>Weekly Plan</Text>
                 <Text style={styles.pricingDescription}>Weekly sessions</Text>
               </View>
-              <Text style={styles.pricingPrice}>${consultant.pricing.perWeek}</Text>
+              <Text style={styles.pricingPrice}>₹{consultant.pricing.perWeek}</Text>
             </TouchableOpacity>
           )}
 
@@ -394,7 +394,7 @@ const handleBookConsultation = () => {
                 <Text style={styles.pricingTitle}>{pkg.title}</Text>
                 <Text style={styles.pricingDescription}>{pkg.duration}</Text>
               </View>
-              <Text style={styles.pricingPrice}>${pkg.price}</Text>
+              <Text style={styles.pricingPrice}>₹{pkg.price}</Text>
             </TouchableOpacity>
           ))}
         </View>
