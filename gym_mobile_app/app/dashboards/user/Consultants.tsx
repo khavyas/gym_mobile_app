@@ -209,7 +209,7 @@ export default function Consultants() {
           </View>
         </View>
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>${consultant.pricing.perSession}</Text>
+          <Text style={styles.price}>₹{consultant.pricing.perSession}</Text>
           <Text style={styles.priceUnit}>per session</Text>
           <Text style={styles.trainingMode}>{consultant.modeOfTraining}</Text>
         </View>
