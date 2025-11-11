@@ -1227,7 +1227,7 @@ thoughtCard: {
   backgroundColor: '#0e292e',
   marginHorizontal: 20,
   borderRadius: 16,
-  padding: 16,
+  padding: 10,
   marginBottom: 24,
   borderWidth: 1,
   borderColor: '#2a3441',
