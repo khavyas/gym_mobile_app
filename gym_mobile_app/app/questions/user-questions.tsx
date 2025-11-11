@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   content: { 
     flexGrow: 1, 
     padding: 20,
-    paddingBottom: 120,
+    paddingBottom: 100,
   },
   questionCard: {
     backgroundColor: '#1E293B',
@@ -370,9 +370,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
     borderTopWidth: 1,
     borderTopColor: '#334155',
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   navigationContainer: {
     flexDirection: 'row',
