@@ -9,7 +9,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { getRandomQuote, type Quote } from './motivationalQuotes';
-import { Lightbulb, Share2 } from 'lucide-react-native';
 import { Video, Play, Star, Eye, Activity, Flame, Droplet, Target, Utensils, TrendingUp } from 'lucide-react-native';
 import { getRandomVideo, getYouTubeThumbnail, getYouTubeUrl, type VideoRecommendation } from './videoRecommendations';
 import { Linking, Image } from 'react-native';
@@ -332,9 +331,7 @@ useEffect(() => {
         {dailyQuote && (
           <View style={styles.thoughtCard}>
             <View style={styles.thoughtContent}>
-              <View style={styles.bulbContainer}>
-                <Lightbulb size={20} color="#FFFFFF" />
-              </View>
+             
               <View style={styles.thoughtTextContainer}>
                 <View style={styles.thoughtHeader}>
                   <Text style={styles.thoughtLabel}>Thought for the Day</Text>
@@ -1239,15 +1236,6 @@ thoughtContent: {
   flexDirection: 'row',
   alignItems: 'flex-start',
   gap: 12,
-},
-bulbContainer: {
-  width: 40,
-  height: 40,
-  backgroundColor: '#0F3D3E',  // Same as card background
-  borderRadius: 12,              // Rounded square corners
-  justifyContent: 'center',
-  alignItems: 'center',
-  flexShrink: 0,
 },
 thoughtTextContainer: {
   flex: 1,
