@@ -7,10 +7,11 @@ export interface WellnessQuestion {
   dataTag: string;
   scaleMin?: number;
   scaleMax?: number;
+  multiSelect?: boolean; // Add this property
 }
 
 export const wellnessQuestions: WellnessQuestion[] = [
-    {
+  {
     id: 1,
     question: "How would you describe your energy levels throughout the day?",
     type: 'multiple-choice',
@@ -64,6 +65,7 @@ export const wellnessQuestions: WellnessQuestion[] = [
     question: "What usually influences your mood the most? (Select all that apply)",
     type: 'multiple-choice',
     dataTag: 'mood_influencers',
+    multiSelect: true, // Enable multi-select
     options: ['Work stress', 'Relationships', 'Sleep', 'Health', 'Social connection', 'Other']
   },
   {
@@ -78,6 +80,7 @@ export const wellnessQuestions: WellnessQuestion[] = [
     question: "What are your top 1-2 health goals right now?",
     type: 'multiple-choice',
     dataTag: 'health_goal',
+    multiSelect: true, // Enable multi-select
     options: [
       'Weight management',
       'Better sleep',
@@ -108,10 +111,10 @@ export const wellnessQuestions: WellnessQuestion[] = [
     ]
   },
   {
-  id: 13,
-  question: "What best describes your current motivation to improve your health?",
-  type: 'multiple-choice',
-  dataTag: 'motivation_level',
-  options: ['Just thinking about it', 'Ready to start soon', 'Actively working on it', 'Fully committed']
-}
+    id: 13,
+    question: "What best describes your current motivation to improve your health?",
+    type: 'multiple-choice',
+    dataTag: 'motivation_level',
+    options: ['Just thinking about it', 'Ready to start soon', 'Actively working on it', 'Fully committed']
+  }
 ];
