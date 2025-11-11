@@ -89,12 +89,10 @@ export const wellnessQuestions: WellnessQuestion[] = [
   },
   {
     id: 11,
-    question: "How ready are you to make small lifestyle changes in the next month?",
-    type: 'scale',
-    dataTag: 'readiness_score',
-    scaleMin: 1,
-    scaleMax: 5,
-    options: ['1 - Not ready', '2', '3', '4', '5 - Fully ready']
+    question: "How much time can you realistically dedicate to your health each day?",
+    type: 'multiple-choice',
+    dataTag: 'time_commitment',
+    options: ['Less than 15 minutes', '15-30 minutes', '30-60 minutes', 'More than 1 hour']
   },
   {
     id: 12,
@@ -108,5 +106,12 @@ export const wellnessQuestions: WellnessQuestion[] = [
       'App reminders',
       'Progress tracking'
     ]
-  }
+  },
+  {
+  id: 13,
+  question: "What best describes your current motivation to improve your health?",
+  type: 'multiple-choice',
+  dataTag: 'motivation_level',
+  options: ['Just thinking about it', 'Ready to start soon', 'Actively working on it', 'Fully committed']
+}
 ];
