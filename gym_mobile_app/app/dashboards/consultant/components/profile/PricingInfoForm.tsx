@@ -100,19 +100,19 @@ await onSave({
           <Card style={styles.priceCard}>
             <Text style={styles.priceLabel}>Per Session</Text>
             <Text style={styles.priceValue}>
-              ${consultant?.pricing?.perSession || '0'}
+              ₹{consultant?.pricing?.perSession || '0'}
             </Text>
           </Card>
           <Card style={styles.priceCard}>
             <Text style={styles.priceLabel}>Per Week</Text>
             <Text style={styles.priceValue}>
-              ${consultant?.pricing?.perWeek || '0'}
+              ₹{consultant?.pricing?.perWeek || '0'}
             </Text>
           </Card>
           <Card style={styles.priceCard}>
             <Text style={styles.priceLabel}>Per Month</Text>
             <Text style={styles.priceValue}>
-              ${consultant?.pricing?.perMonth || '0'}
+              ₹{consultant?.pricing?.perMonth || '0'}
             </Text>
           </Card>
         </View>
@@ -126,7 +126,7 @@ await onSave({
                   <Text style={styles.packageTitle}>{pkg.title}</Text>
                   <Text style={styles.packageDuration}>{pkg.duration}</Text>
                 </View>
-                <Text style={styles.packagePrice}>${pkg.price}</Text>
+                <Text style={styles.packagePrice}>₹{pkg.price}</Text>
               </Card>
             ))
           ) : (
@@ -143,7 +143,7 @@ await onSave({
 
       <View style={styles.pricingInputs}>
         <Input
-          label="Per Session ($)"
+          label="Per Session (₹)"
           value={formData.pricing.perSession}
           onChangeText={(text) => 
             setFormData({
@@ -156,7 +156,7 @@ await onSave({
           containerStyle={styles.priceInput}
         />
         <Input
-          label="Per Week ($)"
+          label="Per Week (₹)"
           value={formData.pricing.perWeek}
           onChangeText={(text) => 
             setFormData({
@@ -169,7 +169,7 @@ await onSave({
           containerStyle={styles.priceInput}
         />
         <Input
-          label="Per Month ($)"
+          label="Per Month (₹)"
           value={formData.pricing.perMonth}
           onChangeText={(text) => 
             setFormData({
@@ -203,7 +203,7 @@ await onSave({
               containerStyle={styles.durationInput}
             />
             <Input
-              label="Price ($)"
+              label="Price (₹)"
               value={newPackage.price.toString()}
               onChangeText={(text) => setNewPackage({ ...newPackage, price: parseFloat(text) || 0 })}
               placeholder="0"
@@ -222,7 +222,7 @@ await onSave({
                 <Text style={styles.packageDuration}>{pkg.duration}</Text>
               </View>
               <View style={styles.packageActions}>
-                <Text style={styles.packagePrice}>${pkg.price}</Text>
+                <Text style={styles.packagePrice}>₹{pkg.price}</Text>
                 <TouchableOpacity onPress={() => removePackage(index)}>
                   <Text style={styles.removeButton}>Remove</Text>
                 </TouchableOpacity>
