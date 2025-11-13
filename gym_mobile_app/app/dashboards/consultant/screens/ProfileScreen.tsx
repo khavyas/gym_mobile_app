@@ -36,6 +36,7 @@ interface ProfileData {
   specializations?: string[];
   certifications?: string[];
   experience?: string;
+  gym?: string;
   trainingModes?: string[];
   
   // Pricing Info
