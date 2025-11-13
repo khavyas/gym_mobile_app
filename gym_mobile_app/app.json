@@ -4,10 +4,10 @@
     "slug": "gym_mobile_app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,16 +19,22 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.khavya.gym_mobile_app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/images/icon.png",
       "bundler": "metro"
     },
     "experiments": {
       "baseUrl": "/gym_mobile_app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4867a78e-b67d-4390-913b-4d65a9b54ccf"
+      }
     }
   }
 }
