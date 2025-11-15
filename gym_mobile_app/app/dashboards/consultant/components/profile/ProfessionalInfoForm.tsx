@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Input } from '../common/Input';
-import { Button } from '../common/Button';
-import { Card } from '../common/Card';
-import { Badge } from '../common/Badge';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { Consultant } from '../../services/types';
 
 interface ProfessionalInfoFormProps {
   consultant?: Consultant | null | undefined;
   onSave: (data: any) => Promise<void>;
   editable?: boolean;
-  isLoading?: boolean; // Add this line
+  isLoading?: boolean;
 }
 
 export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
@@ -20,11 +16,11 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     specialty: consultant?.specialty || '',
-    gymName: consultant?.gymName || '',
+    gymName: consultant?.gym || '',
     modeOfTraining: consultant?.modeOfTraining || 'online',
     certifications: consultant?.certifications || [],
     badges: consultant?.badges || [],
-    availability: consultant?.availability || '', // Added availability property
+    availability: consultant?.availability || '',
   });
 
   const [isEditing, setIsEditing] = useState(editable);
@@ -50,14 +46,13 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
   const handleSave = async () => {
     try {
       await onSave({
-  specialty: formData.specialty,
-  gymName: formData.gymName,
-  certifications: formData.certifications,
-  badges: formData.badges,
-  modeOfTraining: formData.modeOfTraining,
-  availability: formData.availability,
-});
-
+        specialty: formData.specialty,
+        gymName: formData.gymName,
+        certifications: formData.certifications,
+        badges: formData.badges,
+        modeOfTraining: formData.modeOfTraining,
+        availability: formData.availability,
+      });
       setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to save changes');
@@ -66,15 +61,15 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
 
   if (!isEditing) {
     return (
-      <Card>
+      <View style={styles.card}>
         <View style={styles.header}>
           <Text style={styles.sectionTitle}>Professional Information</Text>
-          <Button 
-            title="Edit" 
-            variant="ghost" 
-            size="sm"
+          <TouchableOpacity 
+            style={styles.editButton}
             onPress={() => setIsEditing(true)}
-          />
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.infoRow}>
@@ -84,13 +79,16 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Gym/Wellness Center</Text>
-          <Text style={styles.value}>{consultant?.gymName || 'Not specified'}</Text>
+          <Text style={styles.value}>{consultant?.gym || 'Not specified'}</Text>
         </View>
-
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Training Mode</Text>
-          <Badge text={consultant?.modeOfTraining || 'online'} variant="primary" />
+          <View style={styles.modeBadge}>
+            <Text style={styles.modeBadgeText}>
+              {consultant?.modeOfTraining || 'online'}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.infoRow}>
@@ -98,7 +96,9 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
           <View style={styles.badgeContainer}>
             {consultant?.certifications?.length ? (
               consultant.certifications.map((cert, index) => (
-                <Badge key={index} text={cert} variant="success" style={styles.badge} />
+                <View key={index} style={styles.certBadge}>
+                  <Text style={styles.certBadgeText}>{cert}</Text>
+                </View>
               ))
             ) : (
               <Text style={styles.emptyText}>No certifications added</Text>
@@ -111,38 +111,47 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
           <View style={styles.badgeContainer}>
             {consultant?.badges?.length ? (
               consultant.badges.map((badge, index) => (
-                <Badge key={index} text={badge} variant="warning" style={styles.badge} />
+                <View key={index} style={styles.achievementBadge}>
+                  <Text style={styles.achievementBadgeText}>{badge}</Text>
+                </View>
               ))
             ) : (
               <Text style={styles.emptyText}>No badges earned</Text>
             )}
           </View>
         </View>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card>
+    <View style={styles.card}>
       <Text style={styles.sectionTitle}>Professional Information</Text>
 
-      <Input
-        label="Specialty"
-        value={formData.specialty}
-        onChangeText={(text) => setFormData({ ...formData, specialty: text })}
-        placeholder="e.g. Nutritionist, Yoga Instructor"
-      />
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Specialty</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.specialty}
+          onChangeText={(text) => setFormData({ ...formData, specialty: text })}
+          placeholder="e.g. Nutritionist, Yoga Instructor"
+          placeholderTextColor="#6B7280"
+        />
+      </View>
 
-      <Input
-        label="Gym/Wellness Center"
-        value={formData.gymName || ""}
-        onChangeText={text => setFormData({ ...formData, gymName: text })}
-        placeholder="e.g. Gold's Gym, Wellness World"
-      />
-
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Gym/Wellness Center</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.gymName}
+          onChangeText={(text) => setFormData({ ...formData, gymName: text })}
+          placeholder="e.g. Gold's Gym, Wellness World"
+          placeholderTextColor="#6B7280"
+        />
+      </View>
 
       <View style={styles.modeContainer}>
-        <Text style={styles.label}>Mode of Training</Text>
+        <Text style={styles.inputLabel}>Mode of Training</Text>
         <View style={styles.modeOptions}>
           {['online', 'offline', 'hybrid'].map((mode) => (
             <TouchableOpacity
@@ -167,21 +176,21 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
       </View>
 
       <View style={styles.certificationContainer}>
-        <Text style={styles.label}>Certifications</Text>
+        <Text style={styles.inputLabel}>Certifications</Text>
         <View style={styles.inputRow}>
-          <Input
+          <TextInput
+            style={[styles.input, styles.certificationInput]}
             value={newCertification}
             onChangeText={setNewCertification}
             placeholder="Add certification"
-            containerStyle={styles.certificationInput}
+            placeholderTextColor="#6B7280"
           />
-          <Button 
-            title="Add" 
-            variant="secondary" 
-            size="sm"
-            onPress={addCertification}
+          <TouchableOpacity 
             style={styles.addButton}
-          />
+            onPress={addCertification}
+          >
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
         </View>
         
         <View style={styles.badgeContainer}>
@@ -191,213 +200,260 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
               onPress={() => removeCertification(index)}
               style={styles.removableBadge}
             >
-              <Badge text={`${cert} ×`} variant="success" />
+              <Text style={styles.removableBadgeText}>{cert} ×</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
       <View style={styles.buttonRow}>
-        <Button 
-          title="Cancel" 
-          variant="secondary" 
+        <TouchableOpacity 
+          style={styles.cancelButton}
           onPress={() => setIsEditing(false)}
-          style={styles.button}
-        />
-        <Button 
-          title="Save" 
-          variant="primary" 
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.saveButton}
           onPress={handleSave}
-          style={styles.button}
-        />
+        >
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
       </View>
-    </Card>
+    </View>
   );
 };
 
-// Styles for ProfessionalInfoForm and PricingInfoForm
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#F4F4F5',
+    marginBottom: 20,
+  },
+  editButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   infoRow: {
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: '#111111',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: '600',
+    color: '#D1D5DB',
     marginBottom: 8,
   },
   value: {
     fontSize: 16,
-    color: '#111827',
+    color: '#F4F4F5',
+    fontWeight: '500',
   },
   emptyText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: '#6B7280',
     fontStyle: 'italic',
   },
   badgeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 4,
+    marginTop: 8,
+    gap: 8,
   },
-  badge: {
-    marginRight: 8,
-    marginBottom: 4,
+  certBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  certBadgeText: {
+    color: '#10B981',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  achievementBadge: {
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.3)',
+  },
+  achievementBadgeText: {
+    color: '#FBB936',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modeBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+    alignSelf: 'flex-start',
+  },
+  modeBadgeText: {
+    color: '#3B82F6',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E5E7EB',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#111111',
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   modeContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modeOptions: {
     flexDirection: 'row',
-    marginTop: 8,
+    gap: 10,
   },
   modeOption: {
+    flex: 1,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    marginRight: 8,
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    borderRadius: 12,
+    backgroundColor: '#111111',
+    alignItems: 'center',
   },
   modeOptionActive: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
     borderColor: '#3B82F6',
   },
   modeText: {
     fontSize: 14,
-    color: '#6B7280',
-  },
-  modeTextActive: {
-    color: '#1D4ED8',
+    color: '#9CA3AF',
     fontWeight: '600',
   },
+  modeTextActive: {
+    color: '#3B82F6',
+    fontWeight: '700',
+  },
   certificationContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginTop: 8,
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
   },
   certificationInput: {
     flex: 1,
-    marginRight: 8,
   },
   addButton: {
-    marginBottom: 8,
+    backgroundColor: '#374151',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  addButtonText: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    fontWeight: '600',
   },
   removableBadge: {
-    marginRight: 8,
-    marginBottom: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  removableBadgeText: {
+    color: '#10B981',
+    fontSize: 13,
+    fontWeight: '600',
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 8,
+    gap: 12,
   },
-  button: {
-    flex: 0.48,
-  },
-  // Pricing specific styles
-  pricingGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  priceCard: {
-    flex: 0.32,
-    alignItems: 'center',
-    padding: 12,
-  },
-  priceLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  priceValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#10B981',
-  },
-  packagesSection: {
-    marginTop: 16,
-  },
-  packageCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-  },
-  packageInfo: {
+  cancelButton: {
     flex: 1,
+    backgroundColor: '#374151',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4B5563',
   },
-  packageTitle: {
+  cancelButtonText: {
+    color: '#D1D5DB',
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
   },
-  packageDuration: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  packagePrice: {
+  saveButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#10B981',
-  },
-  pricingInputs: {
-    marginBottom: 16,
-  },
-  priceInput: {
-    marginBottom: 12,
-  },
-  packageSection: {
-    marginBottom: 16,
-  },
-  newPackageCard: {
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    marginBottom: 16,
-  },
-  newPackageTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  packageInputRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  durationInput: {
-    flex: 0.6,
-    marginRight: 8,
-  },
-  priceInputSmall: {
-    flex: 0.35,
-  },
-  existingPackages: {
-    marginTop: 16,
-  },
-  packageActions: {
-    alignItems: 'flex-end',
-  },
-  removeButton: {
-    color: '#EF4444',
-    fontSize: 12,
-    marginTop: 4,
+    fontWeight: '700',
   },
 });
