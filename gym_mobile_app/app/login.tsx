@@ -241,8 +241,28 @@ export default function Login() {
 
       setIsLoading(false);
 
-      // navigate after small delay (let toast show)
-      setTimeout(() => router.replace('/dashboards/user'), 1100);
+      setTimeout(() => {
+        const userRole = data.role?.toLowerCase() || 'user';
+        
+        switch (userRole) {
+          case 'user':
+            router.replace('/dashboards/user');
+            break;
+          case 'consultant':
+            router.replace('/dashboards/consultant');
+            break;
+          case 'admin':
+            router.replace('/dashboards/admin');
+            break;
+          case 'superadmin':
+          case 'super-admin':
+            router.replace('/dashboards/super-admin');
+            break;
+          default:
+            router.replace('/dashboards/user');
+            break;
+        }
+      }, 1100);
     } catch (err: any) {
       console.error('Login error:', err?.response?.data || err.message || err);
 
