@@ -56,15 +56,6 @@ export default function ConsultantHome() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#111111" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Consultant Panel</Text>
-        <View style={styles.headerRight}>
-          <View style={styles.profileCircle}>
-            <Text style={styles.profileInitial}>S</Text>
-          </View>
-        </View>
-      </View>
 
       {/* Main Content Area */}
       <View style={styles.mainContent}>
