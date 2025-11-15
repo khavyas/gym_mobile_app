@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text, Image, TouchableOpacity, StatusBar } from 'react-native'; // Import StatusBar
+import { View, StyleSheet, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
 
 const ScheduleScreen: React.FC = () => {
   return (
@@ -8,9 +8,9 @@ const ScheduleScreen: React.FC = () => {
       <StatusBar barStyle="light-content" />
       
       <View style={styles.emptyState}>
-        {/* I've swapped the image for one that better fits a "schedule" theme */}
+        {/* Professional calendar/schedule themed image */}
         <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop' }}
+          source={{ uri: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop' }}
           style={styles.emptyStateImage}
         />
         <Text style={styles.emptyStateTitle}>Schedule Management</Text>
@@ -29,7 +29,7 @@ const ScheduleScreen: React.FC = () => {
         <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.7}>
           <Image 
             source={{ uri: 'https://cdn-icons-png.flaticon.com/512/747/747310.png' }}
-            style={styles.buttonIconSecondary} // Use a new style for the secondary icon
+            style={styles.buttonIconSecondary}
           />
           <Text style={styles.secondaryButtonText}>View Calendar</Text>
         </TouchableOpacity>
@@ -38,11 +38,11 @@ const ScheduleScreen: React.FC = () => {
   );
 };
 
-// --- Updated Styles for a Professional Dark Theme ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A', // Deep dark background
+    backgroundColor: '#0A0A0A',
+    paddingTop: 80, // Padding to account for header
   },
   emptyState: {
     flex: 1,
@@ -55,34 +55,32 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: 20,
     marginBottom: 32,
-    // Adding a subtle border can help the image stand out
     borderWidth: 1,
     borderColor: '#1A1A1A',
   },
   emptyStateTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#F4F4F5', // Off-white primary text
+    color: '#F4F4F5',
     marginBottom: 12,
     textAlign: 'center',
   },
   emptyStateText: {
     fontSize: 17,
-    color: '#9CA3AF', // Muted gray for secondary text
+    color: '#9CA3AF',
     textAlign: 'center',
-    marginBottom: 40, // Increased spacing
+    marginBottom: 40,
     lineHeight: 26,
     paddingHorizontal: 20,
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3B82F6', // Vibrant blue
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 14,
     marginBottom: 16,
-    // Enhanced shadow for dark theme
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
@@ -98,16 +96,15 @@ const styles = StyleSheet.create({
   secondaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A1A1A', // Dark card background
+    backgroundColor: '#1A1A1A',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 14,
-    // Dark border for definition
     borderWidth: 1.5,
     borderColor: '#374151',
   },
   secondaryButtonText: {
-    color: '#D1D5DB', // Light gray for text
+    color: '#D1D5DB',
     fontSize: 17,
     fontWeight: '600',
     marginLeft: 10,
@@ -115,13 +112,12 @@ const styles = StyleSheet.create({
   buttonIcon: {
     width: 22,
     height: 22,
-    tintColor: '#FFFFFF', // White icon for primary button
+    tintColor: '#FFFFFF',
   },
-  // A new style for the secondary button icon to ensure it's visible
   buttonIconSecondary: {
     width: 22,
     height: 22,
-    tintColor: '#9CA3AF', // Muted gray icon for secondary button
+    tintColor: '#9CA3AF',
   },
 });
 
