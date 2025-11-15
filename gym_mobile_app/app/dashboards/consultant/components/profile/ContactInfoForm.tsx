@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, Linking } from 'react-native';
-import { Input } from '../common/Input';
-import { Button } from '../common/Button';
-import { Card } from '../common/Card';
+import { View, Text, StyleSheet, Alert, Linking, TouchableOpacity, TextInput } from 'react-native';
 import { Consultant } from '../../services/types';
 
 interface ContactInfoFormProps {
@@ -31,14 +28,13 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
   const handleSave = async () => {
     try {
       await onSave({
-  contact: {
-    phone: formData.contact.phone,
-    email: formData.contact.email,
-    website: formData.contact.website,
-    location: formData.contact.location,
-  }
-});
-
+        contact: {
+          phone: formData.contact.phone,
+          email: formData.contact.email,
+          website: formData.contact.website,
+          location: formData.contact.location,
+        }
+      });
       setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to save contact information');
@@ -65,15 +61,15 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
 
   if (!isEditing) {
     return (
-      <Card>
+      <View style={contactStyles.card}>
         <View style={contactStyles.header}>
           <Text style={contactStyles.sectionTitle}>Contact Information</Text>
-          <Button 
-            title="Edit" 
-            variant="ghost" 
-            size="sm"
+          <TouchableOpacity 
+            style={contactStyles.editButton}
             onPress={() => setIsEditing(true)}
-          />
+          >
+            <Text style={contactStyles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={contactStyles.contactList}>
@@ -81,12 +77,19 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
             <Text style={contactStyles.contactIcon}>📞</Text>
             <View style={contactStyles.contactDetails}>
               <Text style={contactStyles.contactLabel}>Phone</Text>
-              <Text 
-                style={[contactStyles.contactValue, consultant?.contact?.phone && contactStyles.clickable]}
+              <TouchableOpacity 
                 onPress={consultant?.contact?.phone ? handleCall : undefined}
+                disabled={!consultant?.contact?.phone}
               >
-                {consultant?.contact?.phone || 'Not provided'}
-              </Text>
+                <Text 
+                  style={[
+                    contactStyles.contactValue, 
+                    consultant?.contact?.phone && contactStyles.clickable
+                  ]}
+                >
+                  {consultant?.contact?.phone || 'Not provided'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -94,12 +97,19 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
             <Text style={contactStyles.contactIcon}>📧</Text>
             <View style={contactStyles.contactDetails}>
               <Text style={contactStyles.contactLabel}>Email</Text>
-              <Text 
-                style={[contactStyles.contactValue, consultant?.contact?.email && contactStyles.clickable]}
+              <TouchableOpacity 
                 onPress={consultant?.contact?.email ? handleEmail : undefined}
+                disabled={!consultant?.contact?.email}
               >
-                {consultant?.contact?.email || 'Not provided'}
-              </Text>
+                <Text 
+                  style={[
+                    contactStyles.contactValue, 
+                    consultant?.contact?.email && contactStyles.clickable
+                  ]}
+                >
+                  {consultant?.contact?.email || 'Not provided'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -117,105 +127,153 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
             <Text style={contactStyles.contactIcon}>🌐</Text>
             <View style={contactStyles.contactDetails}>
               <Text style={contactStyles.contactLabel}>Website</Text>
-              <Text 
-                style={[contactStyles.contactValue, consultant?.contact?.website && contactStyles.clickable]}
+              <TouchableOpacity 
                 onPress={consultant?.contact?.website ? handleWebsite : undefined}
+                disabled={!consultant?.contact?.website}
               >
-                {consultant?.contact?.website || 'Not provided'}
-              </Text>
+                <Text 
+                  style={[
+                    contactStyles.contactValue, 
+                    consultant?.contact?.website && contactStyles.clickable
+                  ]}
+                >
+                  {consultant?.contact?.website || 'Not provided'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card>
+    <View style={contactStyles.card}>
       <Text style={contactStyles.sectionTitle}>Contact Information</Text>
 
-      <Input
-        label="Phone Number"
-        value={formData.contact.phone}
-        onChangeText={(text) => 
-          setFormData({
-            ...formData,
-            contact: { ...formData.contact, phone: text },
-          })
-        }
-        placeholder="+1 (555) 123-4567"
-        keyboardType="phone-pad"
-      />
-
-      <Input
-        label="Email Address"
-        value={formData.contact.email}
-        onChangeText={(text) => 
-          setFormData({
-            ...formData,
-            contact: { ...formData.contact, email: text },
-          })
-        }
-        placeholder="your.email@example.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <Input
-        label="Location"
-        value={formData.contact.location}
-        onChangeText={(text) => 
-          setFormData({
-            ...formData,
-            contact: { ...formData.contact, location: text },
-          })
-        }
-        placeholder="City, State/Country"
-      />
-
-      <Input
-        label="Website (Optional)"
-        value={formData.contact.website}
-        onChangeText={(text) => 
-          setFormData({
-            ...formData,
-            contact: { ...formData.contact, website: text },
-          })
-        }
-        placeholder="https://yourwebsite.com"
-        keyboardType="url"
-        autoCapitalize="none"
-      />
-
-      <View style={contactStyles.buttonRow}>
-        <Button 
-          title="Cancel" 
-          variant="secondary" 
-          onPress={() => setIsEditing(false)}
-          style={contactStyles.button}
-        />
-        <Button 
-          title="Save" 
-          variant="primary" 
-          onPress={handleSave}
-          style={contactStyles.button}
+      <View style={contactStyles.inputContainer}>
+        <Text style={contactStyles.inputLabel}>Phone Number</Text>
+        <TextInput
+          style={contactStyles.input}
+          value={formData.contact.phone}
+          onChangeText={(text) => 
+            setFormData({
+              ...formData,
+              contact: { ...formData.contact, phone: text },
+            })
+          }
+          placeholder="+1 (555) 123-4567"
+          placeholderTextColor="#6B7280"
+          keyboardType="phone-pad"
         />
       </View>
-    </Card>
+
+      <View style={contactStyles.inputContainer}>
+        <Text style={contactStyles.inputLabel}>Email Address</Text>
+        <TextInput
+          style={contactStyles.input}
+          value={formData.contact.email}
+          onChangeText={(text) => 
+            setFormData({
+              ...formData,
+              contact: { ...formData.contact, email: text },
+            })
+          }
+          placeholder="your.email@example.com"
+          placeholderTextColor="#6B7280"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={contactStyles.inputContainer}>
+        <Text style={contactStyles.inputLabel}>Location</Text>
+        <TextInput
+          style={contactStyles.input}
+          value={formData.contact.location}
+          onChangeText={(text) => 
+            setFormData({
+              ...formData,
+              contact: { ...formData.contact, location: text },
+            })
+          }
+          placeholder="City, State/Country"
+          placeholderTextColor="#6B7280"
+        />
+      </View>
+
+      <View style={contactStyles.inputContainer}>
+        <Text style={contactStyles.inputLabel}>Website (Optional)</Text>
+        <TextInput
+          style={contactStyles.input}
+          value={formData.contact.website}
+          onChangeText={(text) => 
+            setFormData({
+              ...formData,
+              contact: { ...formData.contact, website: text },
+            })
+          }
+          placeholder="https://yourwebsite.com"
+          placeholderTextColor="#6B7280"
+          keyboardType="url"
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={contactStyles.buttonRow}>
+        <TouchableOpacity 
+          style={contactStyles.cancelButton}
+          onPress={() => setIsEditing(false)}
+        >
+          <Text style={contactStyles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={contactStyles.saveButton}
+          onPress={handleSave}
+        >
+          <Text style={contactStyles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const contactStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#F4F4F5',
+    marginBottom: 20,
+  },
+  editButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   contactList: {
     marginTop: 8,
@@ -223,9 +281,13 @@ const contactStyles = StyleSheet.create({
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: '#111111',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   contactIcon: {
     fontSize: 24,
@@ -238,24 +300,73 @@ const contactStyles = StyleSheet.create({
   },
   contactLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 2,
+    fontWeight: '600',
+    color: '#D1D5DB',
+    marginBottom: 4,
   },
   contactValue: {
     fontSize: 16,
-    color: '#111827',
+    color: '#F4F4F5',
+    fontWeight: '500',
   },
   clickable: {
     color: '#3B82F6',
     textDecorationLine: 'underline',
   },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E5E7EB',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#111111',
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 24,
+    marginTop: 8,
+    gap: 12,
   },
-  button: {
-    flex: 0.48,
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#374151',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  cancelButtonText: {
+    color: '#D1D5DB',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
