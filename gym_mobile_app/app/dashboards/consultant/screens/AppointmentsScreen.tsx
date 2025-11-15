@@ -81,7 +81,13 @@ export const AppointmentsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+     
+      <ScrollView 
+        style={styles.appointmentsContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+         
       {/* Header Section */}
       <View style={styles.headerSection}>
         <Text style={styles.headerTitle}>Appointments</Text>
@@ -105,11 +111,7 @@ export const AppointmentsScreen: React.FC = () => {
         ))}
       </View>
 
-      <ScrollView 
-        style={styles.appointmentsContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+
         {filteredAppointments.length > 0 ? (
           filteredAppointments.map(appointment => (
             <View key={appointment.id} style={styles.fullAppointmentCard}>
