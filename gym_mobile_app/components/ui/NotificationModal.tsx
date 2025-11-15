@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
+  Modal,
   View,
   Text,
-  Modal,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Animated,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 
 export interface Notification {
   id: string;
-  icon: string;
+  icon: string; // Changed from strict type to flexible string
   iconColor: string;
   iconBg: string;
   title: string;
@@ -32,6 +32,8 @@ interface NotificationModalProps {
   onMarkAllRead: () => void;
 }
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 export default function NotificationModal({
   visible,
   onClose,
@@ -39,268 +41,145 @@ export default function NotificationModal({
   onRemoveNotification,
   onMarkAllRead,
 }: NotificationModalProps) {
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(-50));
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: -50,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const handleRemove = (id: string) => {
-    onRemoveNotification(id);
-  };
-
-  const getIconName = (iconType: string): any => {
-    const iconMap: { [key: string]: any } = {
-      activity: 'pulse',
-      water: 'water',
-      trophy: 'trophy',
-      medical: 'medical',
-      moon: 'moon',
-      fitness: 'fitness',
-    };
-    return iconMap[iconType] || 'notifications';
-  };
-
   return (
     <Modal
       visible={visible}
-      transparent
-      animationType="none"
+      animationType="slide"
+      transparent={true}
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
-        onPress={onClose}
-      >
-        <BlurView intensity={20} tint="dark" style={styles.blurView}>
-          <TouchableOpacity 
-            activeOpacity={1} 
-            style={styles.modalContainer}
-            onPress={(e) => e.stopPropagation()}
+      <SafeAreaView style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <View style={styles.headerLeft}>
+              <Ionicons name="notifications" size={24} color="#fff" />
+              <Text style={styles.modalTitle}>
+                Notifications ({notifications.length})
+              </Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color="#94a3b8" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Notifications List - Scrollable */}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.notificationsList}
+            showsVerticalScrollIndicator={true}
           >
-            <Animated.View
-              style={[
-                styles.notificationPanel,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
-            >
-              {/* Header */}
-              <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                  <Ionicons name="notifications" size={24} color="#10B981" />
-                  <Text style={styles.headerTitle}>Notifications</Text>
-                  {notifications.length > 0 && (
-                    <View style={styles.headerBadge}>
-                      <Text style={styles.headerBadgeText}>
-                        {notifications.length}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                <View style={styles.headerRight}>
-                  {notifications.length > 0 && (
-                    <TouchableOpacity
-                      style={styles.markAllButton}
-                      onPress={onMarkAllRead}
-                    >
-                      <Text style={styles.markAllText}>Mark all read</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                    <Ionicons name="close" size={24} color="#94A3B8" />
-                  </TouchableOpacity>
-                </View>
+            {notifications.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="checkmark-circle" size={64} color="#10B981" />
+                <Text style={styles.emptyTitle}>All Caught Up!</Text>
+                <Text style={styles.emptyMessage}>
+                  You have no new notifications
+                </Text>
               </View>
-
-              {/* Notifications List */}
-              <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollViewContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {notifications.length === 0 ? (
-                  <View style={styles.emptyState}>
+            ) : (
+              notifications.map((notification) => (
+                <View key={notification.id} style={styles.notificationCard}>
+                  {/* Icon */}
+                  <View
+                    style={[
+                      styles.iconContainer,
+                      { backgroundColor: notification.iconBg },
+                    ]}
+                  >
                     <Ionicons
-                      name="notifications-off-outline"
-                      size={64}
-                      color="#475569"
+                      name={notification.icon as any}
+                      size={24}
+                      color={notification.iconColor}
                     />
-                    <Text style={styles.emptyStateText}>No notifications</Text>
-                    <Text style={styles.emptyStateSubtext}>
-                      You're all caught up!
-                    </Text>
                   </View>
-                ) : (
-                  notifications.map((notification) => (
-                    <View key={notification.id} style={styles.notificationCard}>
-                      <View style={styles.notificationContent}>
-                        {/* Icon */}
-                        <View
-                          style={[
-                            styles.iconContainer,
-                            { backgroundColor: notification.iconBg },
-                          ]}
-                        >
-                          <Ionicons
-                            name={getIconName(notification.icon)}
-                            size={20}
-                            color={notification.iconColor}
-                          />
-                        </View>
 
-                        {/* Content */}
-                        <View style={styles.contentContainer}>
-                          <View style={styles.titleRow}>
-                            <Text style={styles.notificationTitle}>
-                              {notification.emoji} {notification.title}
-                            </Text>
-                            <View style={styles.timeAndClose}>
-                              <Text style={styles.notificationTime}>
-                                {notification.time}
-                              </Text>
-                              <TouchableOpacity
-                                onPress={() => handleRemove(notification.id)}
-                                style={styles.removeButton}
-                              >
-                                <Ionicons name="close" size={18} color="#64748B" />
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                          <Text style={styles.notificationMessage}>
-                            {notification.message}
-                          </Text>
-                          {notification.actionButton && (
-                            <TouchableOpacity
-                              style={styles.actionButton}
-                              onPress={notification.onAction}
-                            >
-                              <Text style={styles.actionButtonText}>
-                                {notification.actionButton}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      </View>
+                  {/* Content */}
+                  <View style={styles.notificationContent}>
+                    <View style={styles.notificationHeader}>
+                      <Text style={styles.notificationTitle}>
+                        {notification.emoji} {notification.title}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => onRemoveNotification(notification.id)}
+                        style={styles.removeButton}
+                      >
+                        <Ionicons name="close-circle" size={20} color="#64748b" />
+                      </TouchableOpacity>
                     </View>
-                  ))
-                )}
-              </ScrollView>
-            </Animated.View>
-          </TouchableOpacity>
-        </BlurView>
-      </TouchableOpacity>
+
+                    <Text style={styles.notificationMessage}>
+                      {notification.message}
+                    </Text>
+
+                    <View style={styles.notificationFooter}>
+                      <Text style={styles.notificationTime}>
+                        {notification.time}
+                      </Text>
+                      {notification.actionButton && (
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          onPress={notification.onAction}
+                        >
+                          <Text style={styles.actionButtonText}>
+                            {notification.actionButton}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          {/* Footer */}
+          {notifications.length > 0 && (
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.markAllButton}
+                onPress={onMarkAllRead}
+              >
+                <Ionicons name="checkmark-done" size={20} color="#fff" />
+                <Text style={styles.markAllText}>Mark All Read</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  blurView: {
-    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
   modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 80,
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: SCREEN_HEIGHT * 0.85,
+    height: SCREEN_HEIGHT * 0.85,
   },
-  notificationPanel: {
-    width: '90%',
-    maxWidth: 600,
-    maxHeight: '80%',
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 20,
-    overflow: 'hidden',
-  },
-  header: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
-    backgroundColor: '#0F172A',
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  headerTitle: {
+  modalTitle: {
+    color: '#fff',
     fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  headerBadge: {
-    backgroundColor: '#EF4444',
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  headerBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  markAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderRadius: 8,
-  },
-  markAllText: {
-    color: '#10B981',
-    fontSize: 13,
     fontWeight: '600',
   },
   closeButton: {
@@ -309,89 +188,106 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  scrollViewContent: {
+  notificationsList: {
     padding: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#94A3B8',
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 4,
+    paddingBottom: 24,
   },
   notificationCard: {
-    backgroundColor: '#0F172A',
+    flexDirection: 'row',
+    backgroundColor: '#0f172a',
     borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#334155',
-    marginBottom: 12,
-    overflow: 'hidden',
-  },
-  notificationContent: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    flexShrink: 0,
+    marginRight: 12,
   },
-  contentContainer: {
+  notificationContent: {
     flex: 1,
   },
-  titleRow: {
+  notificationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 6,
   },
   notificationTitle: {
-    fontSize: 15,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
     flex: 1,
-  },
-  timeAndClose: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: '#64748B',
+    marginRight: 8,
   },
   removeButton: {
     padding: 2,
   },
   notificationMessage: {
+    color: '#94a3b8',
     fontSize: 14,
-    color: '#94A3B8',
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  notificationFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  notificationTime: {
+    color: '#64748b',
+    fontSize: 12,
   },
   actionButton: {
-    alignSelf: 'flex-start',
+    backgroundColor: '#0ea5e9',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#334155',
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
   actionButtonText: {
+    color: '#fff',
     fontSize: 13,
     fontWeight: '600',
-    color: '#E2E8F0',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+  },
+  emptyMessage: {
+    color: '#94a3b8',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  modalFooter: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  markAllButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 10,
+    gap: 8,
+  },
+  markAllText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
