@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Input } from '../common/Input';
-import { Button } from '../common/Button';
-import { Card } from '../common/Card';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { Consultant, Package } from '../../services/types';
 
 interface PricingInfoFormProps {
@@ -60,23 +57,14 @@ export const PricingInfoForm: React.FC<PricingInfoFormProps> = ({
 
   const handleSave = async () => {
     try {
-      const pricingData = {
+      await onSave({
         pricing: {
           perSession: parseFloat(formData.pricing.perSession) || undefined,
           perWeek: parseFloat(formData.pricing.perWeek) || undefined,
           perMonth: parseFloat(formData.pricing.perMonth) || undefined,
           packages: formData.pricing.packages,
-        },
-      };
-await onSave({
-  pricing: {
-    perSession: parseFloat(formData.pricing.perSession) || undefined,
-    perWeek: parseFloat(formData.pricing.perWeek) || undefined,
-    perMonth: parseFloat(formData.pricing.perMonth) || undefined,
-    packages: formData.pricing.packages,
-  }
-});
-
+        }
+      });
       setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to save pricing information');
@@ -85,138 +73,165 @@ await onSave({
 
   if (!isEditing) {
     return (
-      <Card>
+      <View style={styles.card}>
         <View style={styles.header}>
           <Text style={styles.sectionTitle}>Pricing Information</Text>
-          <Button 
-            title="Edit" 
-            variant="ghost" 
-            size="sm"
+          <TouchableOpacity 
+            style={styles.editButton}
             onPress={() => setIsEditing(true)}
-          />
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.pricingGrid}>
-          <Card style={styles.priceCard}>
+          <View style={styles.priceCard}>
             <Text style={styles.priceLabel}>Per Session</Text>
             <Text style={styles.priceValue}>
               ₹{consultant?.pricing?.perSession || '0'}
             </Text>
-          </Card>
-          <Card style={styles.priceCard}>
+          </View>
+          <View style={styles.priceCard}>
             <Text style={styles.priceLabel}>Per Week</Text>
             <Text style={styles.priceValue}>
               ₹{consultant?.pricing?.perWeek || '0'}
             </Text>
-          </Card>
-          <Card style={styles.priceCard}>
+          </View>
+          <View style={styles.priceCard}>
             <Text style={styles.priceLabel}>Per Month</Text>
             <Text style={styles.priceValue}>
               ₹{consultant?.pricing?.perMonth || '0'}
             </Text>
-          </Card>
+          </View>
         </View>
 
         <View style={styles.packagesSection}>
           <Text style={styles.label}>Packages</Text>
           {consultant?.pricing?.packages?.length ? (
             consultant.pricing.packages.map((pkg, index) => (
-              <Card key={index} style={styles.packageCard}>
+              <View key={index} style={styles.packageCard}>
                 <View style={styles.packageInfo}>
                   <Text style={styles.packageTitle}>{pkg.title}</Text>
                   <Text style={styles.packageDuration}>{pkg.duration}</Text>
                 </View>
                 <Text style={styles.packagePrice}>₹{pkg.price}</Text>
-              </Card>
+              </View>
             ))
           ) : (
             <Text style={styles.emptyText}>No packages created</Text>
           )}
         </View>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card>
+    <View style={styles.card}>
       <Text style={styles.sectionTitle}>Pricing Information</Text>
 
       <View style={styles.pricingInputs}>
-        <Input
-          label="Per Session (₹)"
-          value={formData.pricing.perSession}
-          onChangeText={(text) => 
-            setFormData({
-              ...formData,
-              pricing: { ...formData.pricing, perSession: text },
-            })
-          }
-          placeholder="0"
-          keyboardType="numeric"
-          containerStyle={styles.priceInput}
-        />
-        <Input
-          label="Per Week (₹)"
-          value={formData.pricing.perWeek}
-          onChangeText={(text) => 
-            setFormData({
-              ...formData,
-              pricing: { ...formData.pricing, perWeek: text },
-            })
-          }
-          placeholder="0"
-          keyboardType="numeric"
-          containerStyle={styles.priceInput}
-        />
-        <Input
-          label="Per Month (₹)"
-          value={formData.pricing.perMonth}
-          onChangeText={(text) => 
-            setFormData({
-              ...formData,
-              pricing: { ...formData.pricing, perMonth: text },
-            })
-          }
-          placeholder="0"
-          keyboardType="numeric"
-          containerStyle={styles.priceInput}
-        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Per Session (₹)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.pricing.perSession}
+            onChangeText={(text) => 
+              setFormData({
+                ...formData,
+                pricing: { ...formData.pricing, perSession: text },
+              })
+            }
+            placeholder="0"
+            placeholderTextColor="#6B7280"
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Per Week (₹)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.pricing.perWeek}
+            onChangeText={(text) => 
+              setFormData({
+                ...formData,
+                pricing: { ...formData.pricing, perWeek: text },
+              })
+            }
+            placeholder="0"
+            placeholderTextColor="#6B7280"
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Per Month (₹)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.pricing.perMonth}
+            onChangeText={(text) => 
+              setFormData({
+                ...formData,
+                pricing: { ...formData.pricing, perMonth: text },
+              })
+            }
+            placeholder="0"
+            placeholderTextColor="#6B7280"
+            keyboardType="numeric"
+          />
+        </View>
       </View>
 
       <View style={styles.packageSection}>
         <Text style={styles.label}>Packages</Text>
         
-        <Card style={styles.newPackageCard}>
+        <View style={styles.newPackageCard}>
           <Text style={styles.newPackageTitle}>Add New Package</Text>
-          <Input
-            label="Package Title"
-            value={newPackage.title}
-            onChangeText={(text) => setNewPackage({ ...newPackage, title: text })}
-            placeholder="e.g. 3-Month Transformation"
-          />
-          <View style={styles.packageInputRow}>
-            <Input
-              label="Duration"
-              value={newPackage.duration}
-              onChangeText={(text) => setNewPackage({ ...newPackage, duration: text })}
-              placeholder="e.g. 3 months"
-              containerStyle={styles.durationInput}
-            />
-            <Input
-              label="Price (₹)"
-              value={newPackage.price.toString()}
-              onChangeText={(text) => setNewPackage({ ...newPackage, price: parseFloat(text) || 0 })}
-              placeholder="0"
-              keyboardType="numeric"
-              containerStyle={styles.priceInputSmall}
+          
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Package Title</Text>
+            <TextInput
+              style={styles.input}
+              value={newPackage.title}
+              onChangeText={(text) => setNewPackage({ ...newPackage, title: text })}
+              placeholder="e.g. 3-Month Transformation"
+              placeholderTextColor="#6B7280"
             />
           </View>
-          <Button title="Add Package" variant="secondary" onPress={addPackage} />
-        </Card>
+
+          <View style={styles.packageInputRow}>
+            <View style={[styles.inputContainer, styles.durationInput]}>
+              <Text style={styles.inputLabel}>Duration</Text>
+              <TextInput
+                style={styles.input}
+                value={newPackage.duration}
+                onChangeText={(text) => setNewPackage({ ...newPackage, duration: text })}
+                placeholder="e.g. 3 months"
+                placeholderTextColor="#6B7280"
+              />
+            </View>
+
+            <View style={[styles.inputContainer, styles.priceInputSmall]}>
+              <Text style={styles.inputLabel}>Price (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={newPackage.price > 0 ? newPackage.price.toString() : ''}
+                onChangeText={(text) => setNewPackage({ ...newPackage, price: parseFloat(text) || 0 })}
+                placeholder="0"
+                placeholderTextColor="#6B7280"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.addPackageButton} onPress={addPackage}>
+            <Text style={styles.addPackageButtonText}>Add Package</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.existingPackages}>
           {formData.pricing.packages.map((pkg, index) => (
-            <Card key={index} style={styles.packageCard}>
+            <View key={index} style={styles.packageCard}>
               <View style={styles.packageInfo}>
                 <Text style={styles.packageTitle}>{pkg.title}</Text>
                 <Text style={styles.packageDuration}>{pkg.duration}</Text>
@@ -227,152 +242,118 @@ await onSave({
                   <Text style={styles.removeButton}>Remove</Text>
                 </TouchableOpacity>
               </View>
-            </Card>
+            </View>
           ))}
         </View>
       </View>
 
       <View style={styles.buttonRow}>
-        <Button 
-          title="Cancel" 
-          variant="secondary" 
+        <TouchableOpacity 
+          style={styles.cancelButton}
           onPress={() => setIsEditing(false)}
-          style={styles.button}
-        />
-        <Button 
-          title="Save" 
-          variant="primary" 
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.saveButton}
           onPress={handleSave}
-          style={styles.button}
-        />
+        >
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
       </View>
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#F4F4F5',
+    marginBottom: 20,
   },
-  infoRow: {
-    marginBottom: 16,
+  editButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  value: {
-    fontSize: 16,
-    color: '#111827',
+    fontWeight: '600',
+    color: '#D1D5DB',
+    marginBottom: 12,
   },
   emptyText: {
     fontSize: 14,
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-  },
-  badgeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 4,
-  },
-  badge: {
-    marginRight: 8,
-    marginBottom: 4,
-  },
-  modeContainer: {
-    marginBottom: 16,
-  },
-  modeOptions: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  modeOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  modeOptionActive: {
-    backgroundColor: '#DBEAFE',
-    borderColor: '#3B82F6',
-  },
-  modeText: {
-    fontSize: 14,
     color: '#6B7280',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
-  modeTextActive: {
-    color: '#1D4ED8',
-    fontWeight: '600',
-  },
-  certificationContainer: {
-    marginBottom: 16,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginTop: 8,
-  },
-  certificationInput: {
-    flex: 1,
-    marginRight: 8,
-  },
-  addButton: {
-    marginBottom: 8,
-  },
-  removableBadge: {
-    marginRight: 8,
-    marginBottom: 4,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  button: {
-    flex: 0.48,
-  },
-  // Pricing specific styles
   pricingGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 24,
+    gap: 10,
   },
   priceCard: {
-    flex: 0.32,
+    flex: 1,
     alignItems: 'center',
-    padding: 12,
+    padding: 16,
+    backgroundColor: '#111111',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   priceLabel: {
     fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 4,
+    color: '#9CA3AF',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   priceValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#10B981',
   },
   packagesSection: {
-    marginTop: 16,
+    marginTop: 8,
   },
   packageCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
+    backgroundColor: '#111111',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   packageInfo: {
     flex: 1,
@@ -380,51 +361,83 @@ const styles = StyleSheet.create({
   packageTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: '#F4F4F5',
+    marginBottom: 4,
   },
   packageDuration: {
     fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+    color: '#9CA3AF',
   },
   packagePrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#10B981',
   },
   pricingInputs: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
-  priceInput: {
-    marginBottom: 12,
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E5E7EB',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#111111',
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   packageSection: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   newPackageCard: {
-    padding: 16,
-    backgroundColor: '#F9FAFB',
+    padding: 20,
+    backgroundColor: '#111111',
+    borderRadius: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   newPackageTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
+    color: '#F4F4F5',
+    marginBottom: 16,
   },
   packageInputRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   durationInput: {
     flex: 0.6,
-    marginRight: 8,
   },
   priceInputSmall: {
     flex: 0.35,
   },
+  addPackageButton: {
+    backgroundColor: '#374151',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  addPackageButtonText: {
+    color: '#D1D5DB',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   existingPackages: {
-    marginTop: 16,
+    marginTop: 8,
   },
   packageActions: {
     alignItems: 'flex-end',
@@ -432,6 +445,43 @@ const styles = StyleSheet.create({
   removeButton: {
     color: '#EF4444',
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#374151',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  cancelButtonText: {
+    color: '#D1D5DB',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
