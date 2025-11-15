@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -27,7 +26,7 @@ const mockAppointments: Appointment[] = [
     client: 'John Martinez', 
     date: '2024-10-15', 
     time: '10:00 AM', 
-    type: 'online', 
+    type: 'Online', 
     duration: '60 mins', 
     status: 'confirmed', 
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
@@ -126,7 +125,9 @@ export const DashboardScreen: React.FC = () => {
               <View>
                 <Text style={styles.statValue}>{stats.totalClients}</Text>
                 <Text style={styles.statLabel}>Total Clients</Text>
-               
+                <View style={styles.statTrend}>
+                  <Text style={styles.trendText}>↗ +12%</Text>
+                </View>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -144,7 +145,9 @@ export const DashboardScreen: React.FC = () => {
               <View>
                 <Text style={styles.statValue}>₹{stats.monthlyRevenue}</Text>
                 <Text style={styles.statLabel}>Monthly Revenue</Text>
-               
+                <View style={styles.statTrend}>
+                  <Text style={styles.trendText}>↗ +8%</Text>
+                </View>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -162,7 +165,9 @@ export const DashboardScreen: React.FC = () => {
               <View>
                 <Text style={styles.statValue}>{stats.completedSessions}</Text>
                 <Text style={styles.statLabel}>Sessions Done</Text>
-              
+                <View style={styles.statTrend}>
+                  <Text style={styles.trendText}>↗ +15%</Text>
+                </View>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -180,7 +185,9 @@ export const DashboardScreen: React.FC = () => {
               <View>
                 <Text style={styles.statValue}>{stats.averageRating}</Text>
                 <Text style={styles.statLabel}>Average Rating</Text>
-              
+                <View style={styles.statTrend}>
+                  <Text style={styles.trendText}>🔥 Excellent</Text>
+                </View>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -330,11 +337,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap', 
     padding: 16, 
     paddingTop: 24,
-    gap: 12
+    justifyContent: 'space-between'
   },
   statCardWrapper: { 
-    width: '48.5%',
-    aspectRatio: 0.95,
+    width: '48%',
+    marginBottom: 12
   },
   statCard: { 
     borderRadius: 24, 
@@ -344,8 +351,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
-    flex: 1,
-    justifyContent: 'space-between'
+    minHeight: 150
   },
   statIconContainer: { 
     width: 56, 
