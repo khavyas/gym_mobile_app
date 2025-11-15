@@ -47,6 +47,7 @@ export interface Package {
 
 export interface Appointment {
   id: string;
+  gym: string;
   client: string;
   date: string;
   time: string;
