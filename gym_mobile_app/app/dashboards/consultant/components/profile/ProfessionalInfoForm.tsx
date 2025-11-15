@@ -20,6 +20,7 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     specialty: consultant?.specialty || '',
+    gymName: consultant?.gymName || '',
     modeOfTraining: consultant?.modeOfTraining || 'online',
     certifications: consultant?.certifications || [],
     badges: consultant?.badges || [],
@@ -50,6 +51,7 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
     try {
       await onSave({
   specialty: formData.specialty,
+  gymName: formData.gymName,
   certifications: formData.certifications,
   badges: formData.badges,
   modeOfTraining: formData.modeOfTraining,
@@ -79,6 +81,12 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
           <Text style={styles.label}>Specialty</Text>
           <Text style={styles.value}>{consultant?.specialty || 'Not specified'}</Text>
         </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Gym/Wellness Center</Text>
+          <Text style={styles.value}>{consultant?.gymName || 'Not specified'}</Text>
+        </View>
+
 
         <View style={styles.infoRow}>
           <Text style={styles.label}>Training Mode</Text>
@@ -124,6 +132,14 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
         onChangeText={(text) => setFormData({ ...formData, specialty: text })}
         placeholder="e.g. Nutritionist, Yoga Instructor"
       />
+
+      <Input
+        label="Gym/Wellness Center"
+        value={formData.gymName || ""}
+        onChangeText={text => setFormData({ ...formData, gymName: text })}
+        placeholder="e.g. Gold's Gym, Wellness World"
+      />
+
 
       <View style={styles.modeContainer}>
         <Text style={styles.label}>Mode of Training</Text>
