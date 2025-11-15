@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import NotificationModal, { Notification } from './ui/NotificationModal';
 // import WearablesModal from '../app/dashboards/user/WearablesModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface HeaderProps {
   title?: string;
@@ -100,7 +101,7 @@ const defaultNotifications: Notification[] = [
 
 export default function Header({
   title = 'HiWox',
-  subtitle = 'User Portal',
+  subtitle,
   showBackButton = false,
   onBackPress,
 }: HeaderProps) {
@@ -108,11 +109,26 @@ export default function Header({
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showWearables, setShowWearables] = useState(false);
+  const [userRole, setUserRole] = useState<string>('user');
 
-  // Load notifications on mount
   useEffect(() => {
     setNotifications(defaultNotifications);
   }, []);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const role = await AsyncStorage.getItem('userRole');
+        if (role) {
+          setUserRole(role);
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+  
+  fetchUserRole();
+}, []);
 
   const handleProfilePress = () => {
     router.push('/dashboards/user/ProfileSettings');
@@ -143,6 +159,21 @@ export default function Header({
     setShowNotifications(false);
   };
 
+  const getPortalName = () => {
+  switch (userRole.toLowerCase()) {
+    case 'user':
+      return 'User Portal';
+    case 'consultant':
+      return 'Consultant Portal';
+    case 'admin':
+      return 'Admin Portal';
+    case 'superadmin':
+      return 'Super Admin Portal';
+    default:
+      return 'Portal';
+  }
+};
+
   return (
     <>
       <View style={styles.container}>
@@ -160,7 +191,7 @@ export default function Header({
           )}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{subtitle}</Text>
+            <Text style={styles.subtitle}>{subtitle || getPortalName()}</Text>
           </View>
         </View>
 
