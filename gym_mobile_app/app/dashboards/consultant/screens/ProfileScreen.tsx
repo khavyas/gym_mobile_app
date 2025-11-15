@@ -5,10 +5,12 @@ import {
   StyleSheet, 
   ScrollView, 
   Alert,
-  ActivityIndicator 
+  ActivityIndicator,
+  TouchableOpacity,
+  StatusBar
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TabNavigation } from '../components/common/TabNavigation';
 import { PersonalInfoForm } from '../components/profile/PersonalInfoForm';
 import { ProfessionalInfoForm } from '../components/profile/ProfessionalInfoForm';
 import { PricingInfoForm } from '../components/profile/PricingInfoForm';
@@ -16,10 +18,10 @@ import { ContactInfoForm } from '../components/profile/ContactInfoForm';
 import { useConsultant } from '../hooks/useConsultant';
 
 const tabs = [
-  { id: 'personal', label: 'Personal' },
-  { id: 'professional', label: 'Professional' },
-  { id: 'pricing', label: 'Pricing' },
-  { id: 'contact', label: 'Contact' },
+  { id: 'personal', label: 'Personal', icon: '👤', color: '#8B5CF6' },
+  { id: 'professional', label: 'Professional', icon: '💼', color: '#3B82F6' },
+  { id: 'pricing', label: 'Pricing', icon: '💰', color: '#10B981' },
+  { id: 'contact', label: 'Contact', icon: '📱', color: '#F59E0B' },
 ];
 
 interface ProfileData {
@@ -106,12 +108,14 @@ export const ProfileScreen: React.FC = () => {
     }
   };
 
+
+
   const renderTabContent = () => {
     if (loading) {
       return (
-        <View style={profileStyles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={profileStyles.loadingText}>Loading profile...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B5CF6" />
+          <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
       );
     }
@@ -161,60 +165,235 @@ export const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <View style={profileStyles.container}>
-      <TabNavigation
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabPress={setActiveTab}
-      />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+    
+
+      {/* Content Area */}
       <ScrollView 
-        style={profileStyles.content}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+          
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={['#1A1A2E', '#16213E']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>My Profile</Text>
+            <Text style={styles.headerSubtitle}>Manage your information</Text>
+          </View>       
+         
+        </View>
+      </LinearGradient>
+
+      {/* Enhanced Tab Navigation */}
+      <View style={styles.tabsWrapper}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabContainer}
+        >
+          {tabs.map((tab, index) => {
+            const isActive = activeTab === tab.id;
+            
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                onPress={() => setActiveTab(tab.id)}
+                activeOpacity={0.7}
+              >
+                {isActive ? (
+                  <LinearGradient
+                    colors={['#667eea', '#764ba2']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tab}
+                  >
+                    <View style={styles.tabIconWrapper}>
+                      <Text style={styles.tabIcon}>{tab.icon}</Text>
+                    </View>
+                    <Text style={styles.activeTabText}>{tab.label}</Text>
+                    <View style={styles.activeIndicator} />
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.tab}>
+                    <View style={styles.tabIconWrapperInactive}>
+                      <Text style={styles.tabIconInactive}>{tab.icon}</Text>
+                    </View>
+                    <Text style={styles.tabText}>{tab.label}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+
         {renderTabContent()}
       </ScrollView>
     </View>
   );
 };
 
-const profileStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: '#0A0A0F',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#A0AEC0',
+    fontWeight: '500',
+  },
+  completionCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+    borderWidth: 3,
+    borderColor: '#667eea',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completionPercentage: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  completionLabel: {
+    fontSize: 10,
+    color: '#A0AEC0',
+    fontWeight: '600',
+  },
+  tabsWrapper: {
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  tabContainer: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  tab: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    minWidth: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+    position: 'relative',
+  },
+  tabIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  tabIconWrapperInactive: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  tabIcon: {
+    fontSize: 22,
+  },
+  tabIconInactive: {
+    fontSize: 22,
+    opacity: 0.5,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  activeTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '25%',
+    right: '25%',
+    height: 3,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  progressBarContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
   },
   content: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 60,
   },
   loadingText: {
-    marginTop: 8,
+    marginTop: 12,
     fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  comingSoonContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  comingSoonText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  comingSoonSubtext: {
-    fontSize: 14,
     color: '#9CA3AF',
-    textAlign: 'center',
-    marginTop: 8,
+    fontWeight: '500',
   },
 });
