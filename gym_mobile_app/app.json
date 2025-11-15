@@ -1,36 +1,36 @@
+
 {
   "expo": {
-    "name": "HiWox",
-    "slug": "hiwox",
+    "name": "gym_mobile_app",
+    "slug": "gym_mobile_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/icon1.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0f172a"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.khavya.hiwox"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon1.png",
-        "backgroundColor": "#0f172a"
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.khavya.hiwox"
+      "package": "com.khavya.gym_mobile_app"
     },
     "web": {
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/images/icon.png",
       "bundler": "metro"
     },
     "experiments": {
-      "baseUrl": "/hiwox"
+      "baseUrl": "/gym_mobile_app"
     },
     "extra": {
       "eas": {
