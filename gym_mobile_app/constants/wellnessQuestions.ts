@@ -7,7 +7,7 @@ export interface WellnessQuestion {
   dataTag: string;
   scaleMin?: number;
   scaleMax?: number;
-  multiSelect?: boolean; // Add this property
+  multiSelect?: boolean;
 }
 
 export const wellnessQuestions: WellnessQuestion[] = [
@@ -65,22 +65,49 @@ export const wellnessQuestions: WellnessQuestion[] = [
     question: "What usually influences your mood the most? (Select all that apply)",
     type: 'multiple-choice',
     dataTag: 'mood_influencers',
-    multiSelect: true, // Enable multi-select
+    multiSelect: true,
     options: ['Work stress', 'Relationships', 'Sleep', 'Health', 'Social connection', 'Other']
   },
   {
     id: 9,
+    question: "Do you currently use tobacco products?",
+    type: 'multiple-choice',
+    dataTag: 'tobacco_usage',
+    options: [
+      "No, I don't use tobacco",
+      'Occasionally (social situations)',
+      'Regularly (daily)',
+      'Trying to quit',
+      'Prefer not to say'
+    ]
+  },
+  {
+    id: 10,
+    question: "How would you describe your alcohol consumption?",
+    type: 'multiple-choice',
+    dataTag: 'alcohol_consumption',
+    options: [
+      "I don't drink alcohol",
+      'Rarely (special occasions only)',
+      'Socially (1-2 times per week)',
+      'Regularly (3-4 times per week)',
+      'Daily',
+      'Prefer not to say'
+    ]
+  },
+  {
+    id: 11,
     question: "Do you have any existing medical conditions or medications?",
     type: 'text',
     dataTag: 'health_condition',
     placeholder: 'Enter conditions or medications (optional)'
   },
   {
-    id: 10,
+    id: 12,
     question: "What are your top 1-2 health goals right now?",
     type: 'multiple-choice',
     dataTag: 'health_goal',
-    multiSelect: true, // Enable multi-select
+    multiSelect: true,
     options: [
       'Weight management',
       'Better sleep',
@@ -91,14 +118,14 @@ export const wellnessQuestions: WellnessQuestion[] = [
     ]
   },
   {
-    id: 11,
+    id: 13,
     question: "How much time can you realistically dedicate to your health each day?",
     type: 'multiple-choice',
     dataTag: 'time_commitment',
     options: ['Less than 15 minutes', '15-30 minutes', '30-60 minutes', 'More than 1 hour']
   },
   {
-    id: 12,
+    id: 14,
     question: "What kind of support would help you most?",
     type: 'multiple-choice',
     dataTag: 'support_preference',
@@ -111,10 +138,10 @@ export const wellnessQuestions: WellnessQuestion[] = [
     ]
   },
   {
-    id: 13,
+    id: 15,
     question: "What best describes your current motivation to improve your health?",
     type: 'multiple-choice',
     dataTag: 'motivation_level',
     options: ['Just thinking about it', 'Ready to start soon', 'Actively working on it', 'Fully committed']
-  }
+  },
 ];

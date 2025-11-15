@@ -1,98 +1,147 @@
-import { Question } from './userQuestions';
+export interface WellnessQuestion {
+  id: number;
+  question: string;
+  type: 'multiple-choice' | 'text' | 'scale';
+  options?: string[];
+  placeholder?: string;
+  dataTag: string;
+  scaleMin?: number;
+  scaleMax?: number;
+  multiSelect?: boolean;
+}
 
-export const consultantQuestions: Question[] = [
+export const wellnessQuestions: WellnessQuestion[] = [
   {
     id: 1,
+    question: "How would you describe your energy levels throughout the day?",
     type: 'multiple-choice',
-    question: "Which area do you specialize in?",
-    options: [
-      "Personal Training",
-      "Nutrition",
-      "Physical Therapy",
-      "Yoga Instruction",
-      "Medical Consultation",
-      "Spa Therapy",
-      "Mental Wellness",
-      "Other"
-    ]
+    dataTag: 'daily_energy_level',
+    options: ['Very low', 'Below average', 'Moderate', 'Good', 'Excellent']
   },
   {
     id: 2,
-    type: 'text',
-    question: "How many years of experience do you have?",
-    placeholder: "Enter years of experience"
+    question: "How often do you feel low on energy or fatigued during the day?",
+    type: 'multiple-choice',
+    dataTag: 'energy_level',
+    options: ['Rarely', 'Sometimes', 'Often', 'Always']
   },
   {
     id: 3,
+    question: "How would you describe your current stress level?",
     type: 'multiple-choice',
-    question: "What certifications do you hold?",
-    options: [
-      "ACE Certified",
-      "NASM Certified",
-      "ISSA Certified",
-      "Registered Dietitian",
-      "Licensed Therapist",
-      "Medical Doctor",
-      "Other certification"
-    ]
+    dataTag: 'stress_level',
+    options: ['Low', 'Moderate', 'High']
   },
   {
     id: 4,
-    type: 'text',
-    question: "What is your educational background?",
-    placeholder: "List your degrees and relevant education"
+    question: "How often do you engage in physical activity (e.g., walking, gym, yoga)?",
+    type: 'multiple-choice',
+    dataTag: 'activity_frequency',
+    options: ['Daily', 'Few times a week', 'Occasionally', 'Rarely']
   },
   {
     id: 5,
+    question: "How many hours of sleep do you usually get per night?",
     type: 'multiple-choice',
-    question: "What age groups do you typically work with?",
-    options: [
-      "Teens (13-19)",
-      "Young adults (20-35)",
-      "Adults (36-55)",
-      "Seniors (55+)",
-      "All age groups"
-    ]
+    dataTag: 'sleep_duration',
+    options: ['Less than 5 hours', '5-6 hours', '6-7 hours', '7-8 hours', 'More than 8 hours']
   },
   {
     id: 6,
+    question: "How would you describe your eating habits?",
     type: 'multiple-choice',
-    question: "What is your preferred coaching style?",
-    options: [
-      "Strict and disciplined",
-      "Supportive and encouraging",
-      "Educational and informative",
-      "Holistic and wellness-focused",
-      "Results-driven"
-    ]
+    dataTag: 'nutrition_pattern',
+    options: ['Regular meals', 'Irregular', 'Skipped meals', 'Emotional eating']
   },
   {
     id: 7,
-    type: 'text',
-    question: "Describe your approach to client wellness",
-    placeholder: "Explain your philosophy and methods"
+    question: "How often do you feel anxious, irritable, or overwhelmed?",
+    type: 'multiple-choice',
+    dataTag: 'anxiety_frequency',
+    options: ['Rarely', 'Sometimes', 'Often']
   },
   {
     id: 8,
+    question: "What usually influences your mood the most? (Select all that apply)",
     type: 'multiple-choice',
-    question: "What availability do you have for new clients?",
-    options: [
-      "Full-time availability",
-      "Part-time availability",
-      "Limited spots available",
-      "Currently not accepting new clients"
-    ]
+    dataTag: 'mood_influencers',
+    multiSelect: true,
+    options: ['Work stress', 'Relationships', 'Sleep', 'Health', 'Social connection', 'Other']
   },
   {
     id: 9,
-    type: 'text',
-    question: "What are your hourly rates?",
-    placeholder: "Enter your consultation fees"
+    question: "Do you currently use tobacco products?",
+    type: 'multiple-choice',
+    dataTag: 'tobacco_usage',
+    options: [
+      "No, I don't use tobacco",
+      'Occasionally (social situations)',
+      'Regularly (daily)',
+      'Trying to quit',
+      'Prefer not to say'
+    ]
   },
   {
     id: 10,
+    question: "How would you describe your alcohol consumption?",
+    type: 'multiple-choice',
+    dataTag: 'alcohol_consumption',
+    options: [
+      "I don't drink alcohol",
+      'Rarely (special occasions only)',
+      'Socially (1-2 times per week)',
+      'Regularly (3-4 times per week)',
+      'Daily',
+      'Prefer not to say'
+    ]
+  },
+  {
+    id: 11,
+    question: "Do you have any existing medical conditions or medications?",
     type: 'text',
-    question: "Do you have any specializations or niches?",
-    placeholder: "List any special areas of expertise"
-  }
+    dataTag: 'health_condition',
+    placeholder: 'Enter conditions or medications (optional)'
+  },
+  {
+    id: 12,
+    question: "What are your top 1-2 health goals right now?",
+    type: 'multiple-choice',
+    dataTag: 'health_goal',
+    multiSelect: true,
+    options: [
+      'Weight management',
+      'Better sleep',
+      'Stress reduction',
+      'Improve energy',
+      'Pain relief',
+      'Fitness'
+    ]
+  },
+  {
+    id: 13,
+    question: "How much time can you realistically dedicate to your health each day?",
+    type: 'multiple-choice',
+    dataTag: 'time_commitment',
+    options: ['Less than 15 minutes', '15-30 minutes', '30-60 minutes', 'More than 1 hour']
+  },
+  {
+    id: 14,
+    question: "What kind of support would help you most?",
+    type: 'multiple-choice',
+    dataTag: 'support_preference',
+    options: [
+      'Personal coaching',
+      'Daily tips',
+      'Group challenges',
+      'App reminders',
+      'Progress tracking'
+    ]
+  },
+  {
+    id: 15,
+    question: "What best describes your current motivation to improve your health?",
+    type: 'multiple-choice',
+    dataTag: 'motivation_level',
+    options: ['Just thinking about it', 'Ready to start soon', 'Actively working on it', 'Fully committed']
+  },
 ];

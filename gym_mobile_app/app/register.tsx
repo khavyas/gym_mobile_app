@@ -17,11 +17,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { EyeIcon, EyeSlashIcon } from "react-native-heroicons/outline";
 import Svg, { Circle, Path, G, Defs, LinearGradient, Stop } from "react-native-svg";
 
-// Toast Component Props Interface
 interface ToastProps {
   visible: boolean;
   message: string;
   onHide: () => void;
+  type?: 'success' | 'error';  // ADD THIS LINE
 }
 
 // Floating Wellness Icon Component
@@ -143,10 +143,11 @@ const FitnessIllustration = () => {
 };
 
 // Toast Component
-const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide, type = 'success' }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-100));
- 
+  const isError = type === 'error'; 
+  
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -193,8 +194,16 @@ const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
         },
       ]}
     >
-      <View style={styles.toastContent}>
-        <Text style={styles.toastIcon}>✓</Text>
+      <View style={[
+          styles.toastContent,
+          isError && styles.toastError 
+        ]}>
+          <Text style={[
+            styles.toastIcon,
+            isError && styles.toastErrorIcon  
+          ]}>
+            {isError ? '✗' : '✓'}  
+          </Text>
         <Text style={styles.toastMessage}>{message}</Text>
       </View>
     </Animated.View>
@@ -219,21 +228,27 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false); 
-  
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
   const handleRegister = async () => {
-    // Validation
     if (!name || !email || !password || !confirmPassword) {
-      alert("Please fill in all required fields");
+      setToastType('error');
+      setToastMessage("Please fill in all required fields");
+      setShowToast(true);
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      setToastType('error');
+      setToastMessage("Passwords do not match");
+      setShowToast(true);
       return;
     }
 
     if (!consent || !privacyNoticeAccepted) {
-      alert("Please accept the consent and privacy policy to continue");
+      setToastType('error');
+      setToastMessage("Please accept the consent and privacy policy to continue");
+      setShowToast(true);
       return;
     }
 
@@ -272,7 +287,7 @@ export default function Register() {
         await AsyncStorage.setItem("userRole", role);
         await AsyncStorage.setItem("userId", data.userId);
 
-        // Show professional toast notification
+        setToastType('success');  // ADD THIS LINE
         setToastMessage(`Registration successful! Welcome ${data.name} 🎉`);
         setShowToast(true);
 
@@ -288,12 +303,41 @@ export default function Register() {
       } else {
         setIsLoading(false);
         console.error("Registration failed:", data);
-        alert(`Error: ${data.message || "Registration failed"}`);
+        setToastType('error');
+        setToastMessage(data.message || "Registration failed");
+        setShowToast(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      console.error("Network error:", error);
-      alert("Network error. Please try again.");
+      console.error("Registration error:", error);
+      
+      // Handle different error scenarios
+      if (error.response) {
+        const status = error.response.status;
+        const serverMsg = error.response.data?.message || error.response.data?.error || 'Registration failed';
+        
+        if (status === 400) {
+          setToastType('error');
+          setToastMessage(serverMsg);
+          setShowToast(true);
+        } else if (status === 500) {
+          setToastType('error');
+          setToastMessage('Server error. Please try again later.');
+          setShowToast(true);
+        } else {
+          setToastType('error');
+          setToastMessage(serverMsg);
+          setShowToast(true);
+        }
+      } else if (error.request) {
+        setToastType('error');
+        setToastMessage('Network error — please check your connection.');
+        setShowToast(true);
+      } else {
+        setToastType('error');
+        setToastMessage('Registration failed. Please try again.');
+        setShowToast(true);
+      }
     }
   };
 
@@ -461,6 +505,7 @@ const TermsOfServiceModal = () => (
       <Toast 
         visible={showToast} 
         message={toastMessage} 
+        type={toastType}  // ADD THIS LINE
         onHide={() => setShowToast(false)} 
       />
       
@@ -722,6 +767,13 @@ const TermsOfServiceModal = () => (
   );
 }
 const styles = StyleSheet.create({
+  toastError: {
+  backgroundColor: '#7F1D1D',
+  borderLeftColor: '#EF4444',
+},
+toastErrorIcon: {
+  color: '#EF4444',
+},
     container: {
     flex: 1,
     backgroundColor: '#111827',
