@@ -11,45 +11,49 @@ import {
 import { Appointment } from '../services/types';
 
 const mockAppointments: Appointment[] = [
-  {
-    id: '1',
-    client: 'John Doe',
-    date: '2024-10-15',
-    time: '10:00 AM',
-    type: 'Nutrition Consultation',
-    status: 'confirmed',
+  { 
+    id: '1', 
+    client: 'John Martinez', 
+    date: '2024-10-15', 
+    time: '10:00 AM', 
+    type: 'online', 
+    duration: '60 mins', 
+    status: 'confirmed', 
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    duration: '60 min'
+    gym: 'PowerFit Gym'
   },
-  {
-    id: '2',
-    client: 'Jane Smith',
-    date: '2024-10-15',
-    time: '2:00 PM',
-    type: 'Yoga Session',
-    status: 'pending',
+  { 
+    id: '2', 
+    client: 'Sarah Chen', 
+    date: '2024-10-15', 
+    time: '2:00 PM', 
+    type: 'Offline', 
+    duration: '45 mins', 
+    status: 'pending', 
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    duration: '45 min'
+    gym: 'Elite Fitness Hub'
   },
-  {
-    id: '3',
-    client: 'Mike Wilson',
-    date: '2024-10-16',
-    time: '11:00 AM',
-    type: 'Diet Planning',
-    status: 'completed',
+  { 
+    id: '3', 
+    client: 'Mike Thompson', 
+    date: '2024-10-16', 
+    time: '11:00 AM', 
+    type: 'Hybrid', 
+    duration: '30 mins', 
+    status: 'completed', 
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    duration: '30 min'
+    gym: 'FitZone Studio'
   },
-  {
-    id: '4',
-    client: 'Sarah Davis',
-    date: '2024-10-17',
-    time: '3:00 PM',
-    type: 'Fitness Assessment',
-    status: 'pending',
+  { 
+    id: '4', 
+    client: 'Emily Rodriguez', 
+    date: '2024-10-16', 
+    time: '3:30 PM', 
+    type: 'Online', 
+    duration: '60 mins', 
+    status: 'confirmed', 
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    duration: '90 min'
+    gym: 'Athletic Performance Center'
   },
 ];
 
