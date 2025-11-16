@@ -23,8 +23,8 @@ import {
 } from "react-native-heroicons/outline";
 import { useFocusEffect } from '@react-navigation/native';
 import React from "react";
+import { logout } from '../../utils/auth';
 
-// API Configuration
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 interface UserInfo {
@@ -181,32 +181,25 @@ export default function ProfileSettings() {
     }, [])
   );
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+const handleLogout = async () => {
+  Alert.alert(
+    'Logout',
+    'Are you sure you want to logout?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logout(); // This now uses the utility function which clears ALL auth data
         },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('userId');
-              await AsyncStorage.removeItem('userToken');
-              router.replace('/login');
-            } catch (error) {
-              console.error('Error during logout:', error);
-              Alert.alert('Error', 'Failed to logout properly');
-            }
-          },
-        },
-      ]
-    );
-  };
+      },
+    ]
+  );
+};
 
   const fetchProfile = async (userId: string, token: string) => {
     try {
