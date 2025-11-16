@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -382,7 +382,23 @@ const renderWellnessSelector = (param: {
 
         <TouchableOpacity 
           style={styles.showResultsButton}
-          onPress={handleShowResults}
+          onPress={() => {
+            try {
+              console.log('Button clicked - wellness params:', wellnessParams);
+              setHasRatedWellness(true);
+              
+              // Use setTimeout to ensure state updates before tab switch
+              setTimeout(() => {
+                console.log('Switching to insights tab');
+                setActiveTab('insights');
+                setToastMessage('Wellness assessment completed! 🎉');
+                setShowToast(true);
+              }, 100);
+            } catch (error) {
+              console.error('Error in show results:', error);
+              Alert.alert('Error', 'Unable to show results. Please try again.');
+            }
+          }}
         >
           <Text style={styles.showResultsButtonText}>Show My Wellness Results</Text>
         </TouchableOpacity>
@@ -721,15 +737,15 @@ wellnessIconContainer: {
     flex: 1,
     backgroundColor: '#334155',
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   moodEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
+    fontSize: 28,
+    marginBottom: 6,
   },
   moodLabel: {
     fontSize: 12,

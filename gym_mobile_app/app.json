@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "HiWox",
-    "slug": "HiWox",
+    "slug": "gym_mobile_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon1.png",
