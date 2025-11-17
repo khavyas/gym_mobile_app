@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import Svg, { Path, Line, Circle } from 'react-native-svg';
 
 // Type definitions
 interface WellnessRange {
@@ -103,7 +104,7 @@ function analyzePattern(scores: Scores): PatternAnalysis {
   return { avgScore, lowCount, highCount, focusArea, keyFocusSuggestion };
 }
 
-// Simple Radar Chart Component
+// Simple Radar Chart Component - FIXED FOR REACT NATIVE
 const RadarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
   const areas = Object.keys(scores) as WellnessArea[];
   const size = 200;
@@ -146,11 +147,11 @@ const RadarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>Wellness Radar</Text>
       <View style={styles.svgContainer}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           {/* Grid */}
           {gridPaths.map((path, i) => (
-            <path
-              key={i}
+            <Path
+              key={`grid-${i}`}
               d={path}
               fill="none"
               stroke="#334155"
@@ -162,8 +163,8 @@ const RadarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
           {areas.map((_, i) => {
             const angle = (Math.PI * 2 * i) / areas.length - Math.PI / 2;
             return (
-              <line
-                key={i}
+              <Line
+                key={`axis-${i}`}
                 x1={center}
                 y1={center}
                 x2={center + radius * Math.cos(angle)}
@@ -175,7 +176,7 @@ const RadarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
           })}
           
           {/* Score polygon */}
-          <path
+          <Path
             d={scorePath}
             fill="rgba(6, 182, 212, 0.3)"
             stroke="#06b6d4"
@@ -184,15 +185,15 @@ const RadarChart: React.FC<{ scores: Scores }> = ({ scores }) => {
           
           {/* Score points */}
           {scorePoints.map((p, i) => (
-            <circle
-              key={i}
+            <Circle
+              key={`point-${i}`}
               cx={p.x}
               cy={p.y}
               r="4"
               fill="#06b6d4"
             />
           ))}
-        </svg>
+        </Svg>
       </View>
       <View style={styles.chartLabels}>
         {areas.map(area => (
