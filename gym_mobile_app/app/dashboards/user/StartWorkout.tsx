@@ -291,44 +291,67 @@ export default function StartWorkout() {
       notes: workoutNotes,
     };
 
-    // Skip backend API call - just save locally and show toast
-    saveWorkoutLocally(workoutData);
-    resetWorkout();
-
-    // Show success toast
-    setToastMessage(`Workout logged successfully! 💪 Burned ${caloriesBurned} calories`);
-    setShowToast(true);
+    // Call backend API
+    const success = await logWorkoutToAPI(workoutData);
+    
+    if (success) {
+      // Refresh workout data from backend
+      await fetchTodayWorkoutData();
+      resetWorkout();
+      
+      // Show success toast
+      setToastMessage(`Workout logged successfully! 💪 Burned ${caloriesBurned} calories`);
+      setShowToast(true);
+    } else {
+      // If API call fails, save locally as fallback
+      saveWorkoutLocally(workoutData);
+      resetWorkout();
+      setToastMessage(`Workout saved locally. Will sync when online.`);
+      setShowToast(true);
+    }
   };
 
-  const logManualWorkout = () => {
-  if (!selectedWorkoutType) {
-    Alert.alert('Missing Info', 'Please select a workout type.');
-    return;
-  }
+  const logManualWorkout = async () => {
+    if (!selectedWorkoutType) {
+      Alert.alert('Missing Info', 'Please select a workout type.');
+      return;
+    }
 
-  // Default to 30 minutes if no active workout
-  const durationMinutes = 30;
-  const workout = workoutTypes.find(w => w.label === selectedWorkoutType);
-  const intensity = intensityLevels.find(i => i.value === selectedIntensity);
-  const caloriesBurned = Math.round(
-    (workout?.calPerMin || 6) * durationMinutes * (intensity?.multiplier || 1)
-  );
+    // Default to 30 minutes if no active workout
+    const durationMinutes = 30;
+    const workout = workoutTypes.find(w => w.label === selectedWorkoutType);
+    const intensity = intensityLevels.find(i => i.value === selectedIntensity);
+    const caloriesBurned = Math.round(
+      (workout?.calPerMin || 6) * durationMinutes * (intensity?.multiplier || 1)
+    );
 
-  const workoutData = {
-    workoutType: selectedWorkoutType,
-    duration: durationMinutes,
-    caloriesBurned,
-    intensity: selectedIntensity,
-    notes: workoutNotes,
+    const workoutData = {
+      workoutType: selectedWorkoutType,
+      duration: durationMinutes,
+      caloriesBurned,
+      intensity: selectedIntensity,
+      notes: workoutNotes,
+    };
+
+    // Call backend API
+    const success = await logWorkoutToAPI(workoutData);
+    
+    if (success) {
+      // Refresh workout data from backend
+      await fetchTodayWorkoutData();
+      setWorkoutNotes('');
+      
+      // Show success toast
+      setToastMessage(`${selectedWorkoutType} workout logged! 💪 ${caloriesBurned} calories burned`);
+      setShowToast(true);
+    } else {
+      // If API call fails, save locally as fallback
+      saveWorkoutLocally(workoutData);
+      setWorkoutNotes('');
+      setToastMessage(`Workout saved locally. Will sync when online.`);
+      setShowToast(true);
+    }
   };
-
-  saveWorkoutLocally(workoutData);
-  setWorkoutNotes('');
-
-  // Show success toast
-  setToastMessage(`${selectedWorkoutType} workout logged! 💪 ${caloriesBurned} calories burned`);
-  setShowToast(true);
-};
 
   const saveWorkoutLocally = (workoutData: Omit<WorkoutEntry, 'id' | 'time'>) => {
     const newEntry: WorkoutEntry = {
@@ -373,17 +396,78 @@ export default function StartWorkout() {
     return workout ? workout.color : '#10B981';
   };
 
-  const removeWorkoutEntry = (id: string) => {
+  const removeWorkoutEntry = async (id: string) => {
     const entry = workoutHistory.find(e => e.id === id);
-    if (entry) {
-      setWorkoutHistory(prev => prev.filter(e => e.id !== id));
-      setTotalCalories(prev => Math.max(0, prev - entry.caloriesBurned));
-      
-      // Show toast for removal
-      setToastMessage(`${entry.workoutType} workout removed from log`);
-      setShowToast(true);
+    if (!entry) return;
+
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found. Please log in again.');
+        return;
+      }
+
+      // Call DELETE API
+      const response = await axios.delete(
+        `${API_BASE_URL}/workouts/${id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Remove from local state
+        setWorkoutHistory(prev => prev.filter(e => e.id !== id));
+        setTotalCalories(prev => Math.max(0, prev - entry.caloriesBurned));
+        
+        // Show toast for removal
+        setToastMessage(`${entry.workoutType} workout removed from log`);
+        setShowToast(true);
+      }
+    } catch (error: any) {
+      console.error('Error deleting workout:', error);
+      Alert.alert('Error', 'Failed to delete workout. Please try again.');
     }
   };
+
+  const updateWorkoutEntry = async (
+  id: string, 
+  updatedData: Partial<Omit<WorkoutEntry, 'id' | 'time'>>
+) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      Alert.alert('Error', 'Authentication token not found. Please log in again.');
+      return false;
+    }
+
+    const response = await axios.put(
+      `${API_BASE_URL}/workouts/${id}`,
+      updatedData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      // Refresh workout data from backend
+      await fetchTodayWorkoutData();
+      setToastMessage('Workout updated successfully!');
+      setShowToast(true);
+      return true;
+    }
+    return false;
+  } catch (error: any) {
+    console.error('Error updating workout:', error);
+    Alert.alert('Error', 'Failed to update workout. Please try again.');
+    return false;
+  }
+    };
 
   return (
     <SafeAreaView style={styles.container}>
