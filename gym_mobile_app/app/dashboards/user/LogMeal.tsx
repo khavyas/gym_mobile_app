@@ -666,47 +666,72 @@ const scanMealFromImage = async () => {
       const token = await getAuthToken();
       if (!token) {
         console.log('No auth token found');
+        router.push('/login');
         return;
       }
 
+      const today = new Date().toISOString().split('T')[0];
+      
       const response = await axios.get(`${API_BASE_URL}/meals`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-        }
+        },
+        params: {
+          date: today, // Use the date query parameter for better performance
+        },
+        timeout: 10000, // 10 second timeout
       });
 
-      const today = new Date().toISOString().split('T')[0];
-      const todayEntries = response.data.filter((entry: APIMealEntry) => {
-        const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
-        return entryDate === today;
-      });
+      if (response.data && Array.isArray(response.data)) {
+        const todayEntries = response.data;
 
-      const totalCals = todayEntries.reduce((sum: number, entry: APIMealEntry) => sum + entry.calories, 0);
-      setTotalCalories(totalCals);
+        const totalCals = todayEntries.reduce((sum: number, entry: APIMealEntry) => 
+          sum + (entry.calories || 0), 0
+        );
+        setTotalCalories(totalCals);
 
-      const localEntries: MealEntry[] = todayEntries.map((entry: APIMealEntry) => ({
-        id: entry._id,
-        mealType: entry.mealType as any,
-        foodName: entry.foodName,
-        calories: entry.calories,
-        protein: entry.protein,
-        carbs: entry.carbs,
-        fats: entry.fats,
-        time: new Date(entry.createdAt).toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        }),
-      }));
+        const localEntries: MealEntry[] = todayEntries.map((entry: APIMealEntry) => ({
+          id: entry._id,
+          mealType: entry.mealType as any,
+          foodName: entry.foodName,
+          calories: entry.calories || 0,
+          protein: entry.protein || 0,
+          carbs: entry.carbs || 0,
+          fats: entry.fats || 0,
+          time: new Date(entry.createdAt).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          }),
+        }));
 
-      setMealHistory(localEntries);
+        setMealHistory(localEntries);
+      }
 
     } catch (error: any) {
       console.error('Error fetching meal data:', error);
+      
+      if (error.response?.status === 401) {
+        // Token expired or invalid
+        await AsyncStorage.removeItem('userToken');
+        router.push('/login');
+      } else if (error.code === 'ECONNABORTED') {
+        Alert.alert('Timeout', 'Request took too long. Please try again.');
+      } else if (error.message === 'Network Error') {
+        Alert.alert(
+          'Connection Error',
+          'Unable to load meal data. Please check your internet connection.'
+        );
+      } else {
+        // Don't show error alert on initial load, just log it
+        console.error('Failed to fetch meals:', error.response?.data?.message || error.message);
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+
 
   const saveSelectedItems = async () => {
     if (selectedItems.length === 0) {
@@ -717,40 +742,169 @@ const scanMealFromImage = async () => {
     setIsSaving(true);
     
     try {
-      const totalNutrition = selectedItems.reduce((acc, item) => ({
-        calories: acc.calories + item.calories,
-        protein: acc.protein + item.protein_g,
-        carbs: acc.carbs + item.carbohydrates_total_g,
-        fats: acc.fats + item.fat_total_g,
-      }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+      const token = await getAuthToken();
+      if (!token) {
+        Alert.alert('Authentication Error', 'Please log in again.');
+        router.push('/login');
+        return;
+      }
 
-      const foodNames = selectedItems.map(item => item.name).join(', ');
+      // Check if we have AI-detected foods (from LogMeal) with multiple items
+      const hasMultipleItems = selectedItems.length > 1;
+      const hasLogMealData = detectedDishes.length > 0 && logMealImageId;
 
-      const mealData = {
-        mealType: selectedMealType,
-        foodName: foodNames,
-        calories: Math.round(totalNutrition.calories),
-        protein: Math.round(totalNutrition.protein),
-        carbs: Math.round(totalNutrition.carbs),
-        fats: Math.round(totalNutrition.fats),
-      };
+      if (hasMultipleItems && hasLogMealData) {
+        // Use BULK endpoint for AI-detected multiple foods
+        const meals = selectedItems.map(item => ({
+          name: item.name,
+          calories: Math.round(item.calories),
+          protein_g: item.protein_g,
+          carbohydrates_total_g: item.carbohydrates_total_g,
+          fat_total_g: item.fat_total_g,
+          serving_size_g: Math.round(item.serving_size_g),
+          fiber_g: item.fiber_g,
+          sugar_g: item.sugar_g,
+          sodium_mg: Math.round(item.sodium_mg),
+          cholesterol_mg: item.cholesterol_mg ? Math.round(item.cholesterol_mg) : 0,
+          fat_saturated_g: item.saturated_fat_g || 0,
+          potassium_mg: item.potassium_mg ? Math.round(item.potassium_mg) : 0,
+        }));
 
-      // Skip backend API call - just log locally and show toast
-      addMealLocally(mealData);
-      clearSearchResults();
+        const response = await axios.post(
+          `${API_BASE_URL}/meals/bulk`,
+          {
+            mealType: selectedMealType,
+            meals: meals,
+            imageId: logMealImageId,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200 || response.status === 201) {
+          // Add to local state for immediate UI update
+          const totalNutrition = selectedItems.reduce((acc, item) => ({
+            calories: acc.calories + item.calories,
+            protein: acc.protein + item.protein_g,
+            carbs: acc.carbs + item.carbohydrates_total_g,
+            fats: acc.fats + item.fat_total_g,
+          }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+
+          const foodNames = selectedItems.map(item => item.name).join(', ');
+          
+          const mealData = {
+            mealType: selectedMealType,
+            foodName: foodNames,
+            calories: Math.round(totalNutrition.calories),
+            protein: Math.round(totalNutrition.protein),
+            carbs: Math.round(totalNutrition.carbs),
+            fats: Math.round(totalNutrition.fats),
+          };
+
+          addMealLocally(mealData);
+          clearSearchResults();
+          
+          setToastMessage(`${selectedItems.length} food items logged successfully! 🍽️`);
+          setShowToast(true);
+        }
+      } else {
+        // Use SINGLE endpoint for manually searched or single food items
+        const totalNutrition = selectedItems.reduce((acc, item) => ({
+          calories: acc.calories + item.calories,
+          protein: acc.protein + item.protein_g,
+          carbs: acc.carbs + item.carbohydrates_total_g,
+          fats: acc.fats + item.fat_total_g,
+          servingSize: acc.servingSize + item.serving_size_g,
+          fiber: acc.fiber + item.fiber_g,
+          sugar: acc.sugar + item.sugar_g,
+          sodium: acc.sodium + item.sodium_mg,
+          cholesterol: acc.cholesterol + (item.cholesterol_mg || 0),
+          saturatedFat: acc.saturatedFat + (item.saturated_fat_g || 0),
+          potassium: acc.potassium + (item.potassium_mg || 0),
+        }), { 
+          calories: 0, protein: 0, carbs: 0, fats: 0,
+          servingSize: 0, fiber: 0, sugar: 0, sodium: 0,
+          cholesterol: 0, saturatedFat: 0, potassium: 0
+        });
+
+        const foodNames = selectedItems.map(item => item.name).join(', ');
+
+        const mealData = {
+          mealType: selectedMealType,
+          foodName: foodNames,
+          calories: Math.round(totalNutrition.calories),
+          protein: Math.round(totalNutrition.protein),
+          carbs: Math.round(totalNutrition.carbs),
+          fats: Math.round(totalNutrition.fats),
+          servingSize: Math.round(totalNutrition.servingSize),
+          fiber: Math.round(totalNutrition.fiber),
+          sugar: Math.round(totalNutrition.sugar),
+          sodium: Math.round(totalNutrition.sodium),
+          cholesterol: Math.round(totalNutrition.cholesterol),
+          saturatedFat: Math.round(totalNutrition.saturatedFat),
+          potassium: Math.round(totalNutrition.potassium),
+          imageId: logMealImageId || undefined,
+        };
+
+        const response = await axios.post(
+          `${API_BASE_URL}/meals`,
+          mealData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200 || response.status === 201) {
+          addMealLocally(mealData);
+          clearSearchResults();
+          
+          setToastMessage(`Meal logged successfully! 🍽️`);
+          setShowToast(true);
+        }
+      }
       
-      // Show success toast
-      setToastMessage(`Meal logged successfully! 🍽️`);
-      setShowToast(true);
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving items:', error);
-      Alert.alert('Error', 'Failed to save meal. Please try again.');
+      console.error('Error response:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        Alert.alert(
+          'Session Expired',
+          'Your session has expired. Please log in again.',
+          [
+            {
+              text: 'Login',
+              onPress: () => router.push('/login'),
+            },
+          ]
+        );
+      } else if (error.response?.status === 400) {
+        Alert.alert(
+          'Validation Error',
+          error.response?.data?.message || 'Invalid meal data. Please check your inputs.'
+        );
+      } else if (error.message === 'Network Error') {
+        Alert.alert(
+          'Network Error',
+          'Unable to connect to the server. Please check your internet connection and try again.'
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          `Failed to save meal: ${error.response?.data?.message || error.message || 'Unknown error'}`
+        );
+      }
     } finally {
       setIsSaving(false);
     }
   };
-
 
   const clearSearchResults = () => {
     setSearchResults([]);
