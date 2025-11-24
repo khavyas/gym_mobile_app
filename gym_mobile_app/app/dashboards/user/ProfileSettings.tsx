@@ -24,6 +24,14 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import React from "react";
 import { logout } from '../../utils/auth';
+import { Animated } from "react-native";
+
+interface ToastProps {
+  visible: boolean;
+  message: string;
+  onHide: () => void;
+  type?: 'success' | 'error';   
+}
 
 // API Configuration
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
@@ -97,12 +105,83 @@ interface ProfileData {
   security?: Security;              
 }
 
+const Toast: React.FC<ToastProps> = ({ visible, message, onHide, type = 'success' }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
+  const isError = type === 'error';
+  
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => onHide());
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.toastContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <View style={[
+        styles.toastContent,
+        isError && styles.toastError
+      ]}>
+        <Text style={[
+          styles.toastIcon,
+          isError && styles.toastErrorIcon
+        ]}>
+          {isError ? '✗' : '✓'}
+        </Text>
+        <Text style={styles.toastMessage}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
+
 export default function ProfileSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
   const [userInfo, setUserInfo] = useState<UserInfo>({
     name: "",
     email: "",
@@ -183,9 +262,15 @@ export default function ProfileSettings() {
     }
   };
 
-  const fetchProfile = async (userId: string, token: string) => {
+ const fetchProfile = async (userId: string, token: string) => {
     try {
       setLoading(true);
+      
+      // Show loading toast
+      setToastType('success');
+      setToastMessage('Loading your profile...');
+      setShowToast(true);
+      
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         method: 'GET',
         headers: {
@@ -197,7 +282,7 @@ export default function ProfileSettings() {
       if (response.ok) {
         const profileData: ProfileData = await response.json();
         
-        // Populate userInfo
+        // Populate all your states as before
         setUserInfo({
           name: profileData.fullName || "",
           email: profileData.email || "",
@@ -207,7 +292,6 @@ export default function ProfileSettings() {
           dateOfBirth: profileData.dateOfBirth || "",
         });
 
-        // Populate healthMetrics
         if (profileData.healthMetrics) {
           setHealthMetrics({
             weight: profileData.healthMetrics.weight || "",
@@ -218,7 +302,6 @@ export default function ProfileSettings() {
           });
         }
 
-        // Populate workPreferences
         if (profileData.workPreferences) {
           setWorkPreferences({
             occupation: profileData.workPreferences.occupation || "other",
@@ -230,13 +313,11 @@ export default function ProfileSettings() {
           });
         }
 
-        // Populate governmentIds
         setGovernmentIds({
           aadharNumber: profileData.aadharNumber || "",
           abhaId: profileData.abhaId || "",
         });
 
-        // Populate address
         if (profileData.address) {
           setAddress({
             street: profileData.address.street || "",
@@ -246,38 +327,72 @@ export default function ProfileSettings() {
           });
         }
 
-        // Populate notifications
         if (profileData.notifications) {
           setNotifications(profileData.notifications);
         }
 
-        // Populate security
         if (profileData.security) {
           setSecurity(profileData.security);
         }
 
+        // Success toast
+        setToastType('success');
+        setToastMessage('Profile loaded successfully!');
+        setShowToast(true);
+
       } else {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        Alert.alert('Error', errorData.message || 'Failed to fetch profile');
+        
+        // Show error toast with server message
+        setToastType('error');
+        setToastMessage(errorData.message || 'Failed to fetch profile');
+        setShowToast(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Network error in fetchProfile:', error);
-      Alert.alert('Error', 'Network error while fetching profile');
+      
+      // Show network error toast
+      setToastType('error');
+      setToastMessage(error.message || 'Network error while fetching profile');
+      setShowToast(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateProfile = async () => {
+
+const updateProfile = async () => {
     if (!userId || !token) {
-      Alert.alert('Error', 'User not authenticated');
+      setToastType('error');
+      setToastMessage('User not authenticated');
+      setShowToast(true);
+      return false;
+    }
+
+    // Validate Aadhar number length if provided
+    if (governmentIds.aadharNumber && governmentIds.aadharNumber.length > 0 && governmentIds.aadharNumber.length !== 12) {
+      setToastType('error');
+      setToastMessage('Aadhar number must be exactly 12 digits');
+      setShowToast(true);
+      return false;
+    }
+
+    // Validate pincode if provided
+    if (address.pincode && address.pincode.length > 0 && address.pincode.length !== 6) {
+      setToastType('error');
+      setToastMessage('Pincode must be exactly 6 digits');
+      setShowToast(true);
       return false;
     }
 
     try {
       setSaving(true);
+      
+      // Show saving toast
+      setToastType('success');
+      setToastMessage('Saving your profile...');
+      setShowToast(true);
 
-      // Prepare update payload (excluding immutable fields)
       const updatePayload = {
         phone: userInfo.phone,
         bio: userInfo.bio,
@@ -303,16 +418,45 @@ export default function ProfileSettings() {
 
       if (response.ok) {
         const result = await response.json();
-        Alert.alert('Success', result.message || 'Profile updated successfully!');
+        
+        // Success toast
+        setToastType('success');
+        setToastMessage(result.message || 'Profile updated successfully! 🎉');
+        setShowToast(true);
         return true;
       } else {
         const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to update profile');
+        
+        // Extract meaningful error message
+        let errorMessage = 'Failed to update profile';
+        
+        if (errorData.message) {
+          // Check if it's a validation error
+          if (errorData.message.includes('validation failed')) {
+            if (errorData.message.includes('aadharNumber')) {
+              errorMessage = 'Aadhar number must be exactly 12 digits';
+            } else if (errorData.message.includes('pincode')) {
+              errorMessage = 'Pincode must be exactly 6 digits';
+            } else {
+              errorMessage = 'Please check your input fields';
+            }
+          } else {
+            errorMessage = errorData.message;
+          }
+        }
+        
+        setToastType('error');
+        setToastMessage(errorMessage);
+        setShowToast(true);
         return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Network error while updating profile');
+      
+      // Network error toast
+      setToastType('error');
+      setToastMessage(error.message || 'Network error while updating profile');
+      setShowToast(true);
       return false;
     } finally {
       setSaving(false);
@@ -434,6 +578,13 @@ export default function ProfileSettings() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
+      <Toast 
+        visible={showToast} 
+        message={toastMessage} 
+        type={toastType}
+        onHide={() => setShowToast(false)} 
+      />
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile Settings</Text>
@@ -970,6 +1121,46 @@ export default function ProfileSettings() {
 }
 
 const styles = StyleSheet.create({
+   toastContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: '#065F46',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  toastError: {
+    backgroundColor: '#7F1D1D',
+    borderLeftColor: '#EF4444',
+  },
+  toastIcon: {
+    fontSize: 20,
+    color: '#10B981',
+    marginRight: 12,
+    fontWeight: 'bold',
+  },
+  toastErrorIcon: {
+    color: '#EF4444',
+  },
+  toastMessage: {
+    flex: 1,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
   secureTitle: {
     color: '#FCA5A5',
     fontWeight: '700',
