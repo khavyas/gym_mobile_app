@@ -25,8 +25,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import React from "react";
 import { logout } from '../../utils/auth';
 
+// API Configuration
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
+// Interfaces
 interface UserInfo {
   name: string;
   email: string;
@@ -155,6 +157,12 @@ export default function ProfileSettings() {
     loadUserData();
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+    }, [])
+  );
+
   const loadUserData = async () => {
     try {
       const storedUserId = await AsyncStorage.getItem("userId");
@@ -175,32 +183,6 @@ export default function ProfileSettings() {
     }
   };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadUserData();
-    }, [])
-  );
-
-const handleLogout = async () => {
-  Alert.alert(
-    'Logout',
-    'Are you sure you want to logout?',
-    [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await logout(); // This now uses the utility function which clears ALL auth data
-        },
-      },
-    ]
-  );
-};
-
   const fetchProfile = async (userId: string, token: string) => {
     try {
       setLoading(true);
@@ -215,6 +197,7 @@ const handleLogout = async () => {
       if (response.ok) {
         const profileData: ProfileData = await response.json();
         
+        // Populate userInfo
         setUserInfo({
           name: profileData.fullName || "",
           email: profileData.email || "",
@@ -224,29 +207,51 @@ const handleLogout = async () => {
           dateOfBirth: profileData.dateOfBirth || "",
         });
 
+        // Populate healthMetrics
         if (profileData.healthMetrics) {
-          setHealthMetrics(profileData.healthMetrics);
-        }
-
-        if (profileData.workPreferences) {
-          setWorkPreferences(profileData.workPreferences);
-        }
-
-        if (profileData.aadharNumber || profileData.abhaId) {
-          setGovernmentIds({
-            aadharNumber: profileData.aadharNumber || "",
-            abhaId: profileData.abhaId || "",
+          setHealthMetrics({
+            weight: profileData.healthMetrics.weight || "",
+            height: profileData.healthMetrics.height || "",
+            age: profileData.healthMetrics.age || "",
+            gender: profileData.healthMetrics.gender || "male",
+            fitnessGoal: profileData.healthMetrics.fitnessGoal || "general_fitness",
           });
         }
 
-        if (profileData.address) {
-          setAddress(profileData.address);
+        // Populate workPreferences
+        if (profileData.workPreferences) {
+          setWorkPreferences({
+            occupation: profileData.workPreferences.occupation || "other",
+            workoutTiming: profileData.workPreferences.workoutTiming || "morning",
+            availableDays: profileData.workPreferences.availableDays || [],
+            workStressLevel: profileData.workPreferences.workStressLevel || "medium",
+            sedentaryHours: profileData.workPreferences.sedentaryHours || "6-8",
+            workoutLocation: profileData.workPreferences.workoutLocation || "gym",
+          });
         }
 
+        // Populate governmentIds
+        setGovernmentIds({
+          aadharNumber: profileData.aadharNumber || "",
+          abhaId: profileData.abhaId || "",
+        });
+
+        // Populate address
+        if (profileData.address) {
+          setAddress({
+            street: profileData.address.street || "",
+            city: profileData.address.city || "",
+            state: profileData.address.state || "",
+            pincode: profileData.address.pincode || "",
+          });
+        }
+
+        // Populate notifications
         if (profileData.notifications) {
           setNotifications(profileData.notifications);
         }
 
+        // Populate security
         if (profileData.security) {
           setSecurity(profileData.security);
         }
@@ -263,7 +268,7 @@ const handleLogout = async () => {
     }
   };
 
-  const updateProfile = async (profileData: Partial<ProfileData>) => {
+  const updateProfile = async () => {
     if (!userId || !token) {
       Alert.alert('Error', 'User not authenticated');
       return false;
@@ -271,16 +276,34 @@ const handleLogout = async () => {
 
     try {
       setSaving(true);
+
+      // Prepare update payload (excluding immutable fields)
+      const updatePayload = {
+        phone: userInfo.phone,
+        bio: userInfo.bio,
+        profileImage: userInfo.profileImage || undefined,
+        dateOfBirth: userInfo.dateOfBirth || undefined,
+        healthMetrics,
+        workPreferences,
+        aadharNumber: governmentIds.aadharNumber || undefined,
+        abhaId: governmentIds.abhaId || undefined,
+        address,
+        notifications,
+        security,
+      };
+
       const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(profileData),
+        body: JSON.stringify(updatePayload),
       });
 
       if (response.ok) {
+        const result = await response.json();
+        Alert.alert('Success', result.message || 'Profile updated successfully!');
         return true;
       } else {
         const errorData = await response.json();
@@ -294,6 +317,26 @@ const handleLogout = async () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+          },
+        },
+      ]
+    );
   };
 
   const pickImage = async () => {
@@ -377,29 +420,6 @@ const handleLogout = async () => {
     }
   };
 
-  const saveChanges = async () => {
-    const profileUpdateData = {
-      fullName: userInfo.name,
-      email: userInfo.email,
-      phone: userInfo.phone,
-      bio: userInfo.bio,
-      profileImage: userInfo.profileImage || undefined,
-      dateOfBirth: userInfo.dateOfBirth || undefined,
-      healthMetrics,
-      workPreferences,
-      aadharNumber: governmentIds.aadharNumber || undefined,
-      abhaId: governmentIds.abhaId || undefined,
-      address,
-      notifications,
-      security,
-    };
-
-    const success = await updateProfile(profileUpdateData);
-    if (success) {
-      Alert.alert("Success", "Your changes have been saved successfully!");
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -414,8 +434,6 @@ const handleLogout = async () => {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
-     
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile Settings</Text>
@@ -449,11 +467,11 @@ const handleLogout = async () => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Full Name</Text>
+              <Text style={styles.inputLabel}>Full Name (Cannot be changed)</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, styles.disabledInput]}
                 value={userInfo.name}
-                onChangeText={(value) => handleInputChange("userInfo", "name", value)}
+                editable={false}
               />
             </View>
             
@@ -501,7 +519,7 @@ const handleLogout = async () => {
           </View>
         </View>
 
-        {/* Government IDs Section - Secure */}
+        {/* Government IDs Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <IdentificationIcon size={20} color="#EF4444" />
@@ -939,7 +957,7 @@ const handleLogout = async () => {
         {/* Save Button */}
         <TouchableOpacity 
           style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={saveChanges}
+          onPress={updateProfile}
           disabled={saving}
         >
           <Text style={styles.saveButtonText}>
@@ -951,40 +969,38 @@ const handleLogout = async () => {
   );
 }
 
-
-
 const styles = StyleSheet.create({
   secureTitle: {
-  color: '#FCA5A5',
-  fontWeight: '700',
-},
-securityNotice: {
-  backgroundColor: '#1F2937',
-  borderLeftWidth: 4,
-  borderLeftColor: '#EF4444',
-  borderRadius: 8,
-  padding: 16,
-  marginBottom: 20,
-  shadowColor: '#EF4444',
-  shadowOffset: {
-    width: 0,
-    height: 2,
+    color: '#FCA5A5',
+    fontWeight: '700',
   },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
-},
-securityNoticeText: {
-  color: '#E5E7EB',
-  fontSize: 14,
-  lineHeight: 20,
-  fontWeight: '500',
-},
-disabledInput: {
-  backgroundColor: '#1F2937',
-  color: '#6B7280',
-  opacity: 0.7,
-},
+  securityNotice: {
+    backgroundColor: '#1F2937',
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#EF4444',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  securityNoticeText: {
+    color: '#E5E7EB',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  disabledInput: {
+    backgroundColor: '#1F2937',
+    color: '#6B7280',
+    opacity: 0.7,
+  },
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -994,20 +1010,20 @@ disabledInput: {
     paddingVertical: 24,
   },
   loadingContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-  backgroundColor: '#0F172A',
-},
-loadingText: {
-  color: '#94A3B8',
-  fontSize: 16,
-  marginTop: 12,
-},
-saveButtonDisabled: {
-  backgroundColor: '#374151',
-  opacity: 0.6,
-},
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+  },
+  loadingText: {
+    color: '#94A3B8',
+    fontSize: 16,
+    marginTop: 12,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#374151',
+    opacity: 0.6,
+  },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -1056,7 +1072,6 @@ saveButtonDisabled: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  // Profile Image Styles
   profileImageSection: {
     alignItems: 'center',
     marginBottom: 24,
@@ -1091,18 +1106,6 @@ saveButtonDisabled: {
     fontSize: 14,
     marginTop: 8,
   },
-  changePhotoButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#4F46E5',
-    borderRadius: 8,
-  },
-  changePhotoText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  // Days Selection Styles
   daysContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1241,5 +1244,3 @@ saveButtonDisabled: {
     fontSize: 18,
   },
 });
-
-
