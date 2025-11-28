@@ -14,22 +14,63 @@ export default function ConsultantQuestions() {
 
   const goToLandingPage = async () => {
     try {
-      await AsyncStorage.setItem('wellnessData', JSON.stringify(answers));
       const role = await AsyncStorage.getItem("userRole");
+      const userId = await AsyncStorage.getItem("userId");
+      const token = await AsyncStorage.getItem("userToken");
 
-      if (role === "user") {
-        router.replace("/dashboards/user");
-      } else if (role === "consultant") {
-        router.replace("/dashboards/consultant");
-      } else if (role === "admin") {
-        router.replace("/dashboards/admin");
-      } else if (role === "superadmin") {
-        router.replace("/dashboards/super-admin");
-      } else {
+      if (!userId || !role) {
+        console.error("Missing userId or role");
         router.replace("/login");
+        return;
+      }
+
+      // Submit wellness answers to backend
+      const response = await fetch(
+        "https://gym-backend-20dr.onrender.com/api/wellness/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // Optional: if you want to protect this endpoint
+          },
+          body: JSON.stringify({
+            userId,
+            userRole: role,
+            answers: answers
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Wellness answers saved successfully:', data);
+        
+        // Also save locally for offline access (optional)
+        await AsyncStorage.setItem('wellnessData', JSON.stringify(answers));
+
+        // Navigate to appropriate dashboard
+        if (role === "user") {
+          router.replace("/dashboards/user");
+        } else if (role === "consultant") {
+          router.replace("/dashboards/consultant");
+        } else if (role === "admin") {
+          router.replace("/dashboards/admin");
+        } else if (role === "superadmin") {
+          router.replace("/dashboards/super-admin");
+        } else {
+          router.replace("/login");
+        }
+      } else {
+        console.error("Failed to save wellness answers:", data);
+        // Still navigate but show error
+        alert(`Warning: ${data.message || 'Failed to save answers'}`);
+        router.replace("/dashboards/user");
       }
     } catch (error) {
       console.error("Error saving wellness data:", error);
+      // Still navigate on error
+      alert("Warning: Could not save wellness answers. Please try again later.");
       router.replace("/login");
     }
   };

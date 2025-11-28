@@ -7,33 +7,75 @@ import { wellnessQuestions } from '@/constants/wellnessQuestions';
 export default function ConsultantQuestions() {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
   
   const currentQuestion = wellnessQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === wellnessQuestions.length - 1;
 
   const goToLandingPage = async () => {
     try {
-      await AsyncStorage.setItem('wellnessData', JSON.stringify(answers));
       const role = await AsyncStorage.getItem("userRole");
+      const userId = await AsyncStorage.getItem("userId");
+      const token = await AsyncStorage.getItem("userToken");
 
-      if (role === "user") {
-        router.replace("/dashboards/user");
-      } else if (role === "consultant") {
-        router.replace("/dashboards/consultant");
-      } else if (role === "admin") {
-        router.replace("/dashboards/admin");
-      } else if (role === "superadmin") {
-        router.replace("/dashboards/super-admin");
-      } else {
+      if (!userId || !role) {
+        console.error("Missing userId or role");
         router.replace("/login");
+        return;
+      }
+
+      // Submit wellness answers to backend
+      const response = await fetch(
+        "https://gym-backend-20dr.onrender.com/api/wellness/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // Optional: if you want to protect this endpoint
+          },
+          body: JSON.stringify({
+            userId,
+            userRole: role,
+            answers: answers
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Wellness answers saved successfully:', data);
+        
+        // Also save locally for offline access (optional)
+        await AsyncStorage.setItem('wellnessData', JSON.stringify(answers));
+
+        // Navigate to appropriate dashboard
+        if (role === "user") {
+          router.replace("/dashboards/user");
+        } else if (role === "consultant") {
+          router.replace("/dashboards/consultant");
+        } else if (role === "admin") {
+          router.replace("/dashboards/admin");
+        } else if (role === "superadmin") {
+          router.replace("/dashboards/super-admin");
+        } else {
+          router.replace("/login");
+        }
+      } else {
+        console.error("Failed to save wellness answers:", data);
+        // Still navigate but show error
+        alert(`Warning: ${data.message || 'Failed to save answers'}`);
+        router.replace("/dashboards/user");
       }
     } catch (error) {
       console.error("Error saving wellness data:", error);
+      // Still navigate on error
+      alert("Warning: Could not save wellness answers. Please try again later.");
       router.replace("/login");
     }
   };
 
+  // Handle single-select answer
   const handleAnswer = (answer: string) => {
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: answer }));
     
@@ -45,8 +87,29 @@ export default function ConsultantQuestions() {
     }
   };
 
+  // Handle multi-select checkbox toggle
+  const handleMultiSelectToggle = (option: string) => {
+    setAnswers(prev => {
+      const currentAnswers = (prev[currentQuestion.id] as string[]) || [];
+      const isSelected = currentAnswers.includes(option);
+      
+      if (isSelected) {
+        // Remove option if already selected
+        return { ...prev, [currentQuestion.id]: currentAnswers.filter(a => a !== option) };
+      } else {
+        // Add option if not selected
+        return { ...prev, [currentQuestion.id]: [...currentAnswers, option] };
+      }
+    });
+  };
+
   const handleNext = () => {
-    if (answers[currentQuestion.id]) {
+    const currentAnswer = answers[currentQuestion.id];
+    const hasAnswer = currentQuestion.multiSelect 
+      ? Array.isArray(currentAnswer) && currentAnswer.length > 0
+      : currentAnswer;
+
+    if (hasAnswer) {
       if (isLastQuestion) {
         console.log('Wellness answers:', answers);
         goToLandingPage();
@@ -54,6 +117,15 @@ export default function ConsultantQuestions() {
         setCurrentQuestionIndex(prev => prev + 1);
       }
     }
+  };
+
+  // Check if current question has valid answer
+  const hasValidAnswer = () => {
+    const currentAnswer = answers[currentQuestion.id];
+    if (currentQuestion.multiSelect) {
+      return Array.isArray(currentAnswer) && currentAnswer.length > 0;
+    }
+    return !!currentAnswer;
   };
 
   // Render Scale Type (Interactive number circles)
@@ -94,38 +166,62 @@ export default function ConsultantQuestions() {
     );
   };
 
-  // Render Multiple Choice (with radio buttons)
+  // Render Multiple Choice (with checkboxes for multi-select, radio for single-select)
   const renderMultipleChoice = () => {
+    const isMultiSelect = currentQuestion.multiSelect;
+    const selectedAnswers = isMultiSelect 
+      ? (answers[currentQuestion.id] as string[] || [])
+      : answers[currentQuestion.id];
+
     return (
       <View style={styles.optionsContainer}>
-        {currentQuestion.options?.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.optionButton,
-              answers[currentQuestion.id] === option && styles.selectedOption
-            ]}
-            onPress={() => handleAnswer(option)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.optionContent}>
-              <View style={[
-                styles.radioCircle,
-                answers[currentQuestion.id] === option && styles.radioCircleSelected
-              ]}>
-                {answers[currentQuestion.id] === option && (
-                  <View style={styles.radioInner} />
+        {currentQuestion.options?.map((option, index) => {
+          const isSelected = isMultiSelect 
+            ? selectedAnswers.includes(option)
+            : selectedAnswers === option;
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.optionButton,
+                isSelected && styles.selectedOption
+              ]}
+              onPress={() => isMultiSelect ? handleMultiSelectToggle(option) : handleAnswer(option)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionContent}>
+                {isMultiSelect ? (
+                  // Checkbox for multi-select questions
+                  <View style={[
+                    styles.checkbox,
+                    isSelected && styles.checkboxSelected
+                  ]}>
+                    {isSelected && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </View>
+                ) : (
+                  // Radio button for single-select questions
+                  <View style={[
+                    styles.radioCircle,
+                    isSelected && styles.radioCircleSelected
+                  ]}>
+                    {isSelected && (
+                      <View style={styles.radioInner} />
+                    )}
+                  </View>
                 )}
+                <Text style={[
+                  styles.optionText,
+                  isSelected && styles.selectedOptionText
+                ]}>
+                  {option}
+                </Text>
               </View>
-              <Text style={[
-                styles.optionText,
-                answers[currentQuestion.id] === option && styles.selectedOptionText
-              ]}>
-                {option}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   };
@@ -139,7 +235,7 @@ export default function ConsultantQuestions() {
           placeholder={currentQuestion.placeholder || "Enter your answer"}
           placeholderTextColor="#6B7280"
           onChangeText={(text) => setAnswers(prev => ({ ...prev, [currentQuestion.id]: text }))}
-          value={answers[currentQuestion.id] || ''}
+          value={answers[currentQuestion.id] as string || ''}
           multiline
           numberOfLines={4}
         />
@@ -183,10 +279,10 @@ export default function ConsultantQuestions() {
           <TouchableOpacity 
             style={[
               styles.nextButton,
-              !answers[currentQuestion.id] && styles.nextButtonDisabled
+              !hasValidAnswer() && styles.nextButtonDisabled
             ]}
             onPress={handleNext}
-            disabled={!answers[currentQuestion.id]}
+            disabled={!hasValidAnswer()}
             activeOpacity={0.8}
           >
             <Text style={styles.nextButtonText}>
@@ -316,6 +412,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Radio button styles (for single-select)
   radioCircle: {
     width: 24,
     height: 24,
@@ -334,6 +431,27 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: '#10B981',
+  },
+  // Checkbox styles (for multi-select)
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#64748B',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0F172A',
+  },
+  checkboxSelected: {
+    borderColor: '#10B981',
+    backgroundColor: '#10B981',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   optionText: { 
     color: '#CBD5E1', 
