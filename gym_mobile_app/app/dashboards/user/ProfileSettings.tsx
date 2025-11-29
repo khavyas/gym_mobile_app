@@ -463,25 +463,55 @@ const updateProfile = async () => {
     }
   };
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-          },
-        },
-      ]
-    );
-  };
+
+const handleLogout = async () => {
+  console.log('🔴 Starting logout process directly...');
+  
+  try {
+    // Clear AsyncStorage
+    console.log('🔵 Clearing AsyncStorage...');
+    await AsyncStorage.removeItem('userToken');
+    await AsyncStorage.removeItem('userId');
+    console.log('✅ AsyncStorage cleared');
+    
+    // Clear local state
+    console.log('🔵 Clearing local states...');
+    setUserId(null);
+    setToken(null);
+    console.log('✅ Local states cleared');
+    
+    // Show success toast
+    setToastType('success');
+    setToastMessage('Logged out successfully!');
+    setShowToast(true);
+    
+    // Wait a moment for toast to show
+    setTimeout(() => {
+      console.log('🔵 Redirecting to login...');
+      // Navigate to login - try different paths
+      try {
+        router.replace('/login');
+        console.log('✅ Redirected with /login');
+      } catch (e1) {
+        console.log('⚠️ /login failed, trying ../../../login');
+        try {
+          router.replace('../../../login');
+          console.log('✅ Redirected with ../../../login');
+        } catch (e2) {
+          console.log('⚠️ Relative path failed, trying push');
+          router.push('/login');
+          console.log('✅ Pushed to /login');
+        }
+      }
+    }, 500);
+    
+  } catch (error) {
+    console.error('❌ Logout error:', error);
+    setToastType('error');
+    setToastMessage('Failed to logout');
+    setShowToast(true);
+  }
+};
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
