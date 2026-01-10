@@ -737,8 +737,16 @@ const renderStepContent = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="light" />   
 
+      {/* Step Content */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -756,12 +764,6 @@ const renderStepContent = () => {
       {/* Step Title */}
       {renderStepTitle()}
 
-      {/* Step Content */}
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
         {renderStepContent()}
       </ScrollView>
 

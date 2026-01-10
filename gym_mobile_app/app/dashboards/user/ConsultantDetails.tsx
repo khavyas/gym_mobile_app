@@ -183,7 +183,12 @@ const handleBookConsultation = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header */}
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
+        {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -194,10 +199,7 @@ const handleBookConsultation = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
+
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <LinearGradient
@@ -405,9 +407,9 @@ const handleBookConsultation = () => {
 
       {/* Bottom Action Bar */}
       <View style={styles.bottomActionBar}>
-        <TouchableOpacity style={styles.messageButton}>
+        {/* <TouchableOpacity style={styles.messageButton}>
           <Ionicons name="chatbubble-outline" size={24} color="#10B981" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity 
           style={styles.bookButton}
           onPress={handleBookConsultation}
@@ -714,6 +716,7 @@ const styles = StyleSheet.create({
   daysContainer: {
     flexDirection: 'row',
     gap: 8,
+    flexWrap: 'wrap', 
   },
   dayChip: {
     paddingHorizontal: 12,
