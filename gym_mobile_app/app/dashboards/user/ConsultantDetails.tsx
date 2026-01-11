@@ -36,12 +36,12 @@ interface ConsultantDetails {
     }>;
   };
   availability: {
-    workingHours: {
+    workingHours?: {  // ✅ Made optional
       start: string;
       end: string;
     };
     status: string;
-    nextSlot: string;
+    nextSlot?: string;  // ✅ Made optional
     workingDays: string[];
   };
   user: {
@@ -96,45 +96,45 @@ export default function ConsultantDetails() {
     }
   };
 
-const handleBookConsultation = () => {
-  if (!consultant) return;
+  const handleBookConsultation = () => {
+    if (!consultant) return;
 
-  let price = 0;
-  let duration = '';
-  let packageType = selectedPackage;
+    let price = 0;
+    let duration = '';
+    let packageType = selectedPackage;
 
-  if (selectedPackage === 'session') {
-    price = consultant.pricing.perSession;
-    duration = '1 Session';
-  } else if (selectedPackage === 'month' && consultant.pricing.perMonth) {
-    price = consultant.pricing.perMonth;
-    duration = '1 Month';
-  } else if (selectedPackage === 'week' && consultant.pricing.perWeek) {
-    price = consultant.pricing.perWeek;
-    duration = '1 Week';
-  } else {
-    const pkg = consultant.pricing.packages.find(p => p._id === selectedPackage);
-    if (pkg) {
-      price = pkg.price;
-      duration = pkg.duration;
+    if (selectedPackage === 'session') {
+      price = consultant.pricing.perSession;
+      duration = '1 Session';
+    } else if (selectedPackage === 'month' && consultant.pricing.perMonth) {
+      price = consultant.pricing.perMonth;
+      duration = '1 Month';
+    } else if (selectedPackage === 'week' && consultant.pricing.perWeek) {
+      price = consultant.pricing.perWeek;
+      duration = '1 Week';
+    } else {
+      const pkg = consultant.pricing.packages.find(p => p._id === selectedPackage);
+      if (pkg) {
+        price = pkg.price;
+        duration = pkg.duration;
+      }
     }
-  }
 
-  // Navigate to booking flow
-  router.push({
-    pathname: "/dashboards/user/BookingFlow",
-    params: {
-      consultantId: consultant._id,
-      consultantName: consultant.name,
-      consultantImage: consultant.image,
-      specialty: consultant.specialty,
-      packageType: packageType,
-      packagePrice: price.toString(),
-      packageDuration: duration,
-      trainingMode: consultant.modeOfTraining,
-    }
-  });
-};
+    // Navigate to booking flow
+    router.push({
+      pathname: "/dashboards/user/BookingFlow",
+      params: {
+        consultantId: consultant._id,
+        consultantName: consultant.name,
+        consultantImage: consultant.image || '',
+        specialty: consultant.specialty,
+        packageType: packageType,
+        packagePrice: price.toString(),
+        packageDuration: duration,
+        trainingMode: consultant.modeOfTraining,
+      }
+    });
+  };
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -183,22 +183,20 @@ const handleBookConsultation = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
         {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Consultant Details</Text>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
-
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Consultant Details</Text>
+          <TouchableOpacity style={styles.favoriteButton}>
+            <Ionicons name="heart-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
 
         {/* Profile Section */}
         <View style={styles.profileSection}>
@@ -208,7 +206,15 @@ const handleBookConsultation = () => {
           >
             <View style={styles.profileHeader}>
               <View style={styles.avatarContainer}>
-                <Text style={styles.avatar}>{consultant.image}</Text>
+                {consultant.image ? (
+                  <Text style={styles.avatar}>{consultant.image}</Text>
+                ) : (
+                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                    <Text style={styles.avatarText}>
+                      {consultant.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 <View style={[
                   styles.statusIndicator,
                   { backgroundColor: getStatusColor(consultant.availability.status) }
@@ -243,49 +249,53 @@ const handleBookConsultation = () => {
                 <Text style={styles.statLabel}>{consultant.modeOfTraining}</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{consultant.certifications.length}</Text>
+                <Text style={styles.statNumber}>{consultant.certifications?.length || 0}</Text>
                 <Text style={styles.statLabel}>Certifications</Text>
               </View>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Badges */}
-        <View style={styles.badgesSection}>
-          <Text style={styles.sectionTitle}>Achievements</Text>
-          <View style={styles.badgesContainer}>
-            {consultant.badges.map((badge, index) => (
-              <View key={index} style={[
-                styles.badge,
-                badge === "Expert" || badge === "Premium" ? styles.badgePremium :
-                badge === "Top Rated" || badge === "Popular" ? styles.badgePopular :
-                styles.badgeDefault
-              ]}>
-                <Text style={[
-                  styles.badgeText,
-                  badge === "Expert" || badge === "Premium" ? styles.badgeTextPremium :
-                  badge === "Top Rated" || badge === "Popular" ? styles.badgeTextPopular :
-                  styles.badgeTextDefault
+        {/* Badges - Only show if not empty */}
+        {consultant.badges && consultant.badges.length > 0 && (
+          <View style={styles.badgesSection}>
+            <Text style={styles.sectionTitle}>Achievements</Text>
+            <View style={styles.badgesContainer}>
+              {consultant.badges.map((badge, index) => (
+                <View key={index} style={[
+                  styles.badge,
+                  badge === "Expert" || badge === "Premium" ? styles.badgePremium :
+                  badge === "Top Rated" || badge === "Popular" ? styles.badgePopular :
+                  styles.badgeDefault
                 ]}>
-                  {badge}
-                </Text>
-              </View>
-            ))}
+                  <Text style={[
+                    styles.badgeText,
+                    badge === "Expert" || badge === "Premium" ? styles.badgeTextPremium :
+                    badge === "Top Rated" || badge === "Popular" ? styles.badgeTextPopular :
+                    styles.badgeTextDefault
+                  ]}>
+                    {badge}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
-        {/* Certifications */}
-        <View style={styles.certificationsSection}>
-          <Text style={styles.sectionTitle}>Certifications</Text>
-          <View style={styles.certificationsContainer}>
-            {consultant.certifications.map((cert, index) => (
-              <View key={index} style={styles.certificationItem}>
-                <Ionicons name="medal" size={20} color="#F59E0B" />
-                <Text style={styles.certificationText}>{cert}</Text>
-              </View>
-            ))}
+        {/* Certifications - Only show if not empty */}
+        {consultant.certifications && consultant.certifications.length > 0 && (
+          <View style={styles.certificationsSection}>
+            <Text style={styles.sectionTitle}>Certifications</Text>
+            <View style={styles.certificationsContainer}>
+              {consultant.certifications.map((cert, index) => (
+                <View key={index} style={styles.certificationItem}>
+                  <Ionicons name="medal" size={20} color="#F59E0B" />
+                  <Text style={styles.certificationText}>{cert}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Availability */}
         <View style={styles.availabilitySection}>
@@ -298,15 +308,20 @@ const handleBookConsultation = () => {
               ]}>
                 <Text style={styles.availabilityStatusText}>{consultant.availability.status}</Text>
               </View>
-              <Text style={styles.nextSlot}>Next: {consultant.availability.nextSlot}</Text>
+              {consultant.availability.nextSlot && (
+                <Text style={styles.nextSlot}>Next: {consultant.availability.nextSlot}</Text>
+              )}
             </View>
             
-            <View style={styles.workingHoursContainer}>
-              <Text style={styles.workingHoursTitle}>Working Hours</Text>
-              <Text style={styles.workingHours}>
-                {consultant.availability.workingHours.start} - {consultant.availability.workingHours.end}
-              </Text>
-            </View>
+            {/* Only show working hours if they exist */}
+            {consultant.availability.workingHours && (
+              <View style={styles.workingHoursContainer}>
+                <Text style={styles.workingHoursTitle}>Working Hours</Text>
+                <Text style={styles.workingHours}>
+                  {consultant.availability.workingHours.start} - {consultant.availability.workingHours.end}
+                </Text>
+              </View>
+            )}
 
             <View style={styles.workingDaysContainer}>
               <Text style={styles.workingDaysTitle}>Working Days</Text>
@@ -314,11 +329,11 @@ const handleBookConsultation = () => {
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                   <View key={day} style={[
                     styles.dayChip,
-                    consultant.availability.workingDays.includes(day) ? styles.dayActive : styles.dayInactive
+                    consultant.availability.workingDays?.includes(day) ? styles.dayActive : styles.dayInactive
                   ]}>
                     <Text style={[
                       styles.dayText,
-                      consultant.availability.workingDays.includes(day) ? styles.dayTextActive : styles.dayTextInactive
+                      consultant.availability.workingDays?.includes(day) ? styles.dayTextActive : styles.dayTextInactive
                     ]}>
                       {day}
                     </Text>
@@ -383,7 +398,7 @@ const handleBookConsultation = () => {
           )}
 
           {/* Packages */}
-          {consultant.pricing.packages.map((pkg) => (
+          {consultant.pricing.packages?.map((pkg) => (
             <TouchableOpacity 
               key={pkg._id}
               style={[
@@ -407,9 +422,6 @@ const handleBookConsultation = () => {
 
       {/* Bottom Action Bar */}
       <View style={styles.bottomActionBar}>
-        {/* <TouchableOpacity style={styles.messageButton}>
-          <Ionicons name="chatbubble-outline" size={24} color="#10B981" />
-        </TouchableOpacity> */}
         <TouchableOpacity 
           style={styles.bookButton}
           onPress={handleBookConsultation}
@@ -516,6 +528,16 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
     backgroundColor: '#374151',
     borderRadius: 40,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   statusIndicator: {
     position: 'absolute',
@@ -791,16 +813,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  messageButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#10B981',
   },
   bookButton: {
     flex: 1,
