@@ -47,15 +47,17 @@ export const ProfessionalInfoForm: React.FC<ProfessionalInfoFormProps> = ({
     try {
       await onSave({
         specialty: formData.specialty,
-        gymName: formData.gymName,
+        gym: formData.gymName, // Backend expects 'gym' not 'gymName'
         certifications: formData.certifications,
         badges: formData.badges,
         modeOfTraining: formData.modeOfTraining,
         availability: formData.availability,
       });
       setIsEditing(false);
+      Alert.alert('Success', 'Professional information saved successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save changes');
+      console.error('Save error:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save changes');
     }
   };
 

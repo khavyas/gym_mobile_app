@@ -29,12 +29,14 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
       await onSave({
         name: formData.name,
         description: formData.description,
-        yearsOfExperience: formData.yearsOfExperience,
+        yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
         image: formData.image,
       });
       setIsEditing(false);
+      Alert.alert('Success', 'Personal information saved successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save changes');
+      console.error('Save error:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save changes');
     }
   };
 

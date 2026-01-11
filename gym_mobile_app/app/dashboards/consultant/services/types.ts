@@ -5,61 +5,53 @@ export interface Consultant {
   name: string;
   specialty: string;
   description?: string;
-  yearsOfExperience: number;
-  certifications: string[];
-  badges: string[];
-  modeOfTraining: 'online' | 'offline' | 'hybrid';
-  pricing: {
+  gender?: 'male' | 'female' | 'other';
+  dateOfBirth?: Date;
+  yearsOfExperience?: number;
+  certifications?: string[];
+  badges?: string[];
+  qualification?: Array<{
+    degree: string;
+    board: string;
+    year: number;
+    field: string;
+  }>;
+  modeOfTraining?: 'online' | 'offline' | 'hybrid';
+  pricing?: {
     perSession?: number;
     perMonth?: number;
     perWeek?: number;
     perDay?: number;
-    packages: Package[];
+    currency?: string;
+    packages?: Package[];
   };
-  availability: {
-    status: 'Available Now' | 'Available Tomorrow' | 'Busy';
+  availability?: {
+    status?: 'Available Now' | 'Available Tomorrow' | 'Busy';
     nextSlot?: string;
-    workingDays: string[];
-    workingHours: {
+    workingDays?: string[];
+    workingHours?: {
       start: string;
       end: string;
     };
   };
-  contact: {
-    phone?: string;
-    email?: string;
+  contact?: {
+    phone: string;
+    email: string;
     website?: string;
     location?: string;
   };
-  rating: number;
-  reviewsCount: number;
+  consent: boolean;
+  privacyNoticeAccepted: boolean;
+  rating?: number;
+  reviewsCount?: number;
   image?: string;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  isVerified?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Package {
   title: string;
   duration: string;
   price: number;
-}
-
-export interface Appointment {
-  id: string;
-  gym: string;
-  client: string;
-  date: string;
-  time: string;
-  type: string;
-  avatar: string;
-  duration: string;
-  status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
-}
-
-export interface DashboardStats {
-  totalClients: number;
-  monthlyRevenue: number;
-  completedSessions: number;
-  averageRating: number;
 }

@@ -30,7 +30,7 @@ interface ProfileData {
   lastName?: string;
   email?: string;
   phone?: string;
-  dateOfBirth?: string;
+  dateOfBirth?: Date;
   bio?: string;
   profileImage?: string;
   
@@ -84,31 +84,61 @@ export const ProfileScreen: React.FC = () => {
   // Hook call with userId
   const { consultant, updateProfile, createProfile, loading } = useConsultant(userId || '');
 
+
   const handleSave = async (formData: Partial<ProfileData>) => {
     try {
       setIsLoading(true);
 
       if (consultant) {
-        // Merge with existing consultant profile (optional)
-        const updatedData = { ...consultant, ...formData };
-        await updateProfile(updatedData);
+        // Update existing profile - formData is merged with existing consultant
+        await updateProfile(formData);
         Alert.alert('Success', 'Profile updated successfully!');
       } else {
-        await createProfile(formData);
+        // Create new profile - validate required fields
+        const gymId = await AsyncStorage.getItem('gymId');
+        
+        if (!gymId) {
+          setIsLoading(false);
+          Alert.alert(
+            'Missing Information',
+            'Gym information is required to create a profile. Please contact your administrator.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        // Build the payload with all required fields
+        const profilePayload = {
+          ...formData,
+          gym: gymId,
+          consent: true,
+          privacyNoticeAccepted: true,
+        };
+        
+        await createProfile(profilePayload);
         Alert.alert('Success', 'Profile created successfully!');
       }
     } catch (error) {
       console.error('Profile save error:', error);
-      Alert.alert(
-        'Error', 
-        error instanceof Error ? error.message : 'Failed to save profile. Please try again.'
-      );
+      
+      // More specific error messages
+      let errorMessage = 'Failed to save profile. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('gym')) {
+          errorMessage = 'Invalid gym information. Please contact support.';
+        } else if (error.message.includes('consent')) {
+          errorMessage = 'Consent is required to create a profile.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   const renderTabContent = () => {
     if (loading) {

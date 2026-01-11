@@ -25,21 +25,23 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
 
   const [isEditing, setIsEditing] = useState(editable);
 
-  const handleSave = async () => {
-    try {
-      await onSave({
-        contact: {
-          phone: formData.contact.phone,
-          email: formData.contact.email,
-          website: formData.contact.website,
-          location: formData.contact.location,
-        }
-      });
-      setIsEditing(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save contact information');
-    }
-  };
+const handleSave = async () => {
+  try {
+    await onSave({
+      contact: {
+        phone: formData.contact.phone,
+        email: formData.contact.email,
+        website: formData.contact.website,
+        location: formData.contact.location,
+      }
+    });
+    setIsEditing(false);
+    Alert.alert('Success', 'Contact information saved successfully!');
+  } catch (error) {
+    console.error('Save error:', error);
+    Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save contact information');
+  }
+};
 
   const handleCall = () => {
     if (consultant?.contact?.phone) {

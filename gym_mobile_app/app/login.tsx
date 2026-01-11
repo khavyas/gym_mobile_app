@@ -234,6 +234,10 @@ export default function Login() {
       if (data.email) await AsyncStorage.setItem('userEmail', data.email);
       if (data.userId) await AsyncStorage.setItem('userId', String(data.userId));
 
+      if (data.gymId) {
+        await AsyncStorage.setItem('gymId', String(data.gymId));
+      }
+
       // show success
       setToastType('success');
       setToastMessage(`Welcome back, ${data.name || 'User'}!`);

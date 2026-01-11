@@ -62,12 +62,15 @@ export const PricingInfoForm: React.FC<PricingInfoFormProps> = ({
           perSession: parseFloat(formData.pricing.perSession) || undefined,
           perWeek: parseFloat(formData.pricing.perWeek) || undefined,
           perMonth: parseFloat(formData.pricing.perMonth) || undefined,
+          currency: 'INR',
           packages: formData.pricing.packages,
         }
       });
       setIsEditing(false);
+      Alert.alert('Success', 'Pricing information saved successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save pricing information');
+      console.error('Save error:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save pricing information');
     }
   };
 
