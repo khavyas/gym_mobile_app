@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,68 +6,44 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  StatusBar
+  StatusBar,
+  ActivityIndicator,
+  RefreshControl,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Appointment } from '../services/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
-const mockAppointments: Appointment[] = [
-  { 
-    id: '1', 
-    client: 'John Martinez', 
-    date: '2024-10-15', 
-    time: '10:00 AM', 
-    type: 'Online', 
-    duration: '60 mins', 
-    status: 'confirmed', 
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    gym: 'PowerFit Gym'
-  },
-  { 
-    id: '2', 
-    client: 'Sarah Chen', 
-    date: '2024-10-15', 
-    time: '2:00 PM', 
-    type: 'Offline', 
-    duration: '45 mins', 
-    status: 'pending', 
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    gym: 'Elite Fitness Hub'
-  },
-  { 
-    id: '3', 
-    client: 'Mike Thompson', 
-    date: '2024-10-16', 
-    time: '11:00 AM', 
-    type: 'Hybrid', 
-    duration: '30 mins', 
-    status: 'completed', 
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    gym: 'FitZone Studio'
-  },
-  { 
-    id: '4', 
-    client: 'Emily Rodriguez', 
-    date: '2024-10-16', 
-    time: '3:30 PM', 
-    type: 'Online', 
-    duration: '60 mins', 
-    status: 'confirmed', 
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    gym: 'Athletic Performance Center'
-  },
-  { 
-    id: '5', 
-    client: 'David Kim', 
-    date: '2024-10-17', 
-    time: '9:00 AM', 
-    type: 'Offline', 
-    duration: '45 mins', 
-    status: 'pending', 
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop',
-    gym: 'Strength Lab'
-  },
-];
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
+
+interface Appointment {
+  _id: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  consultant: {
+    _id: string;
+    name: string;
+    specialty: string;
+    contact: {
+      phone: string;
+      email: string;
+    };
+  };
+  title?: string;
+  notes?: string;
+  startAt: string;
+  endAt: string;
+  status: 'pending' | 'confirmed' | 'rescheduled' | 'completed' | 'cancelled';
+  mode: 'online' | 'offline' | 'hybrid';
+  location?: string;
+  price?: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const filterTabs = [
   { id: 'all', label: 'All', icon: '📋', color: '#8B5CF6' },
@@ -78,31 +54,255 @@ const filterTabs = [
 
 export const AppointmentsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [consultantId, setConsultantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    initializeAndFetch();
+  }, []);
+
+const initializeAndFetch = async () => {
+  try {
+    // Get logged-in user ID from AsyncStorage
+    const userId = await AsyncStorage.getItem('userId');
+    const token = await AsyncStorage.getItem('userToken');
+    
+    if (!userId || !token) {
+      setError('User not logged in');
+      setLoading(false);
+      return;
+    }
+    
+
+    // CRITICAL FIX: Fetch the consultant document first
+    // The consultant collection has a 'user' field that references the User
+    // We need to get the consultant's _id (not the user's _id)
+    const consultantResponse = await axios.get(
+      `${API_BASE_URL}/consultants`,
+      {
+        params: { userId }, // Query by user field
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Consultant lookup response:', consultantResponse.data);
+
+    // Extract consultant _id from the response
+    let actualConsultantId: string | null = null;
+    
+    if (Array.isArray(consultantResponse.data) && consultantResponse.data.length > 0) {
+      // If response is array, take first consultant
+      actualConsultantId = consultantResponse.data[0]._id;
+    } else if (consultantResponse.data._id) {
+      // If response is single object
+      actualConsultantId = consultantResponse.data._id;
+    }
+
+    if (!actualConsultantId) {
+      setError('No consultant profile found for this user');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Found consultant ID:', actualConsultantId);
+    setConsultantId(actualConsultantId);
+    
+    // Now fetch appointments with the correct consultant _id
+    await fetchAppointments(actualConsultantId);
+    
+  } catch (err: any) {
+    console.error('Initialization error:', err?.response?.data || err.message);
+    setError('Failed to initialize');
+    setLoading(false);
+  }
+};
+
+
+  const fetchAppointments = async (consultantIdParam?: string) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const consultantIdToUse = consultantIdParam || consultantId;
+      
+      if (!token) {
+        setError('No authentication token found');
+        setLoading(false);
+        return;
+      }
+
+      if (!consultantIdToUse) {
+        setError('Consultant ID not found');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fetching appointments for consultant:', consultantIdToUse);
+
+      // Now using the actual consultant _id (not user _id)
+      const response = await axios.get(`${API_BASE_URL}/appointments`, {
+        params: {
+          consultantId: consultantIdToUse, // ✅ Now passing consultant._id
+        },
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Fetched appointments:', response.data);
+      setAppointments(response.data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching appointments:', err?.response?.data || err.message);
+      setError(err?.response?.data?.message || 'Failed to load appointments');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAppointments();
+  };
+
+// AppointmentsScreen.tsx - Fixed handleStatusChange function
+
+const handleStatusChange = async (appointmentId: string, newStatus: 'confirmed' | 'cancelled') => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    
+    if (!token) {
+      Alert.alert('Error', 'Authentication required');
+      return;
+    }
+
+    // ✅ FIX: Changed from PUT to PATCH to match backend route
+    await axios.patch(
+      `${API_BASE_URL}/appointments/${appointmentId}`,
+      { status: newStatus },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // Update local state immediately for better UX
+    setAppointments(prev =>
+      prev.map(apt =>
+        apt._id === appointmentId
+          ? { ...apt, status: newStatus }
+          : apt
+      )
+    );
+
+    Alert.alert(
+      'Success', 
+      `Appointment ${newStatus === 'confirmed' ? 'accepted' : 'declined'} successfully`
+    );
+  } catch (err: any) {
+    console.error('Error updating appointment:', err?.response?.data || err.message);
+    
+    // ✅ IMPROVED: Better error handling
+    const errorMessage = err?.response?.data?.message || 'Failed to update appointment status';
+    Alert.alert('Error', errorMessage);
+    
+    // Refresh appointments to ensure UI is in sync
+    await fetchAppointments();
+  }
+};
+
 
   const filteredAppointments = appointments.filter(appointment => {
     if (activeTab === 'all') return true;
     return appointment.status === activeTab;
   });
 
-  const handleStatusChange = (appointmentId: string, newStatus: 'confirmed' | 'cancelled') => {
-    setAppointments(prev =>
-      prev.map(apt =>
-        apt.id === appointmentId
-          ? { ...apt, status: newStatus }
-          : apt
-      )
-    );
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return '#10B981';
       case 'pending': return '#F59E0B';
       case 'completed': return '#3B82F6';
+      case 'cancelled': return '#EF4444';
       default: return '#6B7280';
     }
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const calculateDuration = (startAt: string, endAt: string) => {
+    const start = new Date(startAt);
+    const end = new Date(endAt);
+    const diffMs = end.getTime() - start.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    return `${diffMins} mins`;
+  };
+
+  const getModeIcon = (mode: string) => {
+    switch (mode) {
+      case 'online': return '💻';
+      case 'offline': return '🏢';
+      case 'hybrid': return '🔄';
+      default: return '📍';
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10B981" />
+          <Text style={styles.loadingText}>Loading appointments...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={() => {
+              setLoading(true);
+              setError(null);
+              initializeAndFetch();
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -112,6 +312,14 @@ export const AppointmentsScreen: React.FC = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#10B981"
+            colors={['#10B981']}
+          />
+        }
       >
         {/* Header Section with Gradient */}
         <LinearGradient
@@ -184,9 +392,9 @@ export const AppointmentsScreen: React.FC = () => {
         {/* Appointments List */}
         <View style={styles.appointmentsList}>
           {filteredAppointments.length > 0 ? (
-            filteredAppointments.map((appointment, index) => (
+            filteredAppointments.map((appointment) => (
               <TouchableOpacity 
-                key={appointment.id} 
+                key={appointment._id} 
                 activeOpacity={0.9}
               >
                 <LinearGradient
@@ -206,25 +414,28 @@ export const AppointmentsScreen: React.FC = () => {
                   {/* Card Header */}
                   <View style={styles.cardHeader}>
                     <View style={styles.avatarContainer}>
-                      <Image 
-                        source={{ uri: appointment.avatar }}
-                        style={styles.avatar}
-                      />
+                      <View style={styles.avatarPlaceholder}>
+                        <Text style={styles.avatarText}>
+                          {appointment.user.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
                       <View style={[
                         styles.typeBadge,
-                        { backgroundColor: appointment.type === 'Online' ? '#10B981' : appointment.type === 'Offline' ? '#F59E0B' : '#3B82F6' }
+                        { backgroundColor: appointment.mode === 'online' ? '#10B981' : appointment.mode === 'offline' ? '#F59E0B' : '#3B82F6' }
                       ]}>
                         <Text style={styles.typeBadgeText}>
-                          {appointment.type === 'Online' ? '💻' : appointment.type === 'Offline' ? '🏢' : '🔄'}
+                          {getModeIcon(appointment.mode)}
                         </Text>
                       </View>
                     </View>
                     
                     <View style={styles.clientInfo}>
-                      <Text style={styles.clientName}>{appointment.client}</Text>
-                      <View style={styles.gymBadge}>
-                        <Text style={styles.gymIcon}>🏋️</Text>
-                        <Text style={styles.gymText}>{appointment.gym}</Text>
+                      <Text style={styles.clientName}>{appointment.user.name}</Text>
+                      <View style={styles.emailBadge}>
+                        <Text style={styles.emailIcon}>📧</Text>
+                        <Text style={styles.emailText} numberOfLines={1}>
+                          {appointment.user.email}
+                        </Text>
                       </View>
                     </View>
 
@@ -250,8 +461,20 @@ export const AppointmentsScreen: React.FC = () => {
 
                   {/* Session Type Badge */}
                   <View style={styles.sessionTypeBadge}>
-                    <Text style={styles.sessionTypeText}>{appointment.type} Session</Text>
+                    <Text style={styles.sessionTypeText}>
+                      {appointment.mode.charAt(0).toUpperCase() + appointment.mode.slice(1)} Session
+                    </Text>
                   </View>
+
+                  {/* Title & Notes */}
+                  {appointment.title && (
+                    <Text style={styles.appointmentTitle}>{appointment.title}</Text>
+                  )}
+                  {appointment.notes && (
+                    <Text style={styles.appointmentNotes} numberOfLines={2}>
+                      {appointment.notes}
+                    </Text>
+                  )}
 
                   {/* Details Grid */}
                   <View style={styles.detailsGrid}>
@@ -261,7 +484,7 @@ export const AppointmentsScreen: React.FC = () => {
                       </View>
                       <View>
                         <Text style={styles.detailLabel}>Date</Text>
-                        <Text style={styles.detailValue}>{appointment.date}</Text>
+                        <Text style={styles.detailValue}>{formatDate(appointment.startAt)}</Text>
                       </View>
                     </View>
 
@@ -271,7 +494,7 @@ export const AppointmentsScreen: React.FC = () => {
                       </View>
                       <View>
                         <Text style={styles.detailLabel}>Time</Text>
-                        <Text style={styles.detailValue}>{appointment.time}</Text>
+                        <Text style={styles.detailValue}>{formatTime(appointment.startAt)}</Text>
                       </View>
                     </View>
 
@@ -281,17 +504,27 @@ export const AppointmentsScreen: React.FC = () => {
                       </View>
                       <View>
                         <Text style={styles.detailLabel}>Duration</Text>
-                        <Text style={styles.detailValue}>{appointment.duration}</Text>
+                        <Text style={styles.detailValue}>
+                          {calculateDuration(appointment.startAt, appointment.endAt)}
+                        </Text>
                       </View>
                     </View>
                   </View>
+
+                  {/* Price Display */}
+                  {appointment.price && (
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.priceLabel}>Session Fee:</Text>
+                      <Text style={styles.priceValue}>₹{appointment.price}</Text>
+                    </View>
+                  )}
 
                   {/* Action Buttons for Pending */}
                   {appointment.status === 'pending' && (
                     <View style={styles.actionButtons}>
                       <TouchableOpacity 
                         style={styles.acceptButton}
-                        onPress={() => handleStatusChange(appointment.id, 'confirmed')}
+                        onPress={() => handleStatusChange(appointment._id, 'confirmed')}
                         activeOpacity={0.8}
                       >
                         <LinearGradient
@@ -307,7 +540,7 @@ export const AppointmentsScreen: React.FC = () => {
 
                       <TouchableOpacity 
                         style={styles.declineButton}
-                        onPress={() => handleStatusChange(appointment.id, 'cancelled')}
+                        onPress={() => handleStatusChange(appointment._id, 'cancelled')}
                         activeOpacity={0.8}
                       >
                         <LinearGradient
@@ -364,6 +597,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0A0F',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A0A0F',
+  },
+  loadingText: {
+    color: '#A0AEC0',
+    fontSize: 16,
+    marginTop: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A0A0F',
+    paddingHorizontal: 20,
+  },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -507,12 +779,20 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginRight: 12,
   },
-  avatar: {
+  avatarPlaceholder: {
     width: 56,
     height: 56,
     borderRadius: 16,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   typeBadge: {
     position: 'absolute',
@@ -538,7 +818,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 6,
   },
-  gymBadge: {
+  emailBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(102, 126, 234, 0.2)',
@@ -546,15 +826,17 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
-  gymIcon: {
+  emailIcon: {
     fontSize: 12,
     marginRight: 4,
   },
-  gymText: {
+  emailText: {
     fontSize: 12,
     color: '#A0D7FF',
     fontWeight: '600',
+    flex: 1,
   },
   statusPill: {
     flexDirection: 'row',
@@ -580,12 +862,24 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
     alignSelf: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sessionTypeText: {
     fontSize: 13,
     color: '#CBD5E0',
     fontWeight: '600',
+  },
+  appointmentTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  appointmentNotes: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginBottom: 12,
+    lineHeight: 18,
   },
   detailsGrid: {
     flexDirection: 'row',
@@ -595,12 +889,12 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column', 
+    alignItems: 'flex-start', 
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     padding: 10,
     borderRadius: 12,
-    gap: 8,
+    gap: 6, // Reduced from 8
   },
   detailIconWrapper: {
     width: 32,
@@ -609,6 +903,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(102, 126, 234, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center', 
+    marginBottom: 4,
   },
   detailEmoji: {
     fontSize: 16,
@@ -620,8 +916,29 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   detailValue: {
-    fontSize: 11,
+    fontSize: 10, 
     color: '#FFFFFF',
+    fontWeight: '700',
+    flexWrap: 'wrap', 
+    },
+  priceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  priceLabel: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '600',
+  },
+  priceValue: {
+    fontSize: 16,
+    color: '#10B981',
     fontWeight: '700',
   },
   actionButtons: {
