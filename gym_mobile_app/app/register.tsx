@@ -21,7 +21,7 @@ interface ToastProps {
   visible: boolean;
   message: string;
   onHide: () => void;
-  type?: 'success' | 'error';  // ADD THIS LINE
+  type?: 'success' | 'error';
 }
 
 // Floating Wellness Icon Component
@@ -76,23 +76,16 @@ const FitnessIllustration = () => {
         </LinearGradient>
       </Defs>
       
-      {/* Background circle */}
       <Circle cx="100" cy="100" r="80" fill="url(#grad1)" opacity="0.2" />
       
-      {/* Person doing exercise */}
       <G>
-        {/* Head */}
         <Circle cx="100" cy="50" r="18" fill="#10B981" />
-        
-        {/* Body */}
         <Path
           d="M 100 68 L 100 110"
           stroke="#10B981"
           strokeWidth="12"
           strokeLinecap="round"
         />
-        
-        {/* Left arm raised */}
         <Path
           d="M 100 75 Q 80 70 70 55"
           stroke="#10B981"
@@ -100,8 +93,6 @@ const FitnessIllustration = () => {
           strokeLinecap="round"
           fill="none"
         />
-        
-        {/* Right arm raised */}
         <Path
           d="M 100 75 Q 120 70 130 55"
           stroke="#10B981"
@@ -109,31 +100,22 @@ const FitnessIllustration = () => {
           strokeLinecap="round"
           fill="none"
         />
-        
-        {/* Left leg */}
         <Path
           d="M 100 110 L 85 145"
           stroke="#10B981"
           strokeWidth="12"
           strokeLinecap="round"
         />
-        
-        {/* Right leg */}
         <Path
           d="M 100 110 L 115 145"
           stroke="#10B981"
           strokeWidth="12"
           strokeLinecap="round"
         />
-        
-        {/* Dumbbell in left hand */}
         <Circle cx="70" cy="55" r="6" fill="#10B981" />
-        
-        {/* Dumbbell in right hand */}
         <Circle cx="130" cy="55" r="6" fill="#10B981" />
       </G>
       
-      {/* Energy particles */}
       <Circle cx="65" cy="40" r="3" fill="#10B981" opacity="0.6" />
       <Circle cx="135" cy="40" r="2.5" fill="#10B981" opacity="0.5" />
       <Circle cx="125" cy="30" r="2" fill="#10B981" opacity="0.7" />
@@ -214,6 +196,8 @@ export default function Register() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [weight, setWeight] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -255,7 +239,9 @@ export default function Register() {
     setIsLoading(true);
     const payload = { 
       name, 
-      age: age ? parseInt(age) : undefined, 
+      age: age ? parseInt(age) : undefined,
+      gender: gender || undefined,
+      weight: weight ? parseFloat(weight) : undefined,
       phone, 
       email, 
       password, 
@@ -282,16 +268,14 @@ export default function Register() {
         console.log("Registration successful:", data);
         setIsLoading(false);
         
-        // Save token + role in AsyncStorage
         await AsyncStorage.setItem("userToken", data.token);
         await AsyncStorage.setItem("userRole", role);
         await AsyncStorage.setItem("userId", data.userId);
 
-        setToastType('success');  // ADD THIS LINE
+        setToastType('success');
         setToastMessage(`Registration successful! Welcome ${data.name} 🎉`);
         setShowToast(true);
 
-        // Navigate based on role after toast is shown
         setTimeout(() => {
           if (role === "user") {
             router.push("/questions/user-questions");
@@ -311,7 +295,6 @@ export default function Register() {
       setIsLoading(false);
       console.error("Registration error:", error);
       
-      // Handle different error scenarios
       if (error.response) {
         const status = error.response.status;
         const serverMsg = error.response.data?.message || error.response.data?.error || 'Registration failed';
@@ -402,7 +385,6 @@ const PrivacyPolicyModal = () => (
   </Modal>
 );
 
-// Terms of Service Modal Component
 const TermsOfServiceModal = () => (
   <Modal
     visible={showTermsModal}
@@ -478,15 +460,12 @@ const TermsOfServiceModal = () => (
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Gradient Background */}
       <View style={styles.gradientBackground}>
-        {/* Decorative Blobs */}
         <View style={[styles.blob, styles.blob1]} />
         <View style={[styles.blob, styles.blob2]} />
         <View style={[styles.blob, styles.blob3]} />
       </View>
 
-      {/* Floating Icons */}
       <View style={styles.floatingIconsContainer}>
         <View style={[styles.iconPosition, { top: 80, left: 20 }]}>
           <FloatingIcon icon="💪" delay={0} />
@@ -505,7 +484,7 @@ const TermsOfServiceModal = () => (
       <Toast 
         visible={showToast} 
         message={toastMessage} 
-        type={toastType}  // ADD THIS LINE
+        type={toastType}
         onHide={() => setShowToast(false)} 
       />
       
@@ -546,6 +525,87 @@ const TermsOfServiceModal = () => (
               value={age}
               onChangeText={setAge}
               keyboardType="numeric"
+              editable={!isLoading}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Gender</Text>
+            <View style={styles.genderContainer}>
+              <TouchableOpacity 
+                style={[
+                  styles.genderButton, 
+                  gender === "male" && styles.genderButtonActive
+                ]}
+                onPress={() => setGender("male")}
+                disabled={isLoading}
+              >
+                <Ionicons 
+                  name="male" 
+                  size={20} 
+                  color={gender === "male" ? "#FFFFFF" : "#9CA3AF"} 
+                />
+                <Text style={[
+                  styles.genderButtonText,
+                  gender === "male" && styles.genderButtonTextActive
+                ]}>
+                  Male
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.genderButton, 
+                  gender === "female" && styles.genderButtonActive
+                ]}
+                onPress={() => setGender("female")}
+                disabled={isLoading}
+              >
+                <Ionicons 
+                  name="female" 
+                  size={20} 
+                  color={gender === "female" ? "#FFFFFF" : "#9CA3AF"} 
+                />
+                <Text style={[
+                  styles.genderButtonText,
+                  gender === "female" && styles.genderButtonTextActive
+                ]}>
+                  Female
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.genderButton, 
+                  gender === "other" && styles.genderButtonActive
+                ]}
+                onPress={() => setGender("other")}
+                disabled={isLoading}
+              >
+                <Ionicons 
+                  name="transgender" 
+                  size={20} 
+                  color={gender === "other" ? "#FFFFFF" : "#9CA3AF"} 
+                />
+                <Text style={[
+                  styles.genderButtonText,
+                  gender === "other" && styles.genderButtonTextActive
+                ]}>
+                  Other
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Weight (kg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your weight in kg"
+              placeholderTextColor="#9CA3AF"
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="decimal-pad"
               editable={!isLoading}
             />
           </View>
@@ -694,7 +754,6 @@ const TermsOfServiceModal = () => (
             </View>
           </View>
 
-          {/* Consent Checkboxes */}
           <View style={styles.consentContainer}>
             <TouchableOpacity 
               style={styles.checkboxRow}
@@ -766,28 +825,29 @@ const TermsOfServiceModal = () => (
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   toastError: {
-  backgroundColor: '#7F1D1D',
-  borderLeftColor: '#EF4444',
-},
-toastErrorIcon: {
-  color: '#EF4444',
-},
-    container: {
+    backgroundColor: '#7F1D1D',
+    borderLeftColor: '#EF4444',
+  },
+  toastErrorIcon: {
+    color: '#EF4444',
+  },
+  container: {
     flex: 1,
     backgroundColor: '#111827',
     overflow: 'hidden',
   },
-gradientBackground: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  minHeight: '200%', 
-  backgroundColor: '#111827',
-},
+  gradientBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    minHeight: '200%', 
+    backgroundColor: '#111827',
+  },
   blob: {
     position: 'absolute',
     borderRadius: 9999,
@@ -814,7 +874,6 @@ gradientBackground: {
     top: '40%',
     left: -50,
   },
-  // Floating Icons
   floatingIconsContainer: {
     position: 'absolute',
     top: 0,
@@ -831,14 +890,14 @@ gradientBackground: {
     fontSize: 24,
     opacity: 0.3,
   },
-scrollContainer: {
-  flexGrow: 1,
-  padding: 24,
-  paddingTop: 60,
-  paddingBottom: 40, 
-  zIndex: 2,
-  minHeight: '100%', 
-},
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 40, 
+    zIndex: 2,
+    minHeight: '100%', 
+  },
   headerContainer: {
     alignItems: 'center',
     marginBottom: 32,
@@ -894,6 +953,35 @@ scrollContainer: {
     color: '#F9FAFB',
     fontWeight: '500',
   },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#374151',
+    backgroundColor: '#111827',
+  },
+  genderButtonActive: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  genderButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  genderButtonTextActive: {
+    color: '#FFFFFF',
+  },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -938,109 +1026,86 @@ scrollContainer: {
   roleCardContent: {
     alignItems: 'center',
   },
-// Replace your modal styles with these corrected versions
-
-modalOverlay: {
-  flex: 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.85)',
-  justifyContent: 'center',
-  alignItems: 'flex-start',
-  paddingHorizontal: 24, // Horizontal padding only
-  paddingVertical: 40, // Vertical padding to keep modal away from edges
-},
-
-modalContainer: {
-  backgroundColor: 'rgba(31, 41, 55, 0.95)',
-  borderRadius: 16,
-  width: '70%',
-  maxHeight: '100%', // Changed from 80% to 100%
-  overflow: 'hidden', // Prevent content overflow
-  borderWidth: 1,
-  borderColor: '#374151',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  elevation: 10,
-},
-
-modalHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingHorizontal: 24,
-  paddingVertical: 16, // Reduced from 20
-  borderBottomWidth: 1,
-  borderBottomColor: '#374151',
-  backgroundColor: 'transparent',
-  borderTopLeftRadius: 16,
-  borderTopRightRadius: 16,
-},
-
-modalTitle: {
-  fontSize: 20,
-  fontWeight: 'bold',
-  color: '#10B981',
-},
-
-modalClose: {
-  fontSize: 28,
-  color: '#9CA3AF',
-  fontWeight: '300',
-  padding: 4,
-},
-
-modalContent: {
-  paddingHorizontal: 24,
-  paddingTop: 16, // Reduced from 20
-  paddingBottom: 16, // Reduced from 20
-  flex: 1, // Takes remaining space
-},
-
-modalText: {
-  fontSize: 14,
-  color: '#D1D5DB',
-  lineHeight: 22,
-  paddingBottom: 20,
-},
-
-modalBold: {
-  fontWeight: 'bold',
-  color: '#E5E7EB',
-  fontSize: 15,
-},
-
-modalButton: {
-  backgroundColor: '#10B981',
-  marginHorizontal: 24,
-  marginTop: 12, // Reduced from 20
-  marginBottom: 16, // Reduced from 20
-  paddingVertical: 16,
-  borderRadius: 12,
-  alignItems: 'center',
-  shadowColor: '#10B981',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.4,
-  shadowRadius: 4,
-  elevation: 5,
-},
-
-modalButtonText: {
-  color: '#FFFFFF',
-  fontSize: 16,
-  fontWeight: 'bold',
-},
-
-  eyeIconButton: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
   },
-  eyeIcon: {
+  modalContainer: {
+    backgroundColor: 'rgba(31, 41, 55, 0.95)',
+    borderRadius: 16,
+    width: '70%',
+    maxHeight: '100%',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#374151',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+    backgroundColor: 'transparent',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  modalTitle: {
     fontSize: 20,
+    fontWeight: 'bold',
+    color: '#10B981',
+  },
+  modalClose: {
+    fontSize: 28,
     color: '#9CA3AF',
+    fontWeight: '300',
+    padding: 4,
+  },
+  modalContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    flex: 1,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#D1D5DB',
+    lineHeight: 22,
+    paddingBottom: 20,
+  },
+  modalBold: {
+    fontWeight: 'bold',
+    color: '#E5E7EB',
+    fontSize: 15,
+  },
+  modalButton: {
+    backgroundColor: '#10B981',
+    marginHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   roleIcon: {
     width: 48,
