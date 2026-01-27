@@ -268,9 +268,29 @@ export default function Register() {
         console.log("Registration successful:", data);
         setIsLoading(false);
         
+        // Store core authentication data
         await AsyncStorage.setItem("userToken", data.token);
         await AsyncStorage.setItem("userRole", role);
         await AsyncStorage.setItem("userId", data.userId);
+        
+        // Store user profile data (age, weight, gender)
+        if (data.age !== undefined) {
+          await AsyncStorage.setItem("userAge", String(data.age));
+        }
+        if (data.weight !== undefined) {
+          await AsyncStorage.setItem("userWeight", String(data.weight));
+        }
+        if (data.gender) {
+          await AsyncStorage.setItem("userGender", data.gender);
+        }
+        
+        // Store user name and email for easy access
+        if (data.name) {
+          await AsyncStorage.setItem("userName", data.name);
+        }
+        if (data.email) {
+          await AsyncStorage.setItem("userEmail", data.email);
+        }
 
         setToastType('success');
         setToastMessage(`Registration successful! Welcome ${data.name} 🎉`);

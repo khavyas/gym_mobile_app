@@ -76,21 +76,14 @@ const MeditationIllustration = () => {
         </LinearGradient>
       </Defs>
       
-      {/* Background circle */}
       <Circle cx="100" cy="100" r="80" fill="url(#grad1)" opacity="0.2" />
       
-      {/* Person sitting in meditation */}
       <G>
-        {/* Head */}
         <Circle cx="100" cy="60" r="20" fill="#10B981" />
-        
-        {/* Body */}
         <Path
           d="M 100 80 Q 85 100 85 120 L 85 130 Q 85 135 90 135 L 110 135 Q 115 135 115 130 L 115 120 Q 115 100 100 80 Z"
           fill="#10B981"
         />
-        
-        {/* Arms in meditation pose */}
         <Path
           d="M 85 95 Q 70 95 65 105 Q 60 110 65 115 Q 70 120 75 115 L 85 105"
           fill="#10B981"
@@ -99,8 +92,6 @@ const MeditationIllustration = () => {
           d="M 115 95 Q 130 95 135 105 Q 140 110 135 115 Q 130 120 125 115 L 115 105"
           fill="#10B981"
         />
-        
-        {/* Legs crossed */}
         <Path
           d="M 85 135 Q 75 140 70 145 L 60 150 Q 55 152 60 155 L 80 155"
           fill="#10B981"
@@ -111,7 +102,6 @@ const MeditationIllustration = () => {
         />
       </G>
       
-      {/* Floating particles */}
       <Circle cx="70" cy="50" r="3" fill="#10B981" opacity="0.6" />
       <Circle cx="130" cy="60" r="2" fill="#10B981" opacity="0.5" />
       <Circle cx="120" cy="40" r="2.5" fill="#10B981" opacity="0.7" />
@@ -201,7 +191,6 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
-    // simple validations
     if (!identifier.trim() || !password) {
       setToastType('error');
       setToastMessage('Please enter email/phone and password.');
@@ -220,31 +209,47 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
       });
 
-      // { userId, name, email, role, token }
       const data = response.data;
 
       if (!data || !data.token) {
         throw new Error('Invalid server response: missing token');
       }
 
-      // persist to AsyncStorage
+      // ✅ Store core authentication data
       await AsyncStorage.setItem('userToken', data.token);
       if (data.role) await AsyncStorage.setItem('userRole', data.role);
       if (data.name) await AsyncStorage.setItem('userName', data.name);
       if (data.email) await AsyncStorage.setItem('userEmail', data.email);
       if (data.userId) await AsyncStorage.setItem('userId', String(data.userId));
+      if (data.phone) await AsyncStorage.setItem('userPhone', data.phone);
 
+      // ✅ Store profile data (age, weight, gender) if available
+      if (data.age !== undefined) {
+        await AsyncStorage.setItem('userAge', String(data.age));
+        console.log('✅ Stored age:', data.age);
+      }
+      if (data.weight !== undefined) {
+        await AsyncStorage.setItem('userWeight', String(data.weight));
+        console.log('✅ Stored weight:', data.weight);
+      }
+      if (data.gender) {
+        await AsyncStorage.setItem('userGender', data.gender);
+        console.log('✅ Stored gender:', data.gender);
+      }
+
+      // Store gym ID if present (for consultants)
       if (data.gymId) {
         await AsyncStorage.setItem('gymId', String(data.gymId));
       }
 
-      // show success
+      // Show success toast
       setToastType('success');
       setToastMessage(`Welcome back, ${data.name || 'User'}!`);
       setShowToast(true);
 
       setIsLoading(false);
 
+      // Navigate based on role
       setTimeout(() => {
         const userRole = data.role?.toLowerCase() || 'user';
         
@@ -272,9 +277,7 @@ export default function Login() {
 
       setIsLoading(false);
 
-      // nicer error messaging
       if (err.response) {
-        // server responded with non-2xx
         const status = err.response.status;
         const serverMsg = err.response.data?.message || err.response.data?.error || JSON.stringify(err.response.data);
 
@@ -289,11 +292,9 @@ export default function Login() {
           setToastMessage(serverMsg || 'Server error. Please try again later.');
         }
       } else if (err.request) {
-        // request made but no response
         setToastType('error');
         setToastMessage('Network error — please check your connection.');
       } else {
-        // other errors
         setToastType('error');
         setToastMessage('Login failed. Please try again.');
       }
@@ -302,10 +303,9 @@ export default function Login() {
     }
   };
 
-  // Dynamically decide keyboard type
   const getKeyboardType = () => {
-    if (/^\d+$/.test(identifier)) return "phone-pad"; // only numbers → phone
-    if (identifier.includes("@")) return "email-address"; // has @ → email
+    if (/^\d+$/.test(identifier)) return "phone-pad";
+    if (identifier.includes("@")) return "email-address";
     return "default";
   };
 
@@ -314,15 +314,12 @@ export default function Login() {
       style={styles.container} 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Gradient Background */}
       <View style={styles.gradientBackground}>
-        {/* Decorative Blobs */}
         <View style={[styles.blob, styles.blob1]} />
         <View style={[styles.blob, styles.blob2]} />
         <View style={[styles.blob, styles.blob3]} />
       </View>
 
-      {/* Floating Icons */}
       <View style={styles.floatingIconsContainer}>
         <View style={[styles.iconPosition, { top: 100, left: 30 }]}>
           <FloatingIcon icon="🧘" delay={0} />
@@ -350,7 +347,6 @@ export default function Login() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Logo and Brand Section with Illustration */}
         <View style={styles.brandContainer}>
           <View style={styles.illustrationContainer}>
             <MeditationIllustration />
@@ -463,16 +459,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
     overflow: 'hidden',
   },
- 
-gradientBackground: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  minHeight: '200%',
-  backgroundColor: '#111827',
-},
+  gradientBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    minHeight: '200%',
+    backgroundColor: '#111827',
+  },
   blob: {
     position: 'absolute',
     borderRadius: 9999,
@@ -499,7 +494,6 @@ gradientBackground: {
     top: '40%',
     left: -50,
   },
-  // Floating Icons
   floatingIconsContainer: {
     position: 'absolute',
     top: 0,
@@ -516,15 +510,14 @@ gradientBackground: {
     fontSize: 24,
     opacity: 0.3,
   },
- scrollContent: {
-  flexGrow: 1,
-  padding: 24,
-  paddingTop: 60,
-  paddingBottom: 40, 
-  zIndex: 2,
-  minHeight: '100%', 
-},
-  // Brand Section Styles
+  scrollContent: {
+    flexGrow: 1,
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 40, 
+    zIndex: 2,
+    minHeight: '100%', 
+  },
   brandContainer: {
     alignItems: 'center',
     marginBottom: 32,
@@ -576,21 +569,21 @@ gradientBackground: {
     fontSize: 15,
     color: '#9CA3AF',
   },
-formContainer: {
-  backgroundColor: 'rgba(31, 41, 55, 0.8)',
-  borderRadius: 16,
-  padding: 24,
-  shadowColor: '#000',
-  shadowOffset: {
-    width: 0,
-    height: 4,
+  formContainer: {
+    backgroundColor: 'rgba(31, 41, 55, 0.8)',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  elevation: 10,
-  borderWidth: 1,
-  borderColor: '#374151',
-},
   inputContainer: {
     marginBottom: 20,
   },
@@ -695,7 +688,6 @@ formContainer: {
     color: '#9CA3AF',
     fontStyle: 'italic',
   },
-  // Toast Styles
   toastContainer: {
     position: 'absolute',
     top: 60,
