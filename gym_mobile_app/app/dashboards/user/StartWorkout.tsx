@@ -52,6 +52,7 @@ interface Category {
   icon: React.ComponentType<any>;
   color: string;
   gradient: string[];
+  image: string;
 }
 
 interface WorkoutEntry {
@@ -116,10 +117,38 @@ const EXERCISE_DATABASE: Record<string, Exercise[]> = {
 };
 
 const CATEGORIES: Category[] = [
-  { id: 'cardio', name: 'Cardio', icon: Activity, color: '#EF4444', gradient: ['#EF4444', '#DC2626'] },
-  { id: 'strength', name: 'Strength', icon: Dumbbell, color: '#F59E0B', gradient: ['#F59E0B', '#D97706'] },
-  { id: 'yoga', name: 'Yoga', icon: Heart, color: '#8B5CF6', gradient: ['#8B5CF6', '#7C3AED'] },
-  { id: 'hiit', name: 'HIIT', icon: Flame, color: '#DC2626', gradient: ['#DC2626', '#B91C1C'] },
+  { 
+    id: 'cardio', 
+    name: 'Cardio', 
+    icon: Activity, 
+    color: '#EF4444', 
+    gradient: ['#EF4444', '#DC2626'],
+    image: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=800&q=80' // Running
+  },
+  { 
+    id: 'strength', 
+    name: 'Strength', 
+    icon: Dumbbell, 
+    color: '#F59E0B', 
+    gradient: ['#F59E0B', '#D97706'],
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80' // Gym weights
+  },
+  { 
+    id: 'yoga', 
+    name: 'Yoga', 
+    icon: Heart, 
+    color: '#8B5CF6', 
+    gradient: ['#8B5CF6', '#7C3AED'],
+    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80' // Yoga pose
+  },
+  { 
+    id: 'hiit', 
+    name: 'HIIT', 
+    icon: Flame, 
+    color: '#DC2626', 
+    gradient: ['#DC2626', '#B91C1C'],
+    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80' // HIIT training
+  },
 ];
 
 type Intensity = 'low' | 'light' | 'medium' | 'moderate' | 'high' | 'heavy';
@@ -724,70 +753,69 @@ export default function StartWorkout() {
           {isWorkoutActive && (
             <View style={styles.timerSection}>
               <View style={styles.timerCard}>
-                <View style={styles.timerDisplay}>
-                  <Timer size={32} color="#10B981" strokeWidth={2.5} />
-                  <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
-                </View>
+                {/* Background Image */}
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1534258936925-c58bed479fcb?w=800&q=80' }}
+                  style={styles.timerCardBackground}
+                  blurRadius={1.5}
+                />
+                <View style={styles.timerCardOverlay} />
                 
-                <Text style={styles.timerLabel}>
-                  {selectedExercise?.name} - {selectedIntensity} intensity
-                </Text>
-
-                <View style={styles.timerControls}>
-                  <TouchableOpacity 
-                    style={styles.pauseButton}
-                    onPress={pauseWorkout}
-                  >
-                    {isPaused ? (
-                      <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
-                    ) : (
-                      <Pause size={24} color="#FFFFFF" />
-                    )}
-                  </TouchableOpacity>
+                {/* Timer Content */}
+                <View style={styles.timerCardContent}>
+                  <View style={styles.timerDisplay}>
+                    <View style={styles.timerIconContainer}>
+                      <Timer size={32} color="#10B981" strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
+                  </View>
                   
-                  <TouchableOpacity 
-                    style={styles.stopButton}
-                    onPress={stopWorkout}
-                  >
-                    <StopCircle size={20} color="#FFFFFF" />
-                    <Text style={styles.stopButtonText}>Finish</Text>
-                  </TouchableOpacity>
-                </View>
+                  <Text style={styles.timerLabel}>
+                    {selectedExercise?.name} - {selectedIntensity} intensity
+                  </Text>
 
-                <View style={styles.liveStats}>
-                  <View style={styles.liveStatItem}>
-                    <Flame size={20} color="#F59E0B" />
-                    <Text style={styles.liveStatValue}>
-                      {calculateCalories(Math.floor(elapsedTime / 60))} cal
-                    </Text>
+                  <View style={styles.timerControls}>
+                    <TouchableOpacity 
+                      style={styles.pauseButton}
+                      onPress={pauseWorkout}
+                    >
+                      {isPaused ? (
+                        <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+                      ) : (
+                        <Pause size={24} color="#FFFFFF" />
+                      )}
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={styles.stopButton}
+                      onPress={stopWorkout}
+                    >
+                      <StopCircle size={20} color="#FFFFFF" />
+                      <Text style={styles.stopButtonText}>Finish</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.liveStats}>
+                    <View style={styles.liveStatItem}>
+                      <Flame size={20} color="#F59E0B" />
+                      <Text style={styles.liveStatValue}>
+                        {calculateCalories(Math.floor(elapsedTime / 60))} cal
+                      </Text>
+                    </View>
+                    <View style={styles.liveStatDivider} />
+                    <View style={styles.liveStatItem}>
+                      <Activity size={20} color="#10B981" />
+                      <Text style={styles.liveStatValue}>
+                        {Math.floor(elapsedTime / 60)} min
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
             </View>
           )}
 
-          {/* Quick Start */}
-          {!isWorkoutActive && recentExercises.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Clock size={20} color="#10B981" />
-                <Text style={styles.sectionTitle}>Quick Start</Text>
-              </View>
-              
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {recentExercises.map((exercise) => (
-                  <TouchableOpacity
-                    key={exercise.id}
-                    style={styles.quickStartCard}
-                    onPress={() => selectExercise(exercise)}
-                  >
-                    <Text style={styles.quickStartIcon}>{exercise.icon}</Text>
-                    <Text style={styles.quickStartName}>{exercise.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+         
 
           {/* Category Selection */}
           {!isWorkoutActive && (
@@ -805,17 +833,40 @@ export default function StartWorkout() {
                   return (
                     <TouchableOpacity
                       key={category.id}
-                      style={[
-                        styles.categoryCard,
-                        isSelected && { backgroundColor: category.color }
-                      ]}
+                      style={styles.categoryCard}
                       onPress={() => {
                         setSelectedCategory(category);
                         setShowExerciseModal(true);
                       }}
                     >
-                      <IconComponent size={32} color="#FFFFFF" strokeWidth={2.5} />
-                      <Text style={styles.categoryName}>{category.name}</Text>
+                      {/* Background Image */}
+                      <Image 
+                        source={{ uri: category.image }}
+                        style={styles.categoryCardBackground}
+                        blurRadius={0.5}
+                      />
+                      
+                      {/* Overlay with gradient */}
+                      <View style={[
+                        styles.categoryCardOverlay,
+                        isSelected && { backgroundColor: `${category.color}CC` }
+                      ]} />
+                      
+                      {/* Content */}
+                      <View style={styles.categoryCardContent}>
+                        <View style={[
+                          styles.categoryIconContainer,
+                          isSelected && { backgroundColor: 'rgba(255, 255, 255, 0.3)' }
+                        ]}>
+                          <IconComponent size={28} color="#FFFFFF" strokeWidth={2.5} />
+                        </View>
+                        <Text style={styles.categoryName}>{category.name}</Text>
+                        {isSelected && (
+                          <View style={styles.selectedBadge}>
+                            <Text style={styles.selectedBadgeText}>✓ Selected</Text>
+                          </View>
+                        )}
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -900,12 +951,22 @@ export default function StartWorkout() {
                   </View>
                 </View>
 
+                {/* Start Workout Button with Background */}
                 <TouchableOpacity 
-                  style={styles.startWorkoutButton}
+                  style={styles.startWorkoutButtonContainer}
                   onPress={startWorkout}
                 >
-                  <Text style={styles.startWorkoutButtonText}>Start Workout Timer</Text>
-                  <ChevronRight size={24} color="#FFFFFF" />
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80' }}
+                    style={styles.startWorkoutButtonBackground}
+                    blurRadius={1}
+                  />
+                  <View style={styles.startWorkoutButtonOverlay} />
+                  <View style={styles.startWorkoutButtonContent}>
+                    <Play size={24} color="#FFFFFF" fill="#FFFFFF" />
+                    <Text style={styles.startWorkoutButtonText}>Start Workout Timer</Text>
+                    <ChevronRight size={24} color="#FFFFFF" />
+                  </View>
                 </TouchableOpacity>
 
                 {/* Workout Notes */}
@@ -1288,28 +1349,68 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   timerCard: {
-    backgroundColor: '#1E293B',
     borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
+    minHeight: 320,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#334155',
+    position: 'relative',
+  },
+  timerCardBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  timerCardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  timerCardContent: {
+    position: 'relative',
+    zIndex: 1,
+    padding: 32,
+    alignItems: 'center',
   },
   timerDisplay: {
     alignItems: 'center',
     marginBottom: 16,
   },
+  timerIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#10B981',
+  },
   timerText: {
-    fontSize: 56,
+    fontSize: 64,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginTop: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    fontVariantNumeric: 'tabular-nums',
   },
   timerLabel: {
-    fontSize: 16,
-    color: '#94A3B8',
+    fontSize: 18,
+    color: '#FFFFFF',
     marginBottom: 24,
     fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   timerControls: {
     flexDirection: 'row',
@@ -1317,26 +1418,36 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   pauseButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderWidth: 2,
     borderColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   stopButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EF4444',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 32,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   stopButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -1346,36 +1457,25 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
   },
   liveStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  liveStatDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
   liveStatValue: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
-  },
-  quickStartCard: {
-    minWidth: 120,
-    backgroundColor: '#1E293B',
-    borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  quickStartIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  quickStartName: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: '#E2E8F0',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -1384,20 +1484,70 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     width: (width - 56) / 2,
-    backgroundColor: '#1E293B',
     borderRadius: 16,
-    padding: 20,
-    minHeight: 140,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 160,
+    overflow: 'hidden',
     borderWidth: 2,
     borderColor: '#334155',
+    position: 'relative',
+  },
+  categoryCardBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  categoryCardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  categoryCardContent: {
+    position: 'relative',
+    zIndex: 1,
+    flex: 1,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   categoryName: {
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 12,
-    color: '#E2E8F0',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  selectedBadge: {
+    marginTop: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  selectedBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   selectedExerciseCard: {
     backgroundColor: '#1E293B',
@@ -1489,6 +1639,40 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#F59E0B',
   },
+  startWorkoutButtonContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: 80,
+    position: 'relative',
+    borderWidth: 2,
+    borderColor: '#10B981',
+  },
+  startWorkoutButtonBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  startWorkoutButtonOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+  },
+  startWorkoutButtonContent: {
+    position: 'relative',
+    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    gap: 12,
+  },
   startWorkoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1502,6 +1686,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   notesSection: {
     marginTop: 20,
