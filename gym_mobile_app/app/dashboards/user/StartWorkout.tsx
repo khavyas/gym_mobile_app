@@ -18,7 +18,23 @@ import {
   Timer,
   Play,
   Pause,
-  StopCircle
+  StopCircle,
+  Bike,
+  Waves,
+  CircleDot,
+  Droplet,
+  MoveVertical,
+  ArrowUp,
+  Loader,
+  ArrowUpCircle,
+  ArrowDown,
+  MoveDown,
+  Wind,
+  Minimize2,
+  Circle,
+  Repeat,
+  Target,
+  ArrowUpDown
 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -81,38 +97,38 @@ interface APIWorkoutEntry {
 // Exercise Database with MET values
 const EXERCISE_DATABASE: Record<string, Exercise[]> = {
   cardio: [
-    { id: 'running_outdoor', name: 'Running (Outdoor)', mets: { low: 6.0, medium: 9.8, high: 12.5 }, icon: '🏃', popular: true },
-    { id: 'treadmill', name: 'Treadmill', mets: { low: 5.0, medium: 8.0, high: 11.0 }, icon: '🏃', popular: true },
-    { id: 'cycling', name: 'Cycling', mets: { low: 4.0, medium: 8.0, high: 12.0 }, icon: '🚴', popular: true },
-    { id: 'rowing', name: 'Rowing Machine', mets: { low: 4.8, medium: 7.0, high: 12.0 }, icon: '🚣', popular: false },
-    { id: 'elliptical', name: 'Elliptical', mets: { low: 5.0, medium: 7.0, high: 9.0 }, icon: '🏃', popular: true },
-    { id: 'jump_rope', name: 'Jump Rope', mets: { low: 8.0, medium: 10.0, high: 12.0 }, icon: '🪢', popular: false },
-    { id: 'swimming', name: 'Swimming', mets: { low: 6.0, medium: 8.0, high: 11.0 }, icon: '🏊', popular: true },
-    { id: 'stairs', name: 'Stair Climbing', mets: { low: 5.0, medium: 8.0, high: 10.0 }, icon: '🪜', popular: false },
+    { id: 'running_outdoor', name: 'Running (Outdoor)', mets: { low: 6.0, medium: 9.8, high: 12.5 }, icon: 'activity', popular: true },
+    { id: 'treadmill', name: 'Treadmill', mets: { low: 5.0, medium: 8.0, high: 11.0 }, icon: 'activity', popular: true },
+    { id: 'cycling', name: 'Cycling', mets: { low: 4.0, medium: 8.0, high: 12.0 }, icon: 'bike', popular: true },
+    { id: 'rowing', name: 'Rowing Machine', mets: { low: 4.8, medium: 7.0, high: 12.0 }, icon: 'waves', popular: false },
+    { id: 'elliptical', name: 'Elliptical', mets: { low: 5.0, medium: 7.0, high: 9.0 }, icon: 'circle-dot', popular: true },
+    { id: 'jump_rope', name: 'Jump Rope', mets: { low: 8.0, medium: 10.0, high: 12.0 }, icon: 'zap', popular: false },
+    { id: 'swimming', name: 'Swimming', mets: { low: 6.0, medium: 8.0, high: 11.0 }, icon: 'droplet', popular: true },
+    { id: 'stairs', name: 'Stair Climbing', mets: { low: 5.0, medium: 8.0, high: 10.0 }, icon: 'trending-up', popular: false },
   ],
   strength: [
-    { id: 'bench_press', name: 'Bench Press', mets: { light: 3.5, moderate: 5.0, heavy: 8.0 }, icon: '💪', popular: true },
-    { id: 'squats', name: 'Squats', mets: { light: 5.0, moderate: 6.0, heavy: 8.0 }, icon: '🦵', popular: true },
-    { id: 'deadlift', name: 'Deadlifts', mets: { light: 4.0, moderate: 6.0, heavy: 8.0 }, icon: '💪', popular: true },
-    { id: 'dumbbell_press', name: 'Dumbbell Press', mets: { light: 3.0, moderate: 5.0, heavy: 7.0 }, icon: '💪', popular: true },
-    { id: 'bicep_curls', name: 'Bicep Curls', mets: { light: 3.0, moderate: 4.0, heavy: 6.0 }, icon: '💪', popular: true },
-    { id: 'shoulder_press', name: 'Shoulder Press', mets: { light: 3.5, moderate: 5.0, heavy: 7.0 }, icon: '💪', popular: false },
-    { id: 'lat_pulldown', name: 'Lat Pulldown', mets: { light: 3.0, moderate: 5.0, heavy: 7.0 }, icon: '💪', popular: true },
-    { id: 'leg_press', name: 'Leg Press', mets: { light: 4.0, moderate: 6.0, heavy: 8.0 }, icon: '🦵', popular: true },
+    { id: 'bench_press', name: 'Bench Press', mets: { light: 3.5, moderate: 5.0, heavy: 8.0 }, icon: 'dumbbell', popular: true },
+    { id: 'squats', name: 'Squats', mets: { light: 5.0, moderate: 6.0, heavy: 8.0 }, icon: 'move-vertical', popular: true },
+    { id: 'deadlift', name: 'Deadlifts', mets: { light: 4.0, moderate: 6.0, heavy: 8.0 }, icon: 'arrow-up', popular: true },
+    { id: 'dumbbell_press', name: 'Dumbbell Press', mets: { light: 3.0, moderate: 5.0, heavy: 7.0 }, icon: 'dumbbell', popular: true },
+    { id: 'bicep_curls', name: 'Bicep Curls', mets: { light: 3.0, moderate: 4.0, heavy: 6.0 }, icon: 'loader', popular: true },
+    { id: 'shoulder_press', name: 'Shoulder Press', mets: { light: 3.5, moderate: 5.0, heavy: 7.0 }, icon: 'arrow-up-circle', popular: false },
+    { id: 'lat_pulldown', name: 'Lat Pulldown', mets: { light: 3.0, moderate: 5.0, heavy: 7.0 }, icon: 'arrow-down', popular: true },
+    { id: 'leg_press', name: 'Leg Press', mets: { light: 4.0, moderate: 6.0, heavy: 8.0 }, icon: 'move-down', popular: true },
   ],
   yoga: [
-    { id: 'hatha_yoga', name: 'Hatha Yoga', mets: { low: 2.5, medium: 3.0, high: 4.0 }, icon: '🧘', popular: true },
-    { id: 'vinyasa', name: 'Vinyasa Flow', mets: { low: 3.0, medium: 4.0, high: 5.0 }, icon: '🧘', popular: true },
-    { id: 'power_yoga', name: 'Power Yoga', mets: { low: 4.0, medium: 5.0, high: 6.0 }, icon: '🧘', popular: true },
-    { id: 'stretching', name: 'Stretching', mets: { low: 2.3, medium: 2.3, high: 2.3 }, icon: '🤸', popular: true },
-    { id: 'pilates', name: 'Pilates', mets: { low: 3.0, medium: 4.0, high: 5.0 }, icon: '🧘', popular: false },
+    { id: 'hatha_yoga', name: 'Hatha Yoga', mets: { low: 2.5, medium: 3.0, high: 4.0 }, icon: 'heart', popular: true },
+    { id: 'vinyasa', name: 'Vinyasa Flow', mets: { low: 3.0, medium: 4.0, high: 5.0 }, icon: 'wind', popular: true },
+    { id: 'power_yoga', name: 'Power Yoga', mets: { low: 4.0, medium: 5.0, high: 6.0 }, icon: 'zap', popular: true },
+    { id: 'stretching', name: 'Stretching', mets: { low: 2.3, medium: 2.3, high: 2.3 }, icon: 'minimize-2', popular: true },
+    { id: 'pilates', name: 'Pilates', mets: { low: 3.0, medium: 4.0, high: 5.0 }, icon: 'circle', popular: false },
   ],
   hiit: [
-    { id: 'hiit_general', name: 'HIIT Training', mets: { low: 8.0, medium: 10.0, high: 12.0 }, icon: '🔥', popular: true },
-    { id: 'circuit_training', name: 'Circuit Training', mets: { low: 6.0, medium: 8.0, high: 10.0 }, icon: '🔥', popular: true },
-    { id: 'crossfit', name: 'CrossFit', mets: { low: 8.0, medium: 10.0, high: 13.0 }, icon: '🔥', popular: true },
-    { id: 'burpees', name: 'Burpees', mets: { low: 8.0, medium: 10.0, high: 12.0 }, icon: '🔥', popular: true },
-    { id: 'tabata', name: 'Tabata', mets: { low: 10.0, medium: 12.0, high: 14.0 }, icon: '🔥', popular: false },
+    { id: 'hiit_general', name: 'HIIT Training', mets: { low: 8.0, medium: 10.0, high: 12.0 }, icon: 'flame', popular: true },
+    { id: 'circuit_training', name: 'Circuit Training', mets: { low: 6.0, medium: 8.0, high: 10.0 }, icon: 'repeat', popular: true },
+    { id: 'crossfit', name: 'CrossFit', mets: { low: 8.0, medium: 10.0, high: 13.0 }, icon: 'target', popular: true },
+    { id: 'burpees', name: 'Burpees', mets: { low: 8.0, medium: 10.0, high: 12.0 }, icon: 'arrow-up-down', popular: true },
+    { id: 'tabata', name: 'Tabata', mets: { low: 10.0, medium: 12.0, high: 14.0 }, icon: 'timer', popular: false },
   ]
 };
 
@@ -157,6 +173,36 @@ function isValidIntensity(key: string): key is Intensity {
   const validIntensities: Intensity[] = ['low', 'light', 'medium', 'moderate', 'high', 'heavy'];
   return validIntensities.includes(key as Intensity);
 }
+
+// Helper function to get icon component from icon name
+const getIconComponent = (iconName: string) => {
+  const iconMap: Record<string, React.ComponentType<any>> = {
+    'activity': Activity,
+    'bike': Bike,
+    'waves': Waves,
+    'circle-dot': CircleDot,
+    'zap': Zap,
+    'droplet': Droplet,
+    'trending-up': TrendingUp,
+    'dumbbell': Dumbbell,
+    'move-vertical': MoveVertical,
+    'arrow-up': ArrowUp,
+    'loader': Loader,
+    'arrow-up-circle': ArrowUpCircle,
+    'arrow-down': ArrowDown,
+    'move-down': MoveDown,
+    'heart': Heart,
+    'wind': Wind,
+    'minimize-2': Minimize2,
+    'circle': Circle,
+    'flame': Flame,
+    'repeat': Repeat,
+    'target': Target,
+    'arrow-up-down': ArrowUpDown,
+    'timer': Timer,
+  };
+  return iconMap[iconName] || Activity;
+};
 
 interface ToastProps {
   visible: boolean;
@@ -815,7 +861,46 @@ export default function StartWorkout() {
             </View>
           )}
 
-         
+          {/* Quick Start */}
+          {!isWorkoutActive && recentExercises.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Clock size={20} color="#10B981" />
+                <Text style={styles.sectionTitle}>Quick Start</Text>
+              </View>
+              
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {recentExercises.map((exercise) => {
+                  const ExerciseIcon = getIconComponent(exercise.icon);
+                  const category = CATEGORIES.find(cat => {
+                    const exercises = EXERCISE_DATABASE[cat.id];
+                    return exercises?.some(ex => ex.id === exercise.id);
+                  });
+                  const categoryColor = category?.color || '#10B981';
+                  
+                  return (
+                    <TouchableOpacity
+                      key={exercise.id}
+                      style={styles.quickStartCard}
+                      onPress={() => selectExercise(exercise)}
+                    >
+                      <View style={[
+                        styles.quickStartIconContainer,
+                        { backgroundColor: `${categoryColor}20` }
+                      ]}>
+                        <ExerciseIcon 
+                          size={28} 
+                          color={categoryColor}
+                          strokeWidth={2.5}
+                        />
+                      </View>
+                      <Text style={styles.quickStartName}>{exercise.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
 
           {/* Category Selection */}
           {!isWorkoutActive && (
@@ -885,7 +970,21 @@ export default function StartWorkout() {
               <View style={styles.selectedExerciseCard}>
                 <View style={styles.selectedExerciseHeader}>
                   <View style={styles.selectedExerciseInfo}>
-                    <Text style={styles.selectedExerciseIcon}>{selectedExercise.icon}</Text>
+                    <View style={[
+                      styles.selectedExerciseIconContainer,
+                      { backgroundColor: `${selectedCategory?.color}20` }
+                    ]}>
+                      {(() => {
+                        const ExerciseIcon = getIconComponent(selectedExercise.icon);
+                        return (
+                          <ExerciseIcon 
+                            size={28} 
+                            color={selectedCategory?.color || '#10B981'}
+                            strokeWidth={2.5}
+                          />
+                        );
+                      })()}
+                    </View>
                     <View>
                       <Text style={styles.selectedExerciseName}>{selectedExercise.name}</Text>
                       <Text style={styles.selectedExerciseCategory}>{selectedCategory?.name}</Text>
@@ -1041,30 +1140,58 @@ export default function StartWorkout() {
               </View>
             ) : (
               <View style={styles.historyList}>
-                {workoutHistory.map((entry) => (
-                  <View key={entry.id} style={styles.historyItem}>
-                    <View style={styles.historyItemLeft}>
-                      <Text style={styles.historyIcon}>💪</Text>
-                      <View style={styles.historyDetails}>
-                        <Text style={styles.historyWorkoutType}>{entry.workoutType}</Text>
-                        <Text style={styles.historyTime}>
-                          {entry.duration} min • {entry.intensity} • {entry.time}
-                        </Text>
-                        <View style={styles.historyStats}>
-                          <Flame size={14} color="#F59E0B" />
-                          <Text style={styles.historyCalories}>{entry.caloriesBurned} calories</Text>
+                {workoutHistory.map((entry) => {
+                  // Find the exercise to get its icon
+                  let exerciseIcon = 'dumbbell'; // default
+                  Object.values(EXERCISE_DATABASE).forEach(exercises => {
+                    const found = exercises.find(ex => ex.name === entry.workoutType);
+                    if (found) exerciseIcon = found.icon;
+                  });
+                  const HistoryIcon = getIconComponent(exerciseIcon);
+                  
+                  // Get category color
+                  let categoryColor = '#10B981';
+                  Object.entries(EXERCISE_DATABASE).forEach(([catId, exercises]) => {
+                    if (exercises.find(ex => ex.name === entry.workoutType)) {
+                      const cat = CATEGORIES.find(c => c.id === catId);
+                      if (cat) categoryColor = cat.color;
+                    }
+                  });
+                  
+                  return (
+                    <View key={entry.id} style={styles.historyItem}>
+                      <View style={styles.historyItemLeft}>
+                        <View style={[
+                          styles.historyIconContainer,
+                          { backgroundColor: `${categoryColor}20` }
+                        ]}>
+                          <HistoryIcon 
+                            size={20} 
+                            color={categoryColor}
+                            strokeWidth={2.5}
+                          />
+                        </View>
+                        <View style={styles.historyDetails}>
+                          <Text style={styles.historyWorkoutType}>{entry.workoutType}</Text>
+                          <Text style={styles.historyTime}>
+                            {entry.duration} min • {entry.intensity} • {entry.time}
+                          </Text>
+                          <View style={styles.historyStats}>
+                            <Flame size={14} color="#F59E0B" />
+                            <Text style={styles.historyCalories}>{entry.caloriesBurned} calories</Text>
+                          </View>
                         </View>
                       </View>
+                      
+                      <TouchableOpacity 
+                        style={styles.removeButton}
+                        onPress={() => removeWorkoutEntry(entry.id)}
+                      >
+                        <X size={20} color="#EF4444" />
+                      </TouchableOpacity>
                     </View>
-                    
-                    <TouchableOpacity 
-                      style={styles.removeButton}
-                      onPress={() => removeWorkoutEntry(entry.id)}
-                    >
-                      <X size={20} color="#EF4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             )}
           </View>
@@ -1101,28 +1228,51 @@ export default function StartWorkout() {
             </View>
 
             <ScrollView style={styles.exerciseList}>
-              {getFilteredExercises().map((exercise) => (
-                <TouchableOpacity
-                  key={exercise.id}
-                  style={styles.exerciseItem}
-                  onPress={() => selectExercise(exercise)}
-                >
-                  <View style={styles.exerciseItemLeft}>
-                    <Text style={styles.exerciseItemIcon}>{exercise.icon}</Text>
-                    <View>
-                      <Text style={styles.exerciseItemName}>{exercise.name}</Text>
-                      <Text style={styles.exerciseItemMet}>
-                        MET: {Object.values(exercise.mets)[0]}-{Object.values(exercise.mets)[Object.values(exercise.mets).length - 1]}
-                      </Text>
+              {getFilteredExercises().map((exercise) => {
+                const ExerciseIcon = getIconComponent(exercise.icon);
+                const categoryColor = selectedCategory?.color || '#10B981';
+                
+                return (
+                  <TouchableOpacity
+                    key={exercise.id}
+                    style={styles.exerciseItem}
+                    onPress={() => selectExercise(exercise)}
+                  >
+                    <View style={styles.exerciseItemLeft}>
+                      {/* Icon Container with Gradient */}
+                      <View style={[
+                        styles.exerciseIconContainer,
+                        { backgroundColor: `${categoryColor}20` }
+                      ]}>
+                        <ExerciseIcon 
+                          size={24} 
+                          color={categoryColor}
+                          strokeWidth={2.5}
+                        />
+                      </View>
+                      
+                      <View style={styles.exerciseItemDetails}>
+                        <Text style={styles.exerciseItemName}>{exercise.name}</Text>
+                        <View style={styles.exerciseMetInfo}>
+                          <View style={styles.metBadge}>
+                            <Zap size={12} color="#F59E0B" />
+                            <Text style={styles.exerciseItemMet}>
+                              {Object.values(exercise.mets)[0]}-{Object.values(exercise.mets)[Object.values(exercise.mets).length - 1]} MET
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                  {exercise.popular && (
-                    <View style={styles.popularBadge}>
-                      <Text style={styles.popularBadgeText}>Popular</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+                    
+                    {exercise.popular && (
+                      <View style={styles.popularBadge}>
+                        <TrendingUp size={10} color="#10B981" strokeWidth={3} />
+                        <Text style={styles.popularBadgeText}>Popular</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         </View>
@@ -1477,6 +1627,36 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  quickStartCard: {
+    minWidth: 140,
+    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  quickStartIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  quickStartIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  quickStartName: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#E2E8F0',
+  },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1569,6 +1749,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  selectedExerciseIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   selectedExerciseIcon: {
     fontSize: 40,
@@ -1789,6 +1978,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flex: 1,
   },
+  historyIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
   historyIcon: {
     fontSize: 28,
     marginRight: 12,
@@ -1891,11 +2090,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
   exerciseItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+  },
+  exerciseIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  exerciseItemDetails: {
     flex: 1,
   },
   exerciseItemIcon: {
@@ -1905,17 +2118,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#E2E8F0',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  exerciseMetInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   exerciseItemMet: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 11,
+    color: '#F59E0B',
+    fontWeight: '600',
   },
   popularBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
   popularBadgeText: {
     fontSize: 11,
