@@ -390,20 +390,27 @@ export default function StartWorkout() {
       const totalCals = todayEntries.reduce((sum: number, entry: APIWorkoutEntry) => sum + entry.caloriesBurned, 0);
       setTotalCalories(totalCals);
 
-      const localEntries: WorkoutEntry[] = todayEntries.map((entry: APIWorkoutEntry) => ({
-        id: entry._id,
-        workoutType: entry.workoutType,
-        category: 'General',
-        duration: entry.duration,
-        caloriesBurned: entry.caloriesBurned,
-        intensity: entry.intensity,
-        notes: entry.notes,
-        time: new Date(entry.createdAt).toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        }),
-      }));
+      const localEntries: WorkoutEntry[] = todayEntries.map((entry: APIWorkoutEntry) => {
+        // Extract exercise name from notes (format: "Exercise Name - user notes")
+        const notesArray = entry.notes.split(' - ');
+        const exerciseName = notesArray[0] || entry.workoutType;
+        const userNotes = notesArray.slice(1).join(' - ');
+
+        return {
+          id: entry._id,
+          workoutType: exerciseName, // Show specific exercise name in UI
+          category: entry.workoutType, // Backend workoutType is the category
+          duration: entry.duration,
+          caloriesBurned: entry.caloriesBurned,
+          intensity: entry.intensity,
+          notes: userNotes,
+          time: new Date(entry.createdAt).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          }),
+        };
+      });
 
       setWorkoutHistory(localEntries);
 
@@ -476,22 +483,37 @@ export default function StartWorkout() {
     const durationMinutes = Math.floor(elapsedTime / 60);
     const caloriesBurned = calculateCalories(durationMinutes);
 
-    const workoutData = {
-      workoutType: selectedExercise.name,
-      duration: durationMinutes,
-      caloriesBurned,
-      intensity: selectedIntensity,
-      notes: workoutNotes,
+    // Map frontend intensity to backend intensity (backend only accepts: low, medium, high)
+    const mapIntensityToBackend = (intensity: string): string => {
+      const intensityMap: Record<string, string> = {
+        'low': 'low',
+        'light': 'low',
+        'medium': 'medium',
+        'moderate': 'medium',
+        'high': 'high',
+        'heavy': 'high',
+      };
+      return intensityMap[intensity] || 'medium';
     };
 
-    // Create a new entry for immediate UI update
+    // Prepare data for backend (using category name instead of specific exercise)
+    const backendIntensity = mapIntensityToBackend(selectedIntensity);
+    const workoutData = {
+      workoutType: selectedCategory.name, // Send category name: 'Cardio', 'Strength', 'Yoga', 'HIIT'
+      duration: durationMinutes,
+      caloriesBurned,
+      intensity: backendIntensity, // 'low', 'medium', or 'high'
+      notes: `${selectedExercise.name}${workoutNotes ? ' - ' + workoutNotes : ''}`, // Store exercise name in notes
+    };
+
+    // Create a new entry for immediate UI update (with full details)
     const newEntry: WorkoutEntry = {
       id: Date.now().toString(), // Temporary ID
-      workoutType: selectedExercise.name,
+      workoutType: selectedExercise.name, // Keep detailed name for UI
       category: selectedCategory.name,
       duration: durationMinutes,
       caloriesBurned,
-      intensity: selectedIntensity,
+      intensity: selectedIntensity, // Keep original intensity for UI
       notes: workoutNotes,
       time: new Date().toLocaleTimeString('en-US', { 
         hour: 'numeric', 
@@ -530,17 +552,12 @@ export default function StartWorkout() {
             )
           );
         }
-        
-        // Optionally refresh from backend to ensure sync
-        // await fetchTodayWorkoutData();
       } else {
-        // No token, just keep the local entry
         console.log('No auth token, workout saved locally only');
       }
     } catch (error) {
       console.error('Error logging workout to API:', error);
       // The workout is already in the UI, so we just log the error
-      // Optionally show a message that it will sync later
     }
   };
 
@@ -606,22 +623,36 @@ export default function StartWorkout() {
     const durationMinutes = 30;
     const caloriesBurned = calculateCalories(durationMinutes);
 
+    // Map frontend intensity to backend intensity
+    const mapIntensityToBackend = (intensity: string): string => {
+      const intensityMap: Record<string, string> = {
+        'low': 'low',
+        'light': 'low',
+        'medium': 'medium',
+        'moderate': 'medium',
+        'high': 'high',
+        'heavy': 'high',
+      };
+      return intensityMap[intensity] || 'medium';
+    };
+
+    const backendIntensity = mapIntensityToBackend(selectedIntensity);
     const workoutData = {
-      workoutType: selectedExercise.name,
+      workoutType: selectedCategory?.name || 'Cardio', // Send category name
       duration: durationMinutes,
       caloriesBurned,
-      intensity: selectedIntensity,
-      notes: workoutNotes,
+      intensity: backendIntensity,
+      notes: `${selectedExercise.name}${workoutNotes ? ' - ' + workoutNotes : ''}`,
     };
 
     // Create a new entry for immediate UI update
     const newEntry: WorkoutEntry = {
       id: Date.now().toString(),
-      workoutType: selectedExercise.name,
+      workoutType: selectedExercise.name, // Keep detailed name for UI
       category: selectedCategory?.name || 'General',
       duration: durationMinutes,
       caloriesBurned,
-      intensity: selectedIntensity,
+      intensity: selectedIntensity, // Keep original intensity for UI
       notes: workoutNotes,
       time: new Date().toLocaleTimeString('en-US', { 
         hour: 'numeric', 
@@ -1551,7 +1582,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
-    fontVariantNumeric: 'tabular-nums',
+    // fontVariantNumeric is not supported in React Native - removed
   },
   timerLabel: {
     fontSize: 18,
