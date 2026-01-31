@@ -293,6 +293,16 @@ export default function StartWorkout() {
   const [toastMessage, setToastMessage] = useState<string>('');
   const [estimatedCalories, setEstimatedCalories] = useState<number>(0);
   const [isCalculatingEstimate, setIsCalculatingEstimate] = useState<boolean>(false);
+  const [weightLifted, setWeightLifted] = useState<string>(''); // For strength exercises
+  const [reps, setReps] = useState<string>(''); // For strength exercises
+  const [sets, setSets] = useState<string>(''); // For strength exercises
+  const [distance, setDistance] = useState<string>(''); // For cardio exercises
+  const [incline, setIncline] = useState<string>(''); // For treadmill
+  const [resistance, setResistance] = useState<string>(''); // For cycling, rowing
+  const [speed, setSpeed] = useState<string>(''); // For running, cycling
+  const [yesterdayCalories, setYesterdayCalories] = useState<number>(0);
+  const [weekCalories, setWeekCalories] = useState<number>(0);
+  const [monthCalories, setMonthCalories] = useState<number>(0);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -368,6 +378,161 @@ useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 }, [isWorkoutActive, isPaused]);
+
+// Helper function to get required inputs based on exercise
+const getExerciseInputs = (exerciseId: string, categoryId: string) => {
+  // Strength exercises need weight, reps, sets
+  if (categoryId === 'strength') {
+    return {
+      needsWeight: true,
+      needsReps: true,
+      needsSets: true,
+      needsDistance: false,
+      needsIncline: false,
+      needsResistance: false,
+      needsSpeed: false,
+    };
+  }
+  
+  // Cardio exercises
+  if (categoryId === 'cardio') {
+    switch (exerciseId) {
+      case 'running_outdoor':
+        return {
+          needsWeight: false,
+          needsReps: false,
+          needsSets: false,
+          needsDistance: true,
+          needsSpeed: true,
+          needsIncline: false,
+          needsResistance: false,
+        };
+      case 'treadmill':
+        return {
+          needsWeight: false,
+          needsReps: false,
+          needsSets: false,
+          needsDistance: true,
+          needsSpeed: true,
+          needsIncline: true,
+          needsResistance: false,
+        };
+      case 'cycling':
+        return {
+          needsWeight: false,
+          needsReps: false,
+          needsSets: false,
+          needsDistance: true,
+          needsSpeed: true,
+          needsIncline: false,
+          needsResistance: true,
+        };
+      case 'rowing':
+      case 'elliptical':
+        return {
+          needsWeight: false,
+          needsReps: false,
+          needsSets: false,
+          needsDistance: true,
+          needsSpeed: false,
+          needsIncline: false,
+          needsResistance: true,
+        };
+      default:
+        return {
+          needsWeight: false,
+          needsReps: false,
+          needsSets: false,
+          needsDistance: true,
+          needsSpeed: false,
+          needsIncline: false,
+          needsResistance: false,
+        };
+    }
+  }
+  
+  // HIIT exercises
+  if (categoryId === 'hiit') {
+    return {
+      needsWeight: false,
+      needsReps: true, // For burpees, etc.
+      needsSets: true,
+      needsDistance: false,
+      needsIncline: false,
+      needsResistance: false,
+      needsSpeed: false,
+    };
+  }
+  
+  // Yoga exercises (no additional inputs)
+  return {
+    needsWeight: false,
+    needsReps: false,
+    needsSets: false,
+    needsDistance: false,
+    needsIncline: false,
+    needsResistance: false,
+    needsSpeed: false,
+  };
+};
+
+// Calculate calories for different time periods
+const calculatePeriodCalories = (allWorkouts: APIWorkoutEntry[]) => {
+  const now = new Date();
+  
+  // Yesterday (full 24 hours)
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+  const yesterdayEnd = new Date(yesterday);
+  yesterdayEnd.setHours(23, 59, 59, 999);
+  
+  // Last 7 days (including today)
+  const weekAgo = new Date(now);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  weekAgo.setHours(0, 0, 0, 0);
+  
+  // Last 30 days (including today)
+  const monthAgo = new Date(now);
+  monthAgo.setDate(monthAgo.getDate() - 30);
+  monthAgo.setHours(0, 0, 0, 0);
+  
+  let yesterdayCals = 0;
+  let weekCals = 0;
+  let monthCals = 0;
+  
+  allWorkouts.forEach((workout) => {
+    const workoutDate = new Date(workout.createdAt);
+    
+    // Yesterday
+    if (workoutDate >= yesterday && workoutDate <= yesterdayEnd) {
+      yesterdayCals += workout.caloriesBurned;
+    }
+    
+    // Last 7 days
+    if (workoutDate >= weekAgo) {
+      weekCals += workout.caloriesBurned;
+    }
+    
+    // Last 30 days
+    if (workoutDate >= monthAgo) {
+      monthCals += workout.caloriesBurned;
+    }
+  });
+  
+  return { yesterdayCals, weekCals, monthCals };
+};
+
+// Clear exercise-specific inputs
+const clearExerciseInputs = () => {
+  setWeightLifted('');
+  setReps('');
+  setSets('');
+  setDistance('');
+  setIncline('');
+  setResistance('');
+  setSpeed('');
+};
 
   const loadStoredProfile = async () => {
     try {
@@ -477,8 +642,17 @@ const saveUserProfile = async () => {
         }
       });
 
+      const allWorkouts = response.data; // Store all workouts
+
+      // 🔥 CALCULATE PERIOD CALORIES
+      const { yesterdayCals, weekCals, monthCals } = calculatePeriodCalories(allWorkouts);
+      setYesterdayCalories(yesterdayCals);
+      setWeekCalories(weekCals);
+      setMonthCalories(monthCals);
+
+      // Filter for today's workouts (existing code)
       const today = new Date().toISOString().split('T')[0];
-      const todayEntries = response.data.filter((entry: APIWorkoutEntry) => {
+      const todayEntries = allWorkouts.filter((entry: APIWorkoutEntry) => {
         const entryDate = new Date(entry.createdAt).toISOString().split('T')[0];
         return entryDate === today;
       });
@@ -487,15 +661,14 @@ const saveUserProfile = async () => {
       setTotalCalories(totalCals);
 
       const localEntries: WorkoutEntry[] = todayEntries.map((entry: APIWorkoutEntry) => {
-        // Extract exercise name from notes (format: "Exercise Name - user notes")
         const notesArray = entry.notes.split(' - ');
         const exerciseName = notesArray[0] || entry.workoutType;
         const userNotes = notesArray.slice(1).join(' - ');
 
         return {
           id: entry._id,
-          workoutType: exerciseName, // Show specific exercise name in UI
-          category: entry.workoutType, // Backend workoutType is the category
+          workoutType: exerciseName,
+          category: entry.workoutType,
           duration: entry.duration,
           caloriesBurned: entry.caloriesBurned,
           intensity: entry.intensity,
@@ -518,6 +691,7 @@ const saveUserProfile = async () => {
   const selectExercise = (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowExerciseModal(false);
+    clearExerciseInputs(); 
     
     const updated = [exercise, ...recentExercises.filter(e => e.id !== exercise.id)].slice(0, 5);
     setRecentExercises(updated);
@@ -592,103 +766,131 @@ const saveUserProfile = async () => {
     setIsPaused(!isPaused);
   };
 
-  const stopWorkout = async () => {
-    if (!selectedExercise || !selectedCategory) {
-      Alert.alert('Error', 'Please ensure an exercise and category are selected.');
-      return;
-    }
+const stopWorkout = async () => {
+  if (!selectedExercise || !selectedCategory) {
+    Alert.alert('Error', 'Please ensure an exercise and category are selected.');
+    return;
+  }
 
-    if (elapsedTime < 60) {
-      Alert.alert('Too Short', 'Workout must be at least 1 minute to be logged');
-      return;
-    }
+  if (elapsedTime < 60) {
+    Alert.alert('Too Short', 'Workout must be at least 1 minute to be logged');
+    return;
+  }
 
   const durationMinutes = Math.floor(elapsedTime / 60);
   const caloriesBurned = await calculateCalories(durationMinutes);
-   
-  // Map frontend intensity to backend intensity (backend only accepts: low, medium, high)
-    const mapIntensityToBackend = (intensity: string): string => {
-      const intensityMap: Record<string, string> = {
-        'low': 'low',
-        'light': 'low',
-        'medium': 'medium',
-        'moderate': 'medium',
-        'high': 'high',
-        'heavy': 'high',
-      };
-      return intensityMap[intensity] || 'medium';
-    };
-
-    // Prepare data for backend (using category name instead of specific exercise)
-    const backendIntensity = mapIntensityToBackend(selectedIntensity);
-    const workoutData = {
-      workoutType: selectedCategory.name, // Send category name: 'Cardio', 'Strength', 'Yoga', 'HIIT'
-      duration: durationMinutes,
-      caloriesBurned,
-      intensity: backendIntensity, // 'low', 'medium', or 'high'
-      notes: `${selectedExercise.name}${workoutNotes ? ' - ' + workoutNotes : ''}`, // Store exercise name in notes
-    };
-
-    // Create a new entry for immediate UI update (with full details)
-    const newEntry: WorkoutEntry = {
-      id: Date.now().toString(), // Temporary ID
-      workoutType: selectedExercise.name, // Keep detailed name for UI
-      category: selectedCategory.name,
-      duration: durationMinutes,
-      caloriesBurned,
-      intensity: selectedIntensity, // Keep original intensity for UI
-      notes: workoutNotes,
-      time: new Date().toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-      }),
-    };
-
-    // Update UI immediately
-    setWorkoutHistory(prev => [newEntry, ...prev]);
-    setTotalCalories(prev => prev + caloriesBurned);
-    resetWorkout();
-    showToastMessage(`Workout logged! 💪 Burned ${caloriesBurned} calories`);
-
-    try {
-      const token = await getAuthToken();
-      if (token) {
-        const response = await axios.post(
-          `${API_BASE_URL}/workouts`,
-          workoutData,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          }
-        );
-        
-        // Update the entry with the real ID from the backend
-        if (response.data && response.data._id) {
-          setWorkoutHistory(prev => 
-            prev.map(entry => 
-              entry.id === newEntry.id 
-                ? { ...entry, id: response.data._id }
-                : entry
-            )
-          );
-        }
-      } else {
-        console.log('No auth token, workout saved locally only');
-      }
-    } catch (error) {
-      console.error('Error logging workout to API:', error);
-      // The workout is already in the UI, so we just log the error
+  
+  // 🔥 BUILD DETAILED NOTES
+  let detailedNotes = selectedExercise.name;
+  
+  // Add exercise-specific details
+  if (selectedCategory.id === 'strength') {
+    const details = [];
+    if (weightLifted) details.push(`${weightLifted}kg`);
+    if (sets) details.push(`${sets} sets`);
+    if (reps) details.push(`${reps} reps`);
+    if (details.length > 0) {
+      detailedNotes += ` (${details.join(', ')})`;
     }
+  } else if (selectedCategory.id === 'cardio') {
+    const details = [];
+    if (distance) details.push(`${distance}km`);
+    if (speed) details.push(`${speed}km/h`);
+    if (incline) details.push(`${incline}% incline`);
+    if (resistance) details.push(`resistance ${resistance}`);
+    if (details.length > 0) {
+      detailedNotes += ` (${details.join(', ')})`;
+    }
+  } else if (selectedCategory.id === 'hiit') {
+    const details = [];
+    if (sets) details.push(`${sets} rounds`);
+    if (reps) details.push(`${reps} reps`);
+    if (details.length > 0) {
+      detailedNotes += ` (${details.join(', ')})`;
+    }
+  }
+  
+  // Add user notes if any
+  if (workoutNotes) {
+    detailedNotes += ` - ${workoutNotes}`;
+  }
+
+  const mapIntensityToBackend = (intensity: string): string => {
+    const intensityMap: Record<string, string> = {
+      'low': 'low',
+      'light': 'low',
+      'medium': 'medium',
+      'moderate': 'medium',
+      'high': 'high',
+      'heavy': 'high',
+    };
+    return intensityMap[intensity] || 'medium';
   };
+
+  const backendIntensity = mapIntensityToBackend(selectedIntensity);
+  const workoutData = {
+    workoutType: selectedCategory.name,
+    duration: durationMinutes,
+    caloriesBurned,
+    intensity: backendIntensity,
+    notes: detailedNotes, // 🔥 SEND DETAILED NOTES
+  };
+
+  const newEntry: WorkoutEntry = {
+    id: Date.now().toString(),
+    workoutType: selectedExercise.name,
+    category: selectedCategory.name,
+    duration: durationMinutes,
+    caloriesBurned,
+    intensity: selectedIntensity,
+    notes: detailedNotes.replace(`${selectedExercise.name} - `, ''), // Remove duplicate exercise name
+    time: new Date().toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    }),
+  };
+
+  setWorkoutHistory(prev => [newEntry, ...prev]);
+  setTotalCalories(prev => prev + caloriesBurned);
+  resetWorkout();
+  showToastMessage(`Workout logged! 💪 Burned ${caloriesBurned} calories`);
+
+  try {
+    const token = await getAuthToken();
+    if (token) {
+      const response = await axios.post(
+        `${API_BASE_URL}/workouts`,
+        workoutData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.data && response.data._id) {
+        setWorkoutHistory(prev => 
+          prev.map(entry => 
+            entry.id === newEntry.id 
+              ? { ...entry, id: response.data._id }
+              : entry
+          )
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Error logging workout to API:', error);
+  }
+};
 
   const resetWorkout = () => {
     setIsWorkoutActive(false);
     setIsPaused(false);
     setElapsedTime(0);
     setWorkoutNotes('');
+    clearExerciseInputs();
   };
 
   const formatTime = (seconds: number): string => {
@@ -729,6 +931,10 @@ const saveUserProfile = async () => {
 
       setWorkoutHistory(prev => prev.filter(e => e.id !== id));
       setTotalCalories(prev => Math.max(0, prev - entry.caloriesBurned));
+      
+      // 🔥 ADD THIS: Refresh stats after deletion
+      fetchTodayWorkoutData();
+      
       showToastMessage('Workout removed from log');
     } catch (error: any) {
       console.error('Error deleting workout:', error);
@@ -1196,6 +1402,121 @@ const saveUserProfile = async () => {
                   </View>
                 </View>
 
+{selectedExercise && selectedCategory && (() => {
+  const inputs = getExerciseInputs(selectedExercise.id, selectedCategory.id);
+  
+  return (
+    <View style={styles.exerciseInputsSection}>
+      <Text style={styles.exerciseInputsTitle}>Exercise Details</Text>
+      
+      {/* Weight Lifted (for strength training) */}
+      {inputs.needsWeight && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Weight Lifted (kg)</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 50"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={weightLifted}
+            onChangeText={setWeightLifted}
+          />
+        </View>
+      )}
+      
+      {/* Reps */}
+      {inputs.needsReps && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Reps</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 12"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={reps}
+            onChangeText={setReps}
+          />
+        </View>
+      )}
+      
+      {/* Sets */}
+      {inputs.needsSets && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Sets</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 3"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={sets}
+            onChangeText={setSets}
+          />
+        </View>
+      )}
+      
+      {/* Distance (for cardio) */}
+      {inputs.needsDistance && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Distance (km)</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 5"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={distance}
+            onChangeText={setDistance}
+          />
+        </View>
+      )}
+      
+      {/* Speed */}
+      {inputs.needsSpeed && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Speed (km/h)</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 10"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={speed}
+            onChangeText={setSpeed}
+          />
+        </View>
+      )}
+      
+      {/* Incline (for treadmill) */}
+      {inputs.needsIncline && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Incline (%)</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 5"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={incline}
+            onChangeText={setIncline}
+          />
+        </View>
+      )}
+      
+      {/* Resistance */}
+      {inputs.needsResistance && (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Resistance Level (1-10)</Text>
+          <TextInput
+            style={styles.exerciseInput}
+            placeholder="e.g., 7"
+            placeholderTextColor="#64748B"
+            keyboardType="numeric"
+            value={resistance}
+            onChangeText={setResistance}
+          />
+        </View>
+      )}
+    </View>
+  );
+})()}
+
                 <View style={styles.calorieEstimate}>
                   <Flame size={24} color="#F59E0B" />
                   <View>
@@ -1351,6 +1672,46 @@ const saveUserProfile = async () => {
               </View>
             )}
           </View>
+
+          {/* Calorie Statistics */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Flame size={20} color="#F59E0B" />
+              <Text style={styles.sectionTitle}>Calorie Statistics</Text>
+            </View>
+            
+            <View style={styles.statsGrid}>
+              {/* Yesterday */}
+              <View style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <Clock size={18} color="#8B5CF6" />
+                  <Text style={styles.statLabel}>Yesterday</Text>
+                </View>
+                <Text style={styles.statValue}>{yesterdayCalories}</Text>
+                <Text style={styles.statUnit}>calories</Text>
+              </View>
+              
+              {/* Last 7 Days */}
+              <View style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <TrendingUp size={18} color="#10B981" />
+                  <Text style={styles.statLabel}>Last Week</Text>
+                </View>
+                <Text style={styles.statValue}>{weekCalories}</Text>
+                <Text style={styles.statUnit}>calories</Text>
+              </View>
+              
+              {/* Last 30 Days */}
+              <View style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <Activity size={18} color="#EF4444" />
+                  <Text style={styles.statLabel}>Last Month</Text>
+                </View>
+                <Text style={styles.statValue}>{monthCalories}</Text>
+                <Text style={styles.statUnit}>calories</Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -1448,6 +1809,40 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     zIndex: 1000,
+  },
+  exerciseInputsSection: {
+    marginTop: 20,
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  exerciseInputsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E5E7EB',
+    marginBottom: 8,
+  },
+  exerciseInput: {
+    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   toastContent: {
     backgroundColor: '#065F46',
@@ -1645,6 +2040,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 16,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  statCard: {
+    flex: 1,
+    minWidth: 100,
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+    alignItems: 'center',
+  },
+  statHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  statValue: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  statUnit: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 20,
