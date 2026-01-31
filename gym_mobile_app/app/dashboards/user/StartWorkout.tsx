@@ -39,6 +39,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Animated } from 'react-native';
+import { calculateCaloriesBurned } from '@/services/calorieCalculator';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const { width } = Dimensions.get('window');
@@ -270,6 +271,7 @@ const Toast: React.FC<ToastProps> = ({ visible, message, onHide }) => {
 
 export default function StartWorkout() {
   const router = useRouter();
+  const [liveCalories, setLiveCalories] = useState<number>(0);
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [weightInput, setWeightInput] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
@@ -289,7 +291,13 @@ export default function StartWorkout() {
   const [workoutNotes, setWorkoutNotes] = useState<string>('');
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string>('');
+  const [estimatedCalories, setEstimatedCalories] = useState<number>(0);
+  const [isCalculatingEstimate, setIsCalculatingEstimate] = useState<boolean>(false);
+
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+
+
 
   useEffect(() => {
     loadStoredProfile();
@@ -298,40 +306,103 @@ export default function StartWorkout() {
     };
   }, []);
 
-  useEffect(() => {
-    if (isWorkoutActive && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+useEffect(() => {
+    if (isWorkoutActive && !isPaused && selectedExercise && userWeight && userGender) {
+      const updateCalories = async () => {
+        const mins = Math.floor(elapsedTime / 60);
+        if (mins > 0) {
+          try {
+            const result = await calculateCaloriesBurned(
+              {
+                exerciseName: selectedExercise.name,
+                weightKg: userWeight,
+                durationMinutes: mins,
+                gender: userGender
+              },
+              selectedIntensity as 'low' | 'medium' | 'high'
+            );
+            setLiveCalories(result.calories);
+          } catch (error) {
+            console.error('Error updating live calories:', error);
+          }
+        } else {
+          setLiveCalories(0);
+        }
+      };
+      
+      // Update immediately on first second, then every 10 seconds
+      if (elapsedTime === 1 || elapsedTime % 10 === 0) {
+        updateCalories();
       }
     }
-    
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isWorkoutActive, isPaused]);
+  }, [elapsedTime, isWorkoutActive, isPaused, selectedExercise, userWeight, userGender, selectedIntensity]);
+
+  useEffect(() => {
+  // Calculate estimate when exercise or intensity changes
+  const updateEstimate = async () => {
+    if (selectedExercise && userWeight && userGender && !isWorkoutActive) {
+      setIsCalculatingEstimate(true);
+      const calories = await calculateCalories(30);
+      setEstimatedCalories(calories);
+      setIsCalculatingEstimate(false);
+      console.log('✅ Estimated calories updated:', calories);
+    }
+  };
+  
+  updateEstimate();
+}, [selectedExercise, selectedIntensity, userWeight, userGender]);
+
+useEffect(() => {
+  if (isWorkoutActive && !isPaused) {
+    intervalRef.current = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+  } else {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }
+  
+  return () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+}, [isWorkoutActive, isPaused]);
 
   const loadStoredProfile = async () => {
     try {
       const storedWeight = await AsyncStorage.getItem('userWeight');
       const storedGender = await AsyncStorage.getItem('userGender');
       
+      // 🔥 ADD LOGGING:
+      console.log('📊 Loading profile from storage:', {
+        storedWeight,
+        storedGender
+      });
+      
       if (storedWeight && storedGender) {
-        setUserWeight(parseFloat(storedWeight));
+        const weightValue = parseFloat(storedWeight);
+        setUserWeight(weightValue);
         setUserGender(storedGender as 'male' | 'female');
         setShowProfileSetup(false);
+        
+        // 🔥 ADD VERIFICATION LOG:
+        console.log('✅ Profile loaded successfully:', {
+          weightKg: weightValue,
+          weightLbs: Math.round(weightValue * 2.20462),
+          gender: storedGender
+        });
+        
         fetchTodayWorkoutData();
+      } else {
+        console.log('⚠️ No stored profile found, showing setup');
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('❌ Error loading profile:', error);
     }
   };
 
-  const saveUserProfile = async () => {
+const saveUserProfile = async () => {
     const weight = parseFloat(weightInput);
     if (!weight || weight <= 0) {
       Alert.alert('Invalid Weight', 'Please enter a valid weight');
@@ -345,8 +416,33 @@ export default function StartWorkout() {
     const weightInKg = weightUnit === 'lbs' ? weight * 0.453592 : weight;
     
     try {
+      // Save locally first
       await AsyncStorage.setItem('userWeight', weightInKg.toString());
       await AsyncStorage.setItem('userGender', userGender);
+      
+      // ✅ NEW: Try to sync to backend
+      const token = await getAuthToken();
+      if (token) {
+        try {
+          await axios.put(
+            `${API_BASE_URL}/profile`,
+            {
+              weight: weightInKg,
+              gender: userGender
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
+          console.log('✅ Profile synced to backend');
+        } catch (apiError) {
+          console.warn('⚠️ Failed to sync to backend, continuing with local save:', apiError);
+          // Don't block user if backend sync fails
+        }
+      }
       
       setUserWeight(weightInKg);
       setShowProfileSetup(false);
@@ -441,19 +537,46 @@ export default function StartWorkout() {
     return exercises;
   };
 
-  const calculateCalories = (durationMinutes: number): number => {
-    if (!selectedExercise || !userWeight) return 0; 
-    
-    let metValue = 0;
-    if (isValidIntensity(selectedIntensity)) {
-      metValue = selectedExercise.mets[selectedIntensity] || 0;
-    } else {
-      metValue = Object.values(selectedExercise.mets)[0] || 0;
+  const calculateCalories = async (durationMinutes: number): Promise<number> => {
+    if (!selectedExercise || !userWeight || !userGender) {
+      console.warn('⚠️ Missing data for calculation:', {
+        hasExercise: !!selectedExercise,
+        hasWeight: !!userWeight,
+        hasGender: !!userGender
+      });
+      return 0;
     }
     
-    const genderMultiplier = userGender === 'male' ? 1.0 : 0.9;
-    return Math.round((metValue * 3.5 * userWeight / 200) * durationMinutes * genderMultiplier);
+    try {
+      // 🔥 ADD LOGGING BEFORE API CALL:
+      console.log('📊 Calculating calories with:', {
+        exercise: selectedExercise.name,
+        weightKg: userWeight,
+        weightLbs: Math.round(userWeight * 2.20462),
+        duration: durationMinutes,
+        gender: userGender,
+        intensity: selectedIntensity
+      });
+      
+      const result = await calculateCaloriesBurned(
+        {
+          exerciseName: selectedExercise.name,
+          weightKg: userWeight,
+          durationMinutes: durationMinutes,
+          gender: userGender
+        },
+        selectedIntensity as 'low' | 'medium' | 'high'
+      );
+      
+      // 🔥 ADD LOGGING AFTER API CALL:
+      console.log('✅ Calorie calculation result:', result);
+      return result.calories;
+    } catch (error) {
+      console.error('❌ Error calculating calories:', error);
+      return 0;
+    }
   };
+
 
   const startWorkout = () => {
     if (!selectedExercise) {
@@ -480,10 +603,10 @@ export default function StartWorkout() {
       return;
     }
 
-    const durationMinutes = Math.floor(elapsedTime / 60);
-    const caloriesBurned = calculateCalories(durationMinutes);
-
-    // Map frontend intensity to backend intensity (backend only accepts: low, medium, high)
+  const durationMinutes = Math.floor(elapsedTime / 60);
+  const caloriesBurned = await calculateCalories(durationMinutes);
+   
+  // Map frontend intensity to backend intensity (backend only accepts: low, medium, high)
     const mapIntensityToBackend = (intensity: string): string => {
       const intensityMap: Record<string, string> = {
         'low': 'low',
@@ -621,7 +744,7 @@ export default function StartWorkout() {
 
     // Default to 30 minutes
     const durationMinutes = 30;
-    const caloriesBurned = calculateCalories(durationMinutes);
+    const caloriesBurned = await calculateCalories(durationMinutes);
 
     // Map frontend intensity to backend intensity
     const mapIntensityToBackend = (intensity: string): string => {
@@ -872,21 +995,21 @@ export default function StartWorkout() {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.liveStats}>
-                    <View style={styles.liveStatItem}>
+                <View style={styles.liveStats}>
+                  <View style={styles.liveStatItem}>
                       <Flame size={20} color="#F59E0B" />
                       <Text style={styles.liveStatValue}>
-                        {calculateCalories(Math.floor(elapsedTime / 60))} cal
+                        ~{Math.round(estimatedCalories * (elapsedTime / 1800))} cal
                       </Text>
                     </View>
-                    <View style={styles.liveStatDivider} />
-                    <View style={styles.liveStatItem}>
-                      <Activity size={20} color="#10B981" />
-                      <Text style={styles.liveStatValue}>
-                        {Math.floor(elapsedTime / 60)} min
-                      </Text>
-                    </View>
+                  <View style={styles.liveStatDivider} />
+                  <View style={styles.liveStatItem}>
+                    <Activity size={20} color="#10B981" />
+                    <Text style={styles.liveStatValue}>
+                      {Math.floor(elapsedTime / 60)} min
+                    </Text>
                   </View>
+                </View>
                 </View>
               </View>
             </View>
@@ -1077,7 +1200,9 @@ export default function StartWorkout() {
                   <Flame size={24} color="#F59E0B" />
                   <View>
                     <Text style={styles.calorieEstimateLabel}>Estimated (30 min)</Text>
-                    <Text style={styles.calorieEstimateValue}>~{calculateCalories(30)} calories</Text>
+                    <Text style={styles.calorieEstimateValue}>
+                      {isCalculatingEstimate ? 'Calculating...' : `~${estimatedCalories} calories`}
+                    </Text>
                   </View>
                 </View>
 
