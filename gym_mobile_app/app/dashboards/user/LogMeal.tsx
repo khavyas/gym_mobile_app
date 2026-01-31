@@ -17,6 +17,7 @@ import {
   needsCompression 
 } from '../../utils/imageCompressionUtils';
 import { Animated } from 'react-native';
+import { normalizeFoodQuery, adjustNutritionForQuantity } from '../../utils/foodQueryNormalizer';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const CALORIE_NINJA_API_KEY = '40zvAZsDb7q/yMbKodGj1A==6ddAOLV8qB4sxUUg';
@@ -604,8 +605,16 @@ const scanMealFromImage = async () => {
 
     setIsSearching(true);
     try {
+      // Normalize the query to handle different quantity formats
+      const normalized = normalizeFoodQuery(query);
+      
+      console.log('🔍 Original Query:', query);
+      console.log('✅ Normalized Query:', normalized.query);
+      console.log('📊 Detected Quantity:', normalized.originalQuantity, normalized.unit);
+      console.log('🍽️ Food Name:', normalized.foodName);
+
       const response = await axios.get(
-        `${CALORIE_NINJA_BASE_URL}/nutrition?query=${encodeURIComponent(query)}`,
+        `${CALORIE_NINJA_BASE_URL}/nutrition?query=${encodeURIComponent(normalized.query)}`,
         {
           headers: {
             'X-Api-Key': CALORIE_NINJA_API_KEY,
@@ -614,10 +623,20 @@ const scanMealFromImage = async () => {
       );
 
       if (response.data.items && response.data.items.length > 0) {
-        const items: NutritionItem[] = response.data.items;
+        let items: NutritionItem[] = response.data.items;
+        
+        // Adjust nutrition values based on the specified quantity
+        items = items.map(item => 
+          adjustNutritionForQuantity(item, normalized.originalQuantity, normalized.unit)
+        );
+        
         setSearchResults(items);
         setSelectedItems(items);
-        Alert.alert('Success', `Found ${items.length} item(s). Review the details below.`);
+        
+        Alert.alert(
+          'Success', 
+          `Found ${items.length} item(s) for "${normalized.foodName}" (${normalized.originalQuantity}${normalized.unit}). Review the details below.`
+        );
       } else {
         Alert.alert('Not Found', 'No nutrition information found for this food item. Try a different query.');
         setSearchResults([]);
