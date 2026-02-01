@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput, StyleSheet, Alert, Image, Modal, FlatList } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput, StyleSheet, Alert, Image, Modal, FlatList, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as ImagePicker from 'expo-image-picker';
@@ -32,6 +32,17 @@ interface CustomDropdownProps {
   selectedValue: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
+}
+
+// ── Wellness types ──
+interface WellnessQuestionItem {
+  questionId: number;
+  question: string;
+  type: 'scale' | 'multiple-choice' | 'text';
+  options?: string[];
+  multiSelect?: boolean;
+  placeholder?: string;
+  order: number;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({ 
@@ -306,6 +317,12 @@ export default function ProfileSettings() {
   const [bmiCategory, setBmiCategory] = useState('');
   const [bmiColor, setBmiColor] = useState('#94A3B8');
 
+  // ── Wellness state ──
+  const [wellnessQuestions, setWellnessQuestions] = useState<WellnessQuestionItem[]>([]);
+  const [wellnessAnswers, setWellnessAnswers] = useState<Record<number, string | string[]>>({});
+  const [showWellnessModal, setShowWellnessModal] = useState(false);
+  const [wellnessLoading, setWellnessLoading] = useState(false);
+
   const [userInfo, setUserInfo] = useState<UserInfo>({
     name: "",
     email: "",
@@ -365,6 +382,35 @@ export default function ProfileSettings() {
       loadUserData();
     }, [])
   );
+
+  // ── Fetch wellness questions + this user's saved responses ──
+  const fetchWellnessData = async (storedUserId: string, storedToken: string) => {
+    try {
+      setWellnessLoading(true);
+
+      // 1) all questions
+      const qRes = await fetch(`${API_BASE_URL}/wellness/questions`, {
+        headers: { Authorization: `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
+      });
+      const qData = await qRes.json();
+      if (qRes.ok && qData.success) {
+        setWellnessQuestions(qData.questions);
+      }
+
+      // 2) this user's answers  { questionId: answer, ... }
+      const aRes = await fetch(`${API_BASE_URL}/wellness/responses/${storedUserId}`, {
+        headers: { Authorization: `Bearer ${storedToken}`, 'Content-Type': 'application/json' },
+      });
+      const aData = await aRes.json();
+      if (aRes.ok && aData.success) {
+        setWellnessAnswers(aData.answers);
+      }
+    } catch (err) {
+      console.error('fetchWellnessData error:', err);
+    } finally {
+      setWellnessLoading(false);
+    }
+  };
 
   // BMI Calculation Function
   const calculateBMI = () => {
@@ -426,6 +472,7 @@ export default function ProfileSettings() {
         setUserId(storedUserId);
         setToken(storedToken);
         await fetchProfile(storedUserId, storedToken);
+        await fetchWellnessData(storedUserId, storedToken); // ← fetch wellness alongside profile
       } else {
         Alert.alert('Error', 'User not logged in. Please log in again.');
         setLoading(false);
@@ -742,6 +789,50 @@ export default function ProfileSettings() {
     }
   };
 
+  // ── Derived: how many questions have been answered ──
+  const answeredCount = wellnessQuestions.filter((q) => {
+    const a = wellnessAnswers[q.questionId];
+    return a != null && (Array.isArray(a) ? a.length > 0 : a !== '');
+  }).length;
+  const totalCount = wellnessQuestions.length;
+
+  // ── Render one Q&A row inside the modal ──
+  const renderWellnessItem = ({ item }: { item: WellnessQuestionItem }) => {
+    const answer = wellnessAnswers[item.questionId];
+    const hasAnswer = answer != null && (Array.isArray(answer) ? answer.length > 0 : answer !== '');
+
+    return (
+      <View style={styles.wellnessModalItem}>
+        {/* badge */}
+        <View style={styles.wellnessModalBadge}>
+          <Text style={styles.wellnessModalBadgeText}>Q{item.questionId}</Text>
+        </View>
+
+        {/* question */}
+        <Text style={styles.wellnessModalQuestion}>{item.question}</Text>
+
+        {/* answer */}
+        <View style={[styles.wellnessModalAnswerBox, !hasAnswer && styles.wellnessModalAnswerBoxEmpty]}>
+          {hasAnswer ? (
+            Array.isArray(answer) ? (
+              <View style={styles.wellnessModalTagsRow}>
+                {(answer as string[]).map((tag, i) => (
+                  <View key={i} style={styles.wellnessModalTag}>
+                    <Text style={styles.wellnessModalTagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.wellnessModalAnswerText}>{answer}</Text>
+            )
+          ) : (
+            <Text style={styles.wellnessModalEmptyAnswerText}>Not answered</Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -760,6 +851,62 @@ export default function ProfileSettings() {
         type={toastType}
         onHide={() => setShowToast(false)} 
       />
+
+      {/* ─────────────── Wellness Responses Modal ─────────────── */}
+      <Modal
+        visible={showWellnessModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowWellnessModal(false)}
+      >
+        <View style={styles.wellnessModalOverlay}>
+          <View style={styles.wellnessModalContainer}>
+            {/* header */}
+            <View style={styles.wellnessModalHeader}>
+              <View>
+                <Text style={styles.wellnessModalTitle}>💭 Wellness Responses</Text>
+                <Text style={styles.wellnessModalSubtitle}>
+                  {answeredCount} of {totalCount} answered
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.wellnessModalCloseBtn}
+                onPress={() => setShowWellnessModal(false)}
+              >
+                <Text style={styles.wellnessModalCloseBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* thin progress bar */}
+            <View style={styles.wellnessModalProgressBg}>
+              <View
+                style={[
+                  styles.wellnessModalProgressFill,
+                  { width: `${totalCount > 0 ? (answeredCount / totalCount) * 100 : 0}%` },
+                ]}
+              />
+            </View>
+
+            {/* question list */}
+            {wellnessLoading ? (
+              <View style={styles.wellnessModalCenterBox}>
+                <ActivityIndicator size="large" color="#10B981" />
+                <Text style={styles.wellnessModalLoadingText}>Loading responses…</Text>
+              </View>
+            ) : totalCount === 0 ? (
+              <Text style={styles.wellnessModalEmptyText}>No questions available.</Text>
+            ) : (
+              <FlatList
+                data={wellnessQuestions}
+                keyExtractor={(item) => item.questionId.toString()}
+                renderItem={renderWellnessItem}
+                contentContainerStyle={styles.wellnessModalList}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+      {/* ─────────────── end modal ─────────────── */}
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile Settings</Text>
@@ -1156,6 +1303,33 @@ export default function ProfileSettings() {
               )}
             </View>
 
+            {/* ─── Wellness Responses Card (right after BMI card) ─── */}
+            <View style={styles.wellnessCard}>
+              <View style={styles.wellnessCardHeader}>
+                <View style={styles.wellnessCardIconWrap}>
+                  <Text style={styles.wellnessCardIcon}>💭</Text>
+                </View>
+                <View style={styles.wellnessCardTextWrap}>
+                  <Text style={styles.wellnessCardTitle}>Wellness Responses</Text>
+                  <Text style={styles.wellnessCardSubtitle}>
+                    {totalCount > 0
+                      ? `${answeredCount} of ${totalCount} questions answered`
+                      : 'No questions available'}
+                  </Text>
+                </View>
+              </View>
+
+             
+              <TouchableOpacity
+                style={styles.wellnessCardButton}
+                onPress={() => setShowWellnessModal(true)}
+              >
+                <Text style={styles.wellnessCardButtonText}>View My Responses</Text>
+                <Text style={styles.wellnessCardButtonArrow}>→</Text>
+              </TouchableOpacity>
+            </View>
+            {/* ─── end wellness card ─── */}
+
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Age</Text>
               <TextInput
@@ -1353,7 +1527,7 @@ export default function ProfileSettings() {
 }
 
 const styles = StyleSheet.create({
-  // Custom Dropdown Styles
+  // ── Custom Dropdown ──
   dropdownButton: {
     backgroundColor: '#374151',
     borderWidth: 1,
@@ -1426,6 +1600,8 @@ const styles = StyleSheet.create({
     color: '#4F46E5',
     fontWeight: 'bold',
   },
+
+  // ── Toast ──
   toastContainer: {
     position: 'absolute',
     top: 60,
@@ -1466,41 +1642,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  secureTitle: {
-    color: '#FCA5A5',
-    fontWeight: '700',
-  },
-  securityNotice: {
-    backgroundColor: '#1F2937',
-    borderLeftWidth: 4,
-    borderLeftColor: '#EF4444',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  securityNoticeText: {
-    color: '#E5E7EB',
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
-  },
-  disabledInput: {
-    backgroundColor: '#1F2937',
-    color: '#6B7280',
-    opacity: 0.7,
-  },
+
+  // ── Layout ──
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
   },
   loadingContainer: {
     flex: 1,
@@ -1513,9 +1659,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 12,
   },
-  saveButtonDisabled: {
-    backgroundColor: '#374151',
-    opacity: 0.6,
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
   },
   headerTitle: {
     fontSize: 32,
@@ -1530,6 +1676,8 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+
+  // ── Sections ──
   section: {
     backgroundColor: '#1E293B',
     marginTop: 24,
@@ -1559,6 +1707,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  secureTitle: {
+    color: '#FCA5A5',
+    fontWeight: '700',
+  },
+  securityNotice: {
+    backgroundColor: '#1F2937',
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  securityNoticeText: {
+    color: '#E5E7EB',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+
+  // ── Profile image ──
   profileImageSection: {
     alignItems: 'center',
     marginBottom: 24,
@@ -1593,31 +1766,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
   },
-  daysContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  dayButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#374151',
-    borderWidth: 1,
-    borderColor: '#4B5563',
-  },
-  dayButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
-  },
-  dayButtonText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  dayButtonTextSelected: {
-    color: '#FFFFFF',
+
+  // ── Inputs ──
+  disabledInput: {
+    backgroundColor: '#1F2937',
+    color: '#6B7280',
+    opacity: 0.7,
   },
   inputGroup: {
     marginBottom: 16,
@@ -1650,6 +1804,36 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
   },
+
+  // ── Day buttons ──
+  daysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  dayButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#374151',
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  dayButtonSelected: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  dayButtonText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dayButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+
+  // ── Switches ──
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1676,6 +1860,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#374151',
   },
+
+  // ── Menu items ──
   menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1699,6 +1885,8 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
   },
+
+  // ── Save button ──
   saveButton: {
     backgroundColor: '#4F46E5',
     marginHorizontal: 16,
@@ -1711,13 +1899,18 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  saveButtonDisabled: {
+    backgroundColor: '#374151',
+    opacity: 0.6,
+  },
   saveButtonText: {
     color: 'white',
     textAlign: 'center',
     fontWeight: 'bold',
     fontSize: 18,
   },
-  // BMI Calculator Styles
+
+  // ── BMI Calculator ──
   bmiCalculatorCard: {
     backgroundColor: '#1F2937',
     borderRadius: 16,
@@ -1916,6 +2109,229 @@ const styles = StyleSheet.create({
   bmiCategoryValue: {
     fontSize: 13,
     color: '#9CA3AF',
+    fontWeight: '600',
+  },
+
+  // ── Wellness trigger card ──
+  wellnessCard: {
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    padding: 20,
+    marginVertical: 16,
+    borderWidth: 2,
+    borderColor: '#374151',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  wellnessCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  wellnessCardIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#10B98120',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  wellnessCardIcon: {
+    fontSize: 24,
+  },
+  wellnessCardTextWrap: {
+    flex: 1,
+  },
+  wellnessCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  wellnessCardSubtitle: {
+    fontSize: 13,
+    color: '#94A3B8',
+  },
+  wellnessCardProgressBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#374151',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  wellnessCardProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  wellnessCardButton: {
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  wellnessCardButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  wellnessCardButtonArrow: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
+  // ── Wellness modal (bottom sheet) ──
+  wellnessModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'flex-end',
+  },
+  wellnessModalContainer: {
+    backgroundColor: '#1E293B',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '85%',
+    borderTopWidth: 1,
+    borderTopColor: '#374151',
+  },
+  wellnessModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  wellnessModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  wellnessModalSubtitle: {
+    fontSize: 14,
+    color: '#94A3B8',
+  },
+  wellnessModalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#374151',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wellnessModalCloseBtnText: {
+    fontSize: 18,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
+  wellnessModalProgressBg: {
+    height: 4,
+    backgroundColor: '#374151',
+  },
+  wellnessModalProgressFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+  },
+  wellnessModalList: {
+    padding: 16,
+  },
+  wellnessModalCenterBox: {
+    alignItems: 'center',
+    padding: 48,
+  },
+  wellnessModalLoadingText: {
+    color: '#94A3B8',
+    fontSize: 15,
+    marginTop: 12,
+  },
+  wellnessModalEmptyText: {
+    color: '#6B7280',
+    fontSize: 15,
+    textAlign: 'center',
+    padding: 40,
+  },
+
+  // ── Each Q&A item ──
+  wellnessModalItem: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  wellnessModalBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#4F46E520',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  wellnessModalBadgeText: {
+    color: '#4F46E5',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  wellnessModalQuestion: {
+    color: '#F9FAFB',
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 22,
+    marginBottom: 10,
+  },
+  wellnessModalAnswerBox: {
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#10B98130',
+  },
+  wellnessModalAnswerBoxEmpty: {
+    borderColor: '#334155',
+  },
+  wellnessModalAnswerText: {
+    color: '#10B981',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  wellnessModalEmptyAnswerText: {
+    color: '#4B5563',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  wellnessModalTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  wellnessModalTag: {
+    backgroundColor: '#10B98118',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: '#10B98140',
+  },
+  wellnessModalTagText: {
+    color: '#10B981',
+    fontSize: 13,
     fontWeight: '600',
   },
 });
