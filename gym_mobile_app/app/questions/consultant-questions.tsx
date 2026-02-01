@@ -1,137 +1,158 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { wellnessQuestions } from '@/constants/wellnessQuestions';
+
+// ─────────────────────────────────────────────
+// Type definitions (matches the DB document shape)
+// ─────────────────────────────────────────────
+interface WellnessQuestion {
+  questionId: number;
+  question: string;
+  type: 'scale' | 'multiple-choice' | 'text';
+  options?: string[];
+  multiSelect?: boolean;
+  placeholder?: string;
+  order: number;
+}
+
+const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 
 export default function ConsultantQuestions() {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
-  
-  const currentQuestion = wellnessQuestions[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === wellnessQuestions.length - 1;
 
-  const goToLandingPage = async () => {
+  // ── Questions fetched from DB ──
+  const [questions, setQuestions] = useState<WellnessQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        const response = await fetch(`${API_BASE_URL}/wellness/questions`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          setQuestions(data.questions);
+        } else {
+          setFetchError(data.message || 'Failed to load questions');
+        }
+      } catch (error) {
+        console.error('Error fetching wellness questions:', error);
+        setFetchError('Network error. Please check your connection.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  const currentQuestion = questions[currentQuestionIndex] || null;
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+
+  // ── Submit with final answers (avoids stale state on last question) ──
+  const submitWithAnswers = async (finalAnswers: Record<number, string | string[]>) => {
     try {
-      const role = await AsyncStorage.getItem("userRole");
-      const userId = await AsyncStorage.getItem("userId");
-      const token = await AsyncStorage.getItem("userToken");
+      const role = await AsyncStorage.getItem('userRole');
+      const userId = await AsyncStorage.getItem('userId');
+      const token = await AsyncStorage.getItem('userToken');
 
       if (!userId || !role) {
-        console.error("Missing userId or role");
-        router.replace("/login");
+        console.error('Missing userId or role');
+        router.replace('/login');
         return;
       }
 
-      // Submit wellness answers to backend
-      const response = await fetch(
-        "https://gym-backend-20dr.onrender.com/api/wellness/submit",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // Optional: if you want to protect this endpoint
-          },
-          body: JSON.stringify({
-            userId,
-            userRole: role,
-            answers: answers
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/wellness/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, userRole: role, answers: finalAnswers }),
+      });
 
       const data = await response.json();
 
       if (response.ok) {
         console.log('✅ Wellness answers saved successfully:', data);
-        
-        // Also save locally for offline access (optional)
-        await AsyncStorage.setItem('wellnessData', JSON.stringify(answers));
+        await AsyncStorage.setItem('wellnessData', JSON.stringify(finalAnswers));
 
-        // Navigate to appropriate dashboard
-        if (role === "user") {
-          router.replace("/dashboards/user");
-        } else if (role === "consultant") {
-          router.replace("/dashboards/consultant");
-        } else if (role === "admin") {
-          router.replace("/dashboards/admin");
-        } else if (role === "superadmin") {
-          router.replace("/dashboards/super-admin");
-        } else {
-          router.replace("/login");
-        }
+        if (role === 'user') router.replace('/dashboards/user');
+        else if (role === 'consultant') router.replace('/dashboards/consultant');
+        else if (role === 'admin') router.replace('/dashboards/admin');
+        else if (role === 'superadmin') router.replace('/dashboards/super-admin');
+        else router.replace('/login');
       } else {
-        console.error("Failed to save wellness answers:", data);
-        // Still navigate but show error
+        console.error('Failed to save wellness answers:', data);
         alert(`Warning: ${data.message || 'Failed to save answers'}`);
-        router.replace("/dashboards/user");
+        router.replace('/dashboards/consultant');
       }
     } catch (error) {
-      console.error("Error saving wellness data:", error);
-      // Still navigate on error
-      alert("Warning: Could not save wellness answers. Please try again later.");
-      router.replace("/login");
+      console.error('Error saving wellness data:', error);
+      alert('Warning: Could not save wellness answers. Please try again later.');
+      router.replace('/login');
     }
   };
 
-  // Handle single-select answer
   const handleAnswer = (answer: string) => {
-    setAnswers(prev => ({ ...prev, [currentQuestion.id]: answer }));
-    
+    const updatedAnswers = { ...answers, [currentQuestion.questionId]: answer };
+    setAnswers(updatedAnswers);
+
     if (isLastQuestion) {
-      console.log('Wellness answers:', answers);
-      goToLandingPage();
+      submitWithAnswers(updatedAnswers);
     } else {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
 
-  // Handle multi-select checkbox toggle
   const handleMultiSelectToggle = (option: string) => {
     setAnswers(prev => {
-      const currentAnswers = (prev[currentQuestion.id] as string[]) || [];
+      const currentAnswers = (prev[currentQuestion.questionId] as string[]) || [];
       const isSelected = currentAnswers.includes(option);
-      
+
       if (isSelected) {
-        // Remove option if already selected
-        return { ...prev, [currentQuestion.id]: currentAnswers.filter(a => a !== option) };
+        return { ...prev, [currentQuestion.questionId]: currentAnswers.filter(a => a !== option) };
       } else {
-        // Add option if not selected
-        return { ...prev, [currentQuestion.id]: [...currentAnswers, option] };
+        return { ...prev, [currentQuestion.questionId]: [...currentAnswers, option] };
       }
     });
   };
 
   const handleNext = () => {
-    const currentAnswer = answers[currentQuestion.id];
-    const hasAnswer = currentQuestion.multiSelect 
-      ? Array.isArray(currentAnswer) && currentAnswer.length > 0
-      : currentAnswer;
+    if (!hasValidAnswer()) return;
 
-    if (hasAnswer) {
-      if (isLastQuestion) {
-        console.log('Wellness answers:', answers);
-        goToLandingPage();
-      } else {
-        setCurrentQuestionIndex(prev => prev + 1);
-      }
+    if (isLastQuestion) {
+      submitWithAnswers(answers);
+    } else {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
   };
 
-  // Check if current question has valid answer
   const hasValidAnswer = () => {
-    const currentAnswer = answers[currentQuestion.id];
+    if (!currentQuestion) return false;
+    const currentAnswer = answers[currentQuestion.questionId];
     if (currentQuestion.multiSelect) {
       return Array.isArray(currentAnswer) && currentAnswer.length > 0;
     }
     return !!currentAnswer;
   };
 
-  // Render Scale Type (Interactive number circles)
+  // ── Renderers (UI is pixel-identical to original) ──
   const renderScaleQuestion = () => {
     const scaleValues = Array.from({ length: 10 }, (_, i) => i + 1);
-    const selectedValue = answers[currentQuestion.id];
+    const selectedValue = answers[currentQuestion.questionId];
 
     return (
       <View style={styles.scaleContainer}>
@@ -145,17 +166,11 @@ export default function ConsultantQuestions() {
             return (
               <TouchableOpacity
                 key={value}
-                style={[
-                  styles.scaleButton,
-                  isSelected && styles.scaleButtonSelected
-                ]}
+                style={[styles.scaleButton, isSelected && styles.scaleButtonSelected]}
                 onPress={() => handleAnswer(value.toString())}
                 activeOpacity={0.7}
               >
-                <Text style={[
-                  styles.scaleButtonText,
-                  isSelected && styles.scaleButtonTextSelected
-                ]}>
+                <Text style={[styles.scaleButtonText, isSelected && styles.scaleButtonTextSelected]}>
                   {value}
                 </Text>
               </TouchableOpacity>
@@ -166,56 +181,37 @@ export default function ConsultantQuestions() {
     );
   };
 
-  // Render Multiple Choice (with checkboxes for multi-select, radio for single-select)
   const renderMultipleChoice = () => {
     const isMultiSelect = currentQuestion.multiSelect;
-    const selectedAnswers = isMultiSelect 
-      ? (answers[currentQuestion.id] as string[] || [])
-      : answers[currentQuestion.id];
+    const selectedAnswers = isMultiSelect
+      ? (answers[currentQuestion.questionId] as string[] || [])
+      : answers[currentQuestion.questionId];
 
     return (
       <View style={styles.optionsContainer}>
         {currentQuestion.options?.map((option, index) => {
-          const isSelected = isMultiSelect 
-            ? selectedAnswers.includes(option)
+          const isSelected = isMultiSelect
+            ? (selectedAnswers as string[]).includes(option)
             : selectedAnswers === option;
 
           return (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.optionButton,
-                isSelected && styles.selectedOption
-              ]}
+              style={[styles.optionButton, isSelected && styles.selectedOption]}
               onPress={() => isMultiSelect ? handleMultiSelectToggle(option) : handleAnswer(option)}
               activeOpacity={0.7}
             >
               <View style={styles.optionContent}>
                 {isMultiSelect ? (
-                  // Checkbox for multi-select questions
-                  <View style={[
-                    styles.checkbox,
-                    isSelected && styles.checkboxSelected
-                  ]}>
-                    {isSelected && (
-                      <Text style={styles.checkmark}>✓</Text>
-                    )}
+                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
                   </View>
                 ) : (
-                  // Radio button for single-select questions
-                  <View style={[
-                    styles.radioCircle,
-                    isSelected && styles.radioCircleSelected
-                  ]}>
-                    {isSelected && (
-                      <View style={styles.radioInner} />
-                    )}
+                  <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                    {isSelected && <View style={styles.radioInner} />}
                   </View>
                 )}
-                <Text style={[
-                  styles.optionText,
-                  isSelected && styles.selectedOptionText
-                ]}>
+                <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
                   {option}
                 </Text>
               </View>
@@ -226,23 +222,48 @@ export default function ConsultantQuestions() {
     );
   };
 
-  // Render Text Input
-  const renderTextInput = () => {
+  const renderTextInput = () => (
+    <View style={styles.textInputContainer}>
+      <TextInput
+        style={styles.textInput}
+        placeholder={currentQuestion.placeholder || 'Enter your answer'}
+        placeholderTextColor="#6B7280"
+        onChangeText={(text) => setAnswers(prev => ({ ...prev, [currentQuestion.questionId]: text }))}
+        value={answers[currentQuestion.questionId] as string || ''}
+        multiline
+        numberOfLines={4}
+      />
+    </View>
+  );
+
+  // ── Loading ──
+  if (isLoading) {
     return (
-      <View style={styles.textInputContainer}>
-        <TextInput
-          style={styles.textInput}
-          placeholder={currentQuestion.placeholder || "Enter your answer"}
-          placeholderTextColor="#6B7280"
-          onChangeText={(text) => setAnswers(prev => ({ ...prev, [currentQuestion.id]: text }))}
-          value={answers[currentQuestion.id] as string || ''}
-          multiline
-          numberOfLines={4}
-        />
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={styles.loadingText}>Loading questions...</Text>
       </View>
     );
-  };
+  }
 
+  // ── Error ──
+  if (fetchError || questions.length === 0) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorText}>{fetchError || 'No questions available.'}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => {
+          setIsLoading(true);
+          setFetchError(null);
+          setTimeout(() => setIsLoading(false), 1000);
+        }}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ── Main UI ──
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -253,9 +274,9 @@ export default function ConsultantQuestions() {
             </View>
             <Text style={styles.categoryText}>Health & Wellness</Text>
           </View>
-          
+
           <Text style={styles.question}>{currentQuestion.question}</Text>
-          
+
           {currentQuestion.type === 'scale' && renderScaleQuestion()}
           {currentQuestion.type === 'multiple-choice' && renderMultipleChoice()}
           {currentQuestion.type === 'text' && renderTextInput()}
@@ -265,7 +286,7 @@ export default function ConsultantQuestions() {
       <View style={styles.footer}>
         <View style={styles.navigationContainer}>
           {currentQuestionIndex > 0 && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.backButton}
               onPress={() => setCurrentQuestionIndex(prev => prev - 1)}
               activeOpacity={0.7}
@@ -273,14 +294,11 @@ export default function ConsultantQuestions() {
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
           )}
-          
+
           <View style={{ flex: 1 }} />
-          
-          <TouchableOpacity 
-            style={[
-              styles.nextButton,
-              !hasValidAnswer() && styles.nextButtonDisabled
-            ]}
+
+          <TouchableOpacity
+            style={[styles.nextButton, !hasValidAnswer() && styles.nextButtonDisabled]}
             onPress={handleNext}
             disabled={!hasValidAnswer()}
             activeOpacity={0.8}
@@ -296,15 +314,14 @@ export default function ConsultantQuestions() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#0F172A' 
-  },
-  content: { 
-    flexGrow: 1, 
-    padding: 20,
-    paddingBottom: 100,
-  },
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  centerContent: { justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#94A3B8', fontSize: 16, marginTop: 16 },
+  errorIcon: { fontSize: 48, marginBottom: 16 },
+  errorText: { color: '#EF4444', fontSize: 16, textAlign: 'center', paddingHorizontal: 24, marginBottom: 24 },
+  retryButton: { backgroundColor: '#10B981', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12 },
+  retryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  content: { flexGrow: 1, padding: 20, paddingBottom: 100 },
   questionCard: {
     backgroundColor: '#1E293B',
     borderRadius: 20,
@@ -315,218 +332,65 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  questionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
+  questionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#10B98120',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#10B98120', alignItems: 'center', justifyContent: 'center', marginRight: 12,
   },
-  iconText: {
-    fontSize: 20,
-  },
-  categoryText: {
-    color: '#10B981',
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  question: { 
-    fontSize: 24, 
-    fontWeight: '700', 
-    color: '#F9FAFB', 
-    marginBottom: 28,
-    lineHeight: 32,
-  },
-  
-  // Scale Question Styles
-  scaleContainer: {
-    marginTop: 10,
-  },
-  scaleLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
-  scaleLabelText: {
-    color: '#94A3B8',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  scaleOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
+  iconText: { fontSize: 20 },
+  categoryText: { color: '#10B981', fontSize: 14, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  question: { fontSize: 24, fontWeight: '700', color: '#F9FAFB', marginBottom: 28, lineHeight: 32 },
+
+  scaleContainer: { marginTop: 10 },
+  scaleLabels: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 4 },
+  scaleLabelText: { color: '#94A3B8', fontSize: 13, fontWeight: '600' },
+  scaleOptions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10 },
   scaleButton: {
-    width: '18%',
-    aspectRatio: 1,
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#334155',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: '18%', aspectRatio: 1, backgroundColor: '#0F172A',
+    borderRadius: 16, borderWidth: 2, borderColor: '#334155', alignItems: 'center', justifyContent: 'center',
   },
-  scaleButtonSelected: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
-    transform: [{ scale: 1.05 }],
-  },
-  scaleButtonText: {
-    color: '#CBD5E1',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  scaleButtonTextSelected: {
-    color: '#FFFFFF',
-    fontSize: 20,
-  },
-  
-  // Multiple Choice Styles
-  optionsContainer: { 
-    gap: 12 
-  },
-  optionButton: {
-    backgroundColor: '#0F172A',
-    padding: 18,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#334155',
-  },
-  selectedOption: { 
-    backgroundColor: '#10B98115',
-    borderColor: '#10B981',
-  },
-  optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  // Radio button styles (for single-select)
+  scaleButtonSelected: { backgroundColor: '#10B981', borderColor: '#10B981', transform: [{ scale: 1.05 }] },
+  scaleButtonText: { color: '#CBD5E1', fontSize: 18, fontWeight: '700' },
+  scaleButtonTextSelected: { color: '#FFFFFF', fontSize: 20 },
+
+  optionsContainer: { gap: 12 },
+  optionButton: { backgroundColor: '#0F172A', padding: 18, borderRadius: 14, borderWidth: 2, borderColor: '#334155' },
+  selectedOption: { backgroundColor: '#10B98115', borderColor: '#10B981' },
+  optionContent: { flexDirection: 'row', alignItems: 'center' },
   radioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#64748B',
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 24, height: 24, borderRadius: 12, borderWidth: 2,
+    borderColor: '#64748B', marginRight: 12, alignItems: 'center', justifyContent: 'center',
   },
-  radioCircleSelected: {
-    borderColor: '#10B981',
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#10B981',
-  },
-  // Checkbox styles (for multi-select)
+  radioCircleSelected: { borderColor: '#10B981' },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#10B981' },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#64748B',
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0F172A',
+    width: 24, height: 24, borderRadius: 6, borderWidth: 2,
+    borderColor: '#64748B', marginRight: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F172A',
   },
-  checkboxSelected: {
-    borderColor: '#10B981',
-    backgroundColor: '#10B981',
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  optionText: { 
-    color: '#CBD5E1', 
-    fontSize: 16,
-    flex: 1,
-  },
-  selectedOptionText: { 
-    color: '#F9FAFB', 
-    fontWeight: '600' 
-  },
-  
-  // Text Input Styles
-  textInputContainer: {
-    marginTop: 8,
-  },
+  checkboxSelected: { borderColor: '#10B981', backgroundColor: '#10B981' },
+  checkmark: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  optionText: { color: '#CBD5E1', fontSize: 16, flex: 1 },
+  selectedOptionText: { color: '#F9FAFB', fontWeight: '600' },
+
+  textInputContainer: { marginTop: 8 },
   textInput: {
-    backgroundColor: '#0F172A',
-    borderWidth: 2,
-    borderColor: '#334155',
-    borderRadius: 14,
-    padding: 16,
-    color: '#F9FAFB',
-    fontSize: 16,
-    minHeight: 120,
-    textAlignVertical: 'top',
+    backgroundColor: '#0F172A', borderWidth: 2, borderColor: '#334155',
+    borderRadius: 14, padding: 16, color: '#F9FAFB', fontSize: 16, minHeight: 120, textAlignVertical: 'top',
   },
-  
-  // Footer Navigation
-  footer: { 
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#1E293B',
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+
+  footer: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#1E293B', borderTopWidth: 1, borderTopColor: '#334155',
+    paddingVertical: 12, paddingHorizontal: 20, paddingBottom: 20,
   },
-  navigationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: { 
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  backButtonText: { 
-    color: '#94A3B8', 
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  navigationContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  backButton: { paddingVertical: 14, paddingHorizontal: 20 },
+  backButtonText: { color: '#94A3B8', fontSize: 16, fontWeight: '600' },
   nextButton: {
-    backgroundColor: '#10B981',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 14,
-    minWidth: 140,
-    alignItems: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#10B981', paddingVertical: 16, paddingHorizontal: 32,
+    borderRadius: 14, minWidth: 140, alignItems: 'center',
+    shadowColor: '#10B981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  nextButtonDisabled: { 
-    backgroundColor: '#334155', 
-    opacity: 0.5,
-    shadowOpacity: 0,
-  },
-  nextButtonText: { 
-    color: '#FFFFFF', 
-    fontSize: 16, 
-    fontWeight: '700',
-  },
+  nextButtonDisabled: { backgroundColor: '#334155', opacity: 0.5, shadowOpacity: 0 },
+  nextButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });
