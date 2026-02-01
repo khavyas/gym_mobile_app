@@ -908,6 +908,9 @@ export default function ProfileSettings() {
       </Modal>
       {/* ─────────────── end modal ─────────────── */}
 
+
+      <ScrollView style={styles.scrollView}>
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile Settings</Text>
         <Text style={styles.headerSubtitle}>
@@ -915,7 +918,7 @@ export default function ProfileSettings() {
         </Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+
         {/* Personal Information Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -1195,7 +1198,6 @@ export default function ProfileSettings() {
                   value={healthMetrics.weight}
                   onChangeText={(value) => handleInputChange("healthMetrics", "weight", value)}
                   keyboardType="numeric"
-                  placeholder="70"
                   placeholderTextColor="#6B7280"
                 />
               </View>
@@ -1207,7 +1209,6 @@ export default function ProfileSettings() {
                   value={healthMetrics.height}
                   onChangeText={(value) => handleInputChange("healthMetrics", "height", value)}
                   keyboardType="numeric"
-                  placeholder="170"
                   placeholderTextColor="#6B7280"
                 />
               </View>
