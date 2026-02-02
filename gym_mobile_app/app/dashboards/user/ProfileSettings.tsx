@@ -1304,6 +1304,51 @@ export default function ProfileSettings() {
               )}
             </View>
 
+           
+            {healthMetrics.gender === "female" && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionHeaderIcon}>🩸</Text>
+                  <Text style={styles.sectionTitle}>Menstrual Cycle Tracker</Text>
+                </View>
+
+                <View style={styles.sectionContent}>
+                  <View style={styles.cycleCard}>
+                    <View style={styles.cycleCardHeader}>
+                      <View style={styles.cycleIconContainer}>
+                        <Text style={styles.cycleIcon}>📅</Text>
+                      </View>
+                      <View style={styles.cycleHeaderText}>
+                        <Text style={styles.cycleTitle}>Track Your Cycle</Text>
+                        <Text style={styles.cycleSubtitle}>Monitor your menstrual health</Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity 
+                      style={styles.cycleButton}
+                      onPress={() => router.push("/dashboards/user/MenstrualCycleTracker")}
+                    >
+                      <Text style={styles.cycleButtonText}>Open Cycle Tracker</Text>
+                      <Text style={styles.cycleButtonIcon}>→</Text>
+                    </TouchableOpacity>
+
+                    {/* Quick Stats Preview */}
+                    <View style={styles.cycleStatsPreview}>
+                      <View style={styles.cycleStatItem}>
+                        <Text style={styles.cycleStatLabel}>Next Period</Text>
+                        <Text style={styles.cycleStatValue}>In 7 days</Text>
+                      </View>
+                      <View style={styles.cycleStatDivider} />
+                      <View style={styles.cycleStatItem}>
+                        <Text style={styles.cycleStatLabel}>Cycle Status</Text>
+                        <Text style={styles.cycleStatValue}>Regular</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+
             {/* ─── Wellness Responses Card (right after BMI card) ─── */}
             <View style={styles.wellnessCard}>
               <View style={styles.wellnessCardHeader}>
@@ -1660,6 +1705,100 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 12,
   },
+  // Menstrual Cycle Styles
+cycleCard: {
+  backgroundColor: '#1F2937',
+  borderRadius: 16,
+  padding: 20,
+  borderWidth: 2,
+  borderColor: '#EC4899',
+  shadowColor: '#EC4899',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 5,
+},
+cycleCardHeader: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 16,
+},
+cycleIconContainer: {
+  width: 50,
+  height: 50,
+  borderRadius: 25,
+  backgroundColor: '#EC489920',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 12,
+},
+cycleIcon: {
+  fontSize: 24,
+},
+cycleHeaderText: {
+  flex: 1,
+},
+cycleTitle: {
+  fontSize: 18,
+  fontWeight: '700',
+  color: '#FFFFFF',
+  marginBottom: 4,
+},
+cycleSubtitle: {
+  fontSize: 13,
+  color: '#94A3B8',
+},
+cycleButton: {
+  backgroundColor: '#EC4899',
+  borderRadius: 12,
+  paddingVertical: 14,
+  paddingHorizontal: 20,
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 16,
+},
+cycleButtonText: {
+  color: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: '700',
+  marginRight: 8,
+},
+cycleButtonIcon: {
+  color: '#FFFFFF',
+  fontSize: 20,
+  fontWeight: 'bold',
+},
+cycleStatsPreview: {
+  flexDirection: 'row',
+  backgroundColor: '#0F172A',
+  borderRadius: 12,
+  padding: 16,
+  justifyContent: 'space-around',
+},
+cycleStatItem: {
+  alignItems: 'center',
+  flex: 1,
+},
+cycleStatDivider: {
+  width: 1,
+  backgroundColor: '#374151',
+  marginHorizontal: 12,
+},
+cycleStatLabel: {
+  fontSize: 12,
+  color: '#94A3B8',
+  marginBottom: 4,
+},
+cycleStatValue: {
+  fontSize: 16,
+  fontWeight: '700',
+  color: '#EC4899',
+},
+sectionHeaderIcon: {
+  fontSize: 24,
+  marginRight: 8,
+},
   header: {
     paddingHorizontal: 20,
     paddingVertical: 24,
