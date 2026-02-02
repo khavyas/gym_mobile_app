@@ -28,6 +28,20 @@ interface CalorieCalculationParams {
   gender: 'male' | 'female';
 }
 
+// 🔥 NEW: Exercise-specific parameters for calorie adjustment
+export interface ExerciseParameters {
+  // Strength training
+  weightLifted?: number;  // kg
+  reps?: number;
+  sets?: number;
+  
+  // Cardio
+  distance?: number;      // km
+  speed?: number;         // km/h
+  incline?: number;       // percentage
+  resistance?: number;    // 1-10 scale
+}
+
 // ==========================================
 // EXERCISE TO API ACTIVITY MAPPING
 // ==========================================
@@ -111,6 +125,268 @@ const EXERCISE_MET_VALUES: Record<string, { low: number; medium: number; high: n
   'Burpees': { low: 8.0, medium: 10.0, high: 12.0 },
   'Tabata': { low: 10.0, medium: 12.0, high: 14.0 },
 };
+
+// ==========================================
+// 🔥 NEW: CALORIE ADJUSTMENT FUNCTIONS
+// ==========================================
+
+/**
+ * Adjust calories for strength training based on weight, reps, and sets
+ */
+function adjustCaloriesForStrength(
+  baseCalories: number,
+  params: ExerciseParameters,
+  bodyWeightKg: number,
+  exerciseName: string
+): number {
+  let adjustedCalories = baseCalories;
+  
+  const { weightLifted, reps, sets } = params;
+  
+  // If no parameters provided, return base calories
+  if (!weightLifted && !reps && !sets) {
+    return baseCalories;
+  }
+  
+  // Calculate intensity multiplier based on weight lifted
+  if (weightLifted) {
+    // Heavier weights = more calories
+    // Assumption: lifting bodyweight = 1.0x, 1.5x bodyweight = 1.3x, 2x bodyweight = 1.5x
+    const weightRatio = weightLifted / bodyWeightKg;
+    let weightMultiplier = 1.0;
+    
+    if (weightRatio > 1.5) {
+      weightMultiplier = 1.3; // Heavy lifting
+    } else if (weightRatio > 1.0) {
+      weightMultiplier = 1.15; // Moderate-heavy
+    } else if (weightRatio > 0.5) {
+      weightMultiplier = 1.0; // Moderate
+    } else {
+      weightMultiplier = 0.85; // Light weight
+    }
+    
+    adjustedCalories *= weightMultiplier;
+  }
+  
+  // Adjust based on reps (higher reps = slightly more calories for endurance)
+  if (reps) {
+    let repsMultiplier = 1.0;
+    
+    if (reps > 15) {
+      repsMultiplier = 1.1; // High rep endurance work
+    } else if (reps > 10) {
+      repsMultiplier = 1.05; // Moderate reps
+    } else if (reps <= 5) {
+      repsMultiplier = 0.95; // Low reps (strength focus, less metabolic)
+    }
+    
+    adjustedCalories *= repsMultiplier;
+  }
+  
+  // Adjust based on sets (more sets = proportionally more work)
+  if (sets) {
+    // Each additional set beyond the base (assumed 3 sets) adds calories
+    const baseSets = 3;
+    if (sets > baseSets) {
+      const additionalSets = sets - baseSets;
+      adjustedCalories *= (1 + (additionalSets * 0.15)); // +15% per extra set
+    } else if (sets < baseSets) {
+      const fewerSets = baseSets - sets;
+      adjustedCalories *= (1 - (fewerSets * 0.15)); // -15% per fewer set
+    }
+  }
+  
+  console.log(`💪 Strength Adjustment:`, {
+    baseCalories,
+    weightLifted,
+    reps,
+    sets,
+    adjustedCalories: Math.round(adjustedCalories),
+    change: `${((adjustedCalories / baseCalories - 1) * 100).toFixed(1)}%`
+  });
+  
+  return Math.round(adjustedCalories);
+}
+
+/**
+ * Adjust calories for cardio based on distance, speed, incline, resistance
+ */
+function adjustCaloriesForCardio(
+  baseCalories: number,
+  params: ExerciseParameters,
+  exerciseName: string,
+  durationMinutes: number
+): number {
+  let adjustedCalories = baseCalories;
+  
+  const { distance, speed, incline, resistance } = params;
+  
+  // If no parameters provided, return base calories
+  if (!distance && !speed && !incline && !resistance) {
+    return baseCalories;
+  }
+  
+  // Adjust based on speed (for running/cycling)
+  if (speed) {
+    let speedMultiplier = 1.0;
+    
+    // Running speed adjustments (km/h)
+    if (exerciseName.includes('Running') || exerciseName.includes('Treadmill')) {
+      if (speed > 12) {
+        speedMultiplier = 1.4; // Very fast running
+      } else if (speed > 10) {
+        speedMultiplier = 1.25; // Fast running
+      } else if (speed > 8) {
+        speedMultiplier = 1.1; // Moderate running
+      } else if (speed > 6) {
+        speedMultiplier = 1.0; // Light jogging
+      } else {
+        speedMultiplier = 0.85; // Walking pace
+      }
+    }
+    
+    // Cycling speed adjustments (km/h)
+    if (exerciseName.includes('Cycling')) {
+      if (speed > 25) {
+        speedMultiplier = 1.4; // Very fast cycling
+      } else if (speed > 20) {
+        speedMultiplier = 1.25; // Fast cycling
+      } else if (speed > 15) {
+        speedMultiplier = 1.1; // Moderate cycling
+      } else {
+        speedMultiplier = 0.9; // Leisurely cycling
+      }
+    }
+    
+    adjustedCalories *= speedMultiplier;
+  }
+  
+  // Adjust based on incline (for treadmill)
+  if (incline) {
+    // Incline significantly increases calorie burn
+    // +5% incline = +20% calories, +10% incline = +40% calories
+    const inclineMultiplier = 1 + (incline * 0.04);
+    adjustedCalories *= inclineMultiplier;
+  }
+  
+  // Adjust based on resistance (for cycling, rowing, elliptical)
+  if (resistance) {
+    // Resistance on 1-10 scale
+    let resistanceMultiplier = 1.0;
+    
+    if (resistance >= 8) {
+      resistanceMultiplier = 1.3; // High resistance
+    } else if (resistance >= 6) {
+      resistanceMultiplier = 1.15; // Medium-high resistance
+    } else if (resistance >= 4) {
+      resistanceMultiplier = 1.0; // Medium resistance
+    } else {
+      resistanceMultiplier = 0.85; // Low resistance
+    }
+    
+    adjustedCalories *= resistanceMultiplier;
+  }
+  
+  // Verify distance consistency
+  if (distance && speed) {
+    const expectedDuration = (distance / speed) * 60; // minutes
+    if (Math.abs(expectedDuration - durationMinutes) > durationMinutes * 0.3) {
+      console.warn('⚠️ Distance and speed don\'t match duration - using speed as primary factor');
+    }
+  }
+  
+  console.log(`🏃 Cardio Adjustment:`, {
+    baseCalories,
+    distance,
+    speed,
+    incline,
+    resistance,
+    adjustedCalories: Math.round(adjustedCalories),
+    change: `${((adjustedCalories / baseCalories - 1) * 100).toFixed(1)}%`
+  });
+  
+  return Math.round(adjustedCalories);
+}
+
+/**
+ * Adjust calories for HIIT based on sets and reps
+ */
+function adjustCaloriesForHIIT(
+  baseCalories: number,
+  params: ExerciseParameters
+): number {
+  let adjustedCalories = baseCalories;
+  
+  const { sets, reps } = params;
+  
+  // If no parameters provided, return base calories
+  if (!sets && !reps) {
+    return baseCalories;
+  }
+  
+  // More rounds/sets = proportionally more work
+  if (sets) {
+    const baseSets = 4; // Assume base is 4 rounds
+    if (sets > baseSets) {
+      adjustedCalories *= (1 + ((sets - baseSets) * 0.2)); // +20% per extra round
+    } else if (sets < baseSets) {
+      adjustedCalories *= (1 - ((baseSets - sets) * 0.2)); // -20% per fewer round
+    }
+  }
+  
+  // Higher reps = more work
+  if (reps) {
+    if (reps > 20) {
+      adjustedCalories *= 1.15;
+    } else if (reps > 15) {
+      adjustedCalories *= 1.1;
+    } else if (reps < 10) {
+      adjustedCalories *= 0.9;
+    }
+  }
+  
+  console.log(`🔥 HIIT Adjustment:`, {
+    baseCalories,
+    sets,
+    reps,
+    adjustedCalories: Math.round(adjustedCalories),
+    change: `${((adjustedCalories / baseCalories - 1) * 100).toFixed(1)}%`
+  });
+  
+  return Math.round(adjustedCalories);
+}
+
+/**
+ * Main adjustment function that routes to appropriate exercise type
+ */
+function adjustCaloriesForExerciseParams(
+  baseCalories: number,
+  exerciseName: string,
+  categoryId: string,
+  params: ExerciseParameters,
+  bodyWeightKg: number,
+  durationMinutes: number
+): number {
+  // No adjustments for yoga/stretching
+  if (categoryId === 'yoga') {
+    return baseCalories;
+  }
+  
+  // Route to appropriate adjustment function
+  if (categoryId === 'strength') {
+    return adjustCaloriesForStrength(baseCalories, params, bodyWeightKg, exerciseName);
+  }
+  
+  if (categoryId === 'cardio') {
+    return adjustCaloriesForCardio(baseCalories, params, exerciseName, durationMinutes);
+  }
+  
+  if (categoryId === 'hiit') {
+    return adjustCaloriesForHIIT(baseCalories, params);
+  }
+  
+  return baseCalories;
+}
 
 // ==========================================
 // CALORIE CALCULATION FUNCTIONS
@@ -210,37 +486,66 @@ export function calculateCaloriesWithMET(
 }
 
 /**
- * Smart calorie calculation with automatic fallback
+ * 🔥 NEW: Smart calorie calculation with parameter adjustments
  * This is the main function you should use
  */
 export async function calculateCaloriesBurned(
   params: CalorieCalculationParams,
-  intensity: 'low' | 'medium' | 'high' = 'medium'
-): Promise<{ calories: number; method: 'api' | 'met' }> {
+  intensity: 'low' | 'medium' | 'high' = 'medium',
+  exerciseParams?: ExerciseParameters,
+  categoryId?: string
+): Promise<{ calories: number; method: 'api' | 'met'; baseCalories?: number }> {
   const { exerciseName, weightKg, durationMinutes, gender } = params;
+  
+  let baseCalories = 0;
+  let method: 'api' | 'met' = 'met';
   
   // Try API Ninjas first
   if (API_NINJAS_KEY) {
     try {
-      const calories = await calculateCaloriesWithAPI(params);
-      return { calories, method: 'api' };
+      baseCalories = await calculateCaloriesWithAPI(params);
+      method = 'api';
     } catch (error) {
       console.log('⚠️ API Ninjas failed, falling back to MET calculation');
+      baseCalories = calculateCaloriesWithMET(
+        exerciseName,
+        intensity,
+        weightKg,
+        durationMinutes,
+        gender
+      );
+      method = 'met';
     }
   } else {
     console.log('⚠️ No API key, using MET calculation');
+    baseCalories = calculateCaloriesWithMET(
+      exerciseName,
+      intensity,
+      weightKg,
+      durationMinutes,
+      gender
+    );
   }
   
-  // Fallback to MET calculation
-  const calories = calculateCaloriesWithMET(
-    exerciseName,
-    intensity,
-    weightKg,
-    durationMinutes,
-    gender
-  );
+  // 🔥 NEW: Apply exercise-specific parameter adjustments
+  let finalCalories = baseCalories;
   
-  return { calories, method: 'met' };
+  if (exerciseParams && categoryId) {
+    finalCalories = adjustCaloriesForExerciseParams(
+      baseCalories,
+      exerciseName,
+      categoryId,
+      exerciseParams,
+      weightKg,
+      durationMinutes
+    );
+  }
+  
+  return { 
+    calories: finalCalories, 
+    method,
+    baseCalories // Include base for comparison
+  };
 }
 
 // ==========================================

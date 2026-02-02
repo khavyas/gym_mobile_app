@@ -39,7 +39,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Animated } from 'react-native';
-import { calculateCaloriesBurned } from '@/services/calorieCalculator';
+import { calculateCaloriesBurned, ExerciseParameters } from '@/services/calorieCalculator';
 
 const API_BASE_URL = 'https://gym-backend-20dr.onrender.com/api';
 const { width } = Dimensions.get('window');
@@ -303,11 +303,8 @@ export default function StartWorkout() {
   const [yesterdayCalories, setYesterdayCalories] = useState<number>(0);
   const [weekCalories, setWeekCalories] = useState<number>(0);
   const [monthCalories, setMonthCalories] = useState<number>(0);
-
+ 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-
-
 
   useEffect(() => {
     loadStoredProfile();
@@ -316,41 +313,70 @@ export default function StartWorkout() {
     };
   }, []);
 
-useEffect(() => {
-    if (isWorkoutActive && !isPaused && selectedExercise && userWeight && userGender) {
-      const updateCalories = async () => {
-        const mins = Math.floor(elapsedTime / 60);
-        if (mins > 0) {
-          try {
-            const result = await calculateCaloriesBurned(
-              {
-                exerciseName: selectedExercise.name,
-                weightKg: userWeight,
-                durationMinutes: mins,
-                gender: userGender
-              },
-              selectedIntensity as 'low' | 'medium' | 'high'
-            );
-            setLiveCalories(result.calories);
-          } catch (error) {
-            console.error('Error updating live calories:', error);
-          }
-        } else {
-          setLiveCalories(0);
-        }
-      };
-      
-      // Update immediately on first second, then every 10 seconds
-      if (elapsedTime === 1 || elapsedTime % 10 === 0) {
-        updateCalories();
-      }
-    }
-  }, [elapsedTime, isWorkoutActive, isPaused, selectedExercise, userWeight, userGender, selectedIntensity]);
 
-  useEffect(() => {
-  // Calculate estimate when exercise or intensity changes
+useEffect(() => {
+  if (isWorkoutActive && !isPaused && selectedExercise && userWeight && userGender && selectedCategory) {
+    const updateCalories = async () => {
+      const mins = Math.floor(elapsedTime / 60);
+      if (mins > 0) {
+        try {
+          // 🔥 BUILD EXERCISE PARAMETERS
+          const exerciseParams: ExerciseParameters = {};
+          if (weightLifted) exerciseParams.weightLifted = parseFloat(weightLifted);
+          if (reps) exerciseParams.reps = parseInt(reps);
+          if (sets) exerciseParams.sets = parseInt(sets);
+          if (distance) exerciseParams.distance = parseFloat(distance);
+          if (speed) exerciseParams.speed = parseFloat(speed);
+          if (incline) exerciseParams.incline = parseFloat(incline);
+          if (resistance) exerciseParams.resistance = parseFloat(resistance);
+          
+          const result = await calculateCaloriesBurned(
+            {
+              exerciseName: selectedExercise.name,
+              weightKg: userWeight,
+              durationMinutes: mins,
+              gender: userGender
+            },
+            selectedIntensity as 'low' | 'medium' | 'high',
+            exerciseParams,  // 🔥 Pass parameters for live update
+            selectedCategory.id
+          );
+          setLiveCalories(result.calories);
+        } catch (error) {
+          console.error('Error updating live calories:', error);
+        }
+      } else {
+        setLiveCalories(0);
+      }
+    };
+    
+    // Update immediately on first second, then every 10 seconds
+    if (elapsedTime === 1 || elapsedTime % 10 === 0) {
+      updateCalories();
+    }
+  }
+}, [
+  elapsedTime, 
+  isWorkoutActive, 
+  isPaused, 
+  selectedExercise, 
+  userWeight, 
+  userGender, 
+  selectedIntensity,
+  selectedCategory,
+  // 🔥 ADD THESE DEPENDENCIES so changes trigger recalculation:
+  weightLifted,
+  reps,
+  sets,
+  distance,
+  speed,
+  incline,
+  resistance
+]);
+  
+useEffect(() => {
   const updateEstimate = async () => {
-    if (selectedExercise && userWeight && userGender && !isWorkoutActive) {
+    if (selectedExercise && userWeight && userGender && !isWorkoutActive && selectedCategory) {
       setIsCalculatingEstimate(true);
       const calories = await calculateCalories(30);
       setEstimatedCalories(calories);
@@ -360,7 +386,21 @@ useEffect(() => {
   };
   
   updateEstimate();
-}, [selectedExercise, selectedIntensity, userWeight, userGender]);
+}, [
+  selectedExercise, 
+  selectedIntensity, 
+  userWeight, 
+  userGender,
+  selectedCategory,
+  // 🔥 ADD THESE so estimate updates when user changes parameters:
+  weightLifted,
+  reps,
+  sets,
+  distance,
+  speed,
+  incline,
+  resistance
+]);
 
 useEffect(() => {
   if (isWorkoutActive && !isPaused) {
@@ -378,6 +418,8 @@ useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 }, [isWorkoutActive, isPaused]);
+
+
 
 // Helper function to get required inputs based on exercise
 const getExerciseInputs = (exerciseId: string, categoryId: string) => {
@@ -521,6 +563,36 @@ const calculatePeriodCalories = (allWorkouts: APIWorkoutEntry[]) => {
   });
   
   return { yesterdayCals, weekCals, monthCals };
+};
+
+const ParameterImpactIndicator: React.FC<{
+  paramName: string;
+  value: string;
+  impact: 'positive' | 'neutral' | 'negative';
+}> = ({ paramName, value, impact }) => {
+  const impactColors = {
+    positive: '#10B981',
+    neutral: '#94A3B8',
+    negative: '#EF4444'
+  };
+  
+  const impactIcons = {
+    positive: '↑',
+    neutral: '→',
+    negative: '↓'
+  };
+  
+  return (
+    <View style={styles.parameterImpact}>
+      <Text style={styles.parameterName}>{paramName}</Text>
+      <View style={styles.parameterValueContainer}>
+        <Text style={styles.parameterValue}>{value}</Text>
+        <Text style={[styles.impactIcon, { color: impactColors[impact] }]}>
+          {impactIcons[impact]}
+        </Text>
+      </View>
+    </View>
+  );
 };
 
 // Clear exercise-specific inputs
@@ -711,46 +783,70 @@ const saveUserProfile = async () => {
     return exercises;
   };
 
-  const calculateCalories = async (durationMinutes: number): Promise<number> => {
-    if (!selectedExercise || !userWeight || !userGender) {
-      console.warn('⚠️ Missing data for calculation:', {
-        hasExercise: !!selectedExercise,
-        hasWeight: !!userWeight,
-        hasGender: !!userGender
-      });
-      return 0;
-    }
+const calculateCalories = async (durationMinutes: number): Promise<number> => {
+  if (!selectedExercise || !userWeight || !userGender || !selectedCategory) {
+    console.warn('⚠️ Missing data for calculation:', {
+      hasExercise: !!selectedExercise,
+      hasWeight: !!userWeight,
+      hasGender: !!userGender,
+      hasCategory: !!selectedCategory
+    });
+    return 0;
+  }
+  
+  try {
+    // 🔥 BUILD EXERCISE PARAMETERS FROM USER INPUTS
+    const exerciseParams: ExerciseParameters = {};
     
-    try {
-      // 🔥 ADD LOGGING BEFORE API CALL:
-      console.log('📊 Calculating calories with:', {
-        exercise: selectedExercise.name,
+    // Add strength parameters
+    if (weightLifted) exerciseParams.weightLifted = parseFloat(weightLifted);
+    if (reps) exerciseParams.reps = parseInt(reps);
+    if (sets) exerciseParams.sets = parseInt(sets);
+    
+    // Add cardio parameters
+    if (distance) exerciseParams.distance = parseFloat(distance);
+    if (speed) exerciseParams.speed = parseFloat(speed);
+    if (incline) exerciseParams.incline = parseFloat(incline);
+    if (resistance) exerciseParams.resistance = parseFloat(resistance);
+    
+    console.log('📊 Calculating calories with:', {
+      exercise: selectedExercise.name,
+      category: selectedCategory.id,
+      weightKg: userWeight,
+      duration: durationMinutes,
+      gender: userGender,
+      intensity: selectedIntensity,
+      exerciseParams
+    });
+    
+    // 🔥 PASS EXERCISE PARAMETERS TO CALCULATOR
+    const result = await calculateCaloriesBurned(
+      {
+        exerciseName: selectedExercise.name,
         weightKg: userWeight,
-        weightLbs: Math.round(userWeight * 2.20462),
-        duration: durationMinutes,
-        gender: userGender,
-        intensity: selectedIntensity
-      });
-      
-      const result = await calculateCaloriesBurned(
-        {
-          exerciseName: selectedExercise.name,
-          weightKg: userWeight,
-          durationMinutes: durationMinutes,
-          gender: userGender
-        },
-        selectedIntensity as 'low' | 'medium' | 'high'
-      );
-      
-      // 🔥 ADD LOGGING AFTER API CALL:
-      console.log('✅ Calorie calculation result:', result);
-      return result.calories;
-    } catch (error) {
-      console.error('❌ Error calculating calories:', error);
-      return 0;
-    }
-  };
-
+        durationMinutes: durationMinutes,
+        gender: userGender
+      },
+      selectedIntensity as 'low' | 'medium' | 'high',
+      exerciseParams,  // 🔥 NEW: Pass exercise parameters
+      selectedCategory.id  // 🔥 NEW: Pass category ID
+    );
+    
+    console.log('✅ Calorie calculation result:', {
+      baseCalories: result.baseCalories,
+      adjustedCalories: result.calories,
+      method: result.method,
+      adjustment: result.baseCalories 
+        ? `${((result.calories / result.baseCalories - 1) * 100).toFixed(1)}%`
+        : 'N/A'
+    });
+    
+    return result.calories;
+  } catch (error) {
+    console.error('❌ Error calculating calories:', error);
+    return 0;
+  }
+};
 
   const startWorkout = () => {
     if (!selectedExercise) {
@@ -1402,120 +1498,210 @@ const stopWorkout = async () => {
                   </View>
                 </View>
 
-{selectedExercise && selectedCategory && (() => {
-  const inputs = getExerciseInputs(selectedExercise.id, selectedCategory.id);
-  
-  return (
-    <View style={styles.exerciseInputsSection}>
-      <Text style={styles.exerciseInputsTitle}>Exercise Details</Text>
-      
-      {/* Weight Lifted (for strength training) */}
-      {inputs.needsWeight && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Weight Lifted (kg)</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 50"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={weightLifted}
-            onChangeText={setWeightLifted}
-          />
-        </View>
-      )}
-      
-      {/* Reps */}
-      {inputs.needsReps && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Reps</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 12"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={reps}
-            onChangeText={setReps}
-          />
-        </View>
-      )}
-      
-      {/* Sets */}
-      {inputs.needsSets && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Sets</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 3"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={sets}
-            onChangeText={setSets}
-          />
-        </View>
-      )}
-      
-      {/* Distance (for cardio) */}
-      {inputs.needsDistance && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Distance (km)</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 5"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={distance}
-            onChangeText={setDistance}
-          />
-        </View>
-      )}
-      
-      {/* Speed */}
-      {inputs.needsSpeed && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Speed (km/h)</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 10"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={speed}
-            onChangeText={setSpeed}
-          />
-        </View>
-      )}
-      
-      {/* Incline (for treadmill) */}
-      {inputs.needsIncline && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Incline (%)</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 5"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={incline}
-            onChangeText={setIncline}
-          />
-        </View>
-      )}
-      
-      {/* Resistance */}
-      {inputs.needsResistance && (
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Resistance Level (1-10)</Text>
-          <TextInput
-            style={styles.exerciseInput}
-            placeholder="e.g., 7"
-            placeholderTextColor="#64748B"
-            keyboardType="numeric"
-            value={resistance}
-            onChangeText={setResistance}
-          />
-        </View>
-      )}
-    </View>
-  );
-})()}
+                {selectedExercise && selectedCategory && (() => {
+                  const inputs = getExerciseInputs(selectedExercise.id, selectedCategory.id);
+                  
+                  // Calculate impact indicators based on values
+                  const getSpeedImpact = (speed: string): 'positive' | 'neutral' | 'negative' => {
+                    const s = parseFloat(speed);
+                    if (!s) return 'neutral';
+                    if (selectedExercise.id === 'running_outdoor' || selectedExercise.id === 'treadmill') {
+                      return s > 10 ? 'positive' : s < 6 ? 'negative' : 'neutral';
+                    }
+                    if (selectedExercise.id === 'cycling') {
+                      return s > 20 ? 'positive' : s < 12 ? 'negative' : 'neutral';
+                    }
+                    return 'neutral';
+                  };
+                  
+                  const getInclineImpact = (incline: string): 'positive' | 'neutral' | 'negative' => {
+                    const i = parseFloat(incline);
+                    if (!i) return 'neutral';
+                    return i > 5 ? 'positive' : i < 2 ? 'negative' : 'neutral';
+                  };
+                  
+                  const getResistanceImpact = (resistance: string): 'positive' | 'neutral' | 'negative' => {
+                    const r = parseFloat(resistance);
+                    if (!r) return 'neutral';
+                    return r > 6 ? 'positive' : r < 4 ? 'negative' : 'neutral';
+                  };
+                  
+                  const getWeightImpact = (weight: string): 'positive' | 'neutral' | 'negative' => {
+                    const w = parseFloat(weight);
+                    if (!w || !userWeight) return 'neutral';
+                    const ratio = w / userWeight;
+                    return ratio > 1.0 ? 'positive' : ratio < 0.5 ? 'negative' : 'neutral';
+                  };
+                  
+                  return (
+                    <View style={styles.exerciseInputsSection}>
+                      <View style={styles.exerciseInputsHeader}>
+                        <Text style={styles.exerciseInputsTitle}>Exercise Details</Text>
+                        <Text style={styles.exerciseInputsSubtitle}>
+                          💡 These values affect calorie calculation
+                        </Text>
+                      </View>
+                      
+                      {/* Weight Lifted (for strength training) */}
+                      {inputs.needsWeight && (
+                        <View style={styles.inputGroup}>
+                          <View style={styles.inputLabelRow}>
+                            <Text style={styles.inputLabel}>Weight Lifted (kg)</Text>
+                            {weightLifted && (
+                              <ParameterImpactIndicator
+                                paramName=""
+                                value={`${Math.round((parseFloat(weightLifted) / userWeight!) * 100)}% of bodyweight`}
+                                impact={getWeightImpact(weightLifted)}
+                              />
+                            )}
+                          </View>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 50"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={weightLifted}
+                            onChangeText={setWeightLifted}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Reps */}
+                      {inputs.needsReps && (
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Reps</Text>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 12"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={reps}
+                            onChangeText={setReps}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Sets */}
+                      {inputs.needsSets && (
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Sets</Text>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 3"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={sets}
+                            onChangeText={setSets}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Distance (for cardio) */}
+                      {inputs.needsDistance && (
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Distance (km)</Text>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 5"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={distance}
+                            onChangeText={setDistance}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Speed */}
+                      {inputs.needsSpeed && (
+                        <View style={styles.inputGroup}>
+                          <View style={styles.inputLabelRow}>
+                            <Text style={styles.inputLabel}>Speed (km/h)</Text>
+                            {speed && (
+                              <ParameterImpactIndicator
+                                paramName=""
+                                value={`${speed} km/h`}
+                                impact={getSpeedImpact(speed)}
+                              />
+                            )}
+                          </View>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 10"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={speed}
+                            onChangeText={setSpeed}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Incline (for treadmill) */}
+                      {inputs.needsIncline && (
+                        <View style={styles.inputGroup}>
+                          <View style={styles.inputLabelRow}>
+                            <Text style={styles.inputLabel}>Incline (%)</Text>
+                            {incline && (
+                              <ParameterImpactIndicator
+                                paramName=""
+                                value={`+${Math.round(parseFloat(incline) * 10)}% calories`}
+                                impact={getInclineImpact(incline)}
+                              />
+                            )}
+                          </View>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 5"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={incline}
+                            onChangeText={setIncline}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Resistance */}
+                      {inputs.needsResistance && (
+                        <View style={styles.inputGroup}>
+                          <View style={styles.inputLabelRow}>
+                            <Text style={styles.inputLabel}>Resistance Level (1-10)</Text>
+                            {resistance && (
+                              <ParameterImpactIndicator
+                                paramName=""
+                                value={`Level ${resistance}`}
+                                impact={getResistanceImpact(resistance)}
+                              />
+                            )}
+                          </View>
+                          <TextInput
+                            style={styles.exerciseInput}
+                            placeholder="e.g., 7"
+                            placeholderTextColor="#64748B"
+                            keyboardType="numeric"
+                            value={resistance}
+                            onChangeText={setResistance}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Show calculation breakdown */}
+                      {(distance || speed || incline || resistance || weightLifted) && (
+                        <View style={styles.calculationBreakdown}>
+                          <Text style={styles.breakdownTitle}>📊 How it's calculated:</Text>
+                          <Text style={styles.breakdownText}>
+                            Base calories are adjusted based on:
+                          </Text>
+                          {speed && <Text style={styles.breakdownItem}>• Speed: Higher speed = more calories</Text>}
+                          {incline && <Text style={styles.breakdownItem}>• Incline: Each 1% adds ~10% calories</Text>}
+                          {resistance && <Text style={styles.breakdownItem}>• Resistance: Higher level = more effort</Text>}
+                          {weightLifted && <Text style={styles.breakdownItem}>• Weight: Heavier weights = more calories</Text>}
+                          {reps && sets && <Text style={styles.breakdownItem}>• Volume: Total reps × sets</Text>}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })()}
+
+
 
                 <View style={styles.calorieEstimate}>
                   <Flame size={24} color="#F59E0B" />
@@ -2416,6 +2602,74 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#F59E0B',
   },
+  parameterImpact: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+},
+parameterName: {
+  fontSize: 12,
+  color: '#94A3B8',
+  fontWeight: '500',
+},
+parameterValueContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 4,
+  backgroundColor: '#1E293B',
+  paddingHorizontal: 8,
+  paddingVertical: 4,
+  borderRadius: 6,
+},
+parameterValue: {
+  fontSize: 11,
+  color: '#E5E7EB',
+  fontWeight: '600',
+},
+impactIcon: {
+  fontSize: 12,
+  fontWeight: 'bold',
+},
+exerciseInputsHeader: {
+  marginBottom: 16,
+},
+exerciseInputsSubtitle: {
+  fontSize: 12,
+  color: '#F59E0B',
+  marginTop: 4,
+  fontStyle: 'italic',
+},
+inputLabelRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 8,
+},
+calculationBreakdown: {
+  marginTop: 16,
+  padding: 12,
+  backgroundColor: 'rgba(16, 185, 129, 0.05)',
+  borderRadius: 8,
+  borderLeftWidth: 3,
+  borderLeftColor: '#10B981',
+},
+breakdownTitle: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#10B981',
+  marginBottom: 8,
+},
+breakdownText: {
+  fontSize: 12,
+  color: '#94A3B8',
+  marginBottom: 6,
+},
+breakdownItem: {
+  fontSize: 11,
+  color: '#CBD5E1',
+  marginLeft: 8,
+  marginTop: 3,
+},
   startWorkoutButtonContainer: {
     borderRadius: 16,
     overflow: 'hidden',
