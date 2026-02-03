@@ -1182,11 +1182,12 @@ export default function ProfileSettings() {
           </View>
         </View>
 
-        {/* Health Metrics Section with BMI Calculator */}
+
+        {/* Health Metrics Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <HeartIcon size={24} color="#4F46E5" />
-            <Text style={styles.sectionTitle}>Health Metrics & BMI</Text>
+            <Text style={styles.sectionTitle}>Health Metrics</Text>
           </View>
 
           <View style={styles.sectionContent}>
@@ -1198,6 +1199,7 @@ export default function ProfileSettings() {
                   value={healthMetrics.weight}
                   onChangeText={(value) => handleInputChange("healthMetrics", "weight", value)}
                   keyboardType="numeric"
+                  placeholder="70"
                   placeholderTextColor="#6B7280"
                 />
               </View>
@@ -1209,29 +1211,69 @@ export default function ProfileSettings() {
                   value={healthMetrics.height}
                   onChangeText={(value) => handleInputChange("healthMetrics", "height", value)}
                   keyboardType="numeric"
+                  placeholder="170"
                   placeholderTextColor="#6B7280"
                 />
               </View>
             </View>
 
-            {/* BMI Calculator Card */}
-            <View style={styles.bmiCalculatorCard}>
-              <View style={styles.bmiHeader}>
-                <View style={styles.bmiIconContainer}>
-                  <Text style={styles.bmiIcon}>⚖️</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Age</Text>
+              <TextInput
+                style={styles.textInput}
+                value={healthMetrics.age}
+                onChangeText={(value) => handleInputChange("healthMetrics", "age", value)}
+                keyboardType="numeric"
+                placeholder="25"
+                placeholderTextColor="#6B7280"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Gender</Text>
+              <CustomDropdown
+                options={GENDER_OPTIONS}
+                selectedValue={healthMetrics.gender}
+                onValueChange={(value) => handleInputChange("healthMetrics", "gender", value)}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Fitness Goal</Text>
+              <CustomDropdown
+                options={FITNESS_GOAL_OPTIONS}
+                selectedValue={healthMetrics.fitnessGoal}
+                onValueChange={(value) => handleInputChange("healthMetrics", "fitnessGoal", value)}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* BMI Calculator Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ChartBarIcon size={24} color="#4F46E5" />
+            <Text style={styles.sectionTitle}>BMI Calculator</Text>
+          </View>
+
+          <View style={styles.sectionContent}>
+            <View style={styles.featureCard}>
+              <View style={styles.featureCardHeader}>
+                <View style={styles.featureIconContainer}>
+                  <Text style={styles.featureIcon}>⚖️</Text>
                 </View>
-                <View style={styles.bmiHeaderText}>
-                  <Text style={styles.bmiTitle}>BMI Calculator</Text>
-                  <Text style={styles.bmiSubtitle}>Body Mass Index Analysis</Text>
+                <View style={styles.featureHeaderText}>
+                  <Text style={styles.featureTitle}>Body Mass Index</Text>
+                  <Text style={styles.featureSubtitle}>Calculate your BMI based on weight and height</Text>
                 </View>
               </View>
 
               <TouchableOpacity 
-                style={styles.calculateButton}
+                style={styles.featureButton}
                 onPress={calculateBMI}
               >
-                <Text style={styles.calculateButtonText}>Calculate BMI</Text>
-                <Text style={styles.calculateButtonIcon}>→</Text>
+                <Text style={styles.featureButtonText}>Calculate BMI</Text>
+                <Text style={styles.featureButtonIcon}>→</Text>
               </TouchableOpacity>
 
               {bmiCalculated && (
@@ -1303,61 +1345,26 @@ export default function ProfileSettings() {
                 </View>
               )}
             </View>
+          </View>
+        </View>
 
-           
-            {healthMetrics.gender === "female" && (
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionHeaderIcon}>🩸</Text>
-                  <Text style={styles.sectionTitle}>Menstrual Cycle Tracker</Text>
+        {/* Wellness & Tracking Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <HeartIcon size={24} color="#10b981" />
+            <Text style={styles.sectionTitle}>Wellness & Tracking</Text>
+          </View>
+
+          <View style={styles.sectionContent}>
+            {/* Wellness Responses Card */}
+            <View style={styles.featureCard}>
+              <View style={styles.featureCardHeader}>
+                <View style={styles.featureIconContainer}>
+                  <Text style={styles.featureIcon}>💭</Text>
                 </View>
-
-                <View style={styles.sectionContent}>
-                  <View style={styles.cycleCard}>
-                    <View style={styles.cycleCardHeader}>
-                      <View style={styles.cycleIconContainer}>
-                        <Text style={styles.cycleIcon}>📅</Text>
-                      </View>
-                      <View style={styles.cycleHeaderText}>
-                        <Text style={styles.cycleTitle}>Track Your Cycle</Text>
-                        <Text style={styles.cycleSubtitle}>Monitor your menstrual health</Text>
-                      </View>
-                    </View>
-
-                    <TouchableOpacity 
-                      style={styles.cycleButton}
-                      onPress={() => router.push("/dashboards/user/MenstrualCycleTracker")}
-                    >
-                      <Text style={styles.cycleButtonText}>Open Cycle Tracker</Text>
-                      <Text style={styles.cycleButtonIcon}>→</Text>
-                    </TouchableOpacity>
-
-                    {/* Quick Stats Preview */}
-                    <View style={styles.cycleStatsPreview}>
-                      <View style={styles.cycleStatItem}>
-                        <Text style={styles.cycleStatLabel}>Next Period</Text>
-                        <Text style={styles.cycleStatValue}>In 7 days</Text>
-                      </View>
-                      <View style={styles.cycleStatDivider} />
-                      <View style={styles.cycleStatItem}>
-                        <Text style={styles.cycleStatLabel}>Cycle Status</Text>
-                        <Text style={styles.cycleStatValue}>Regular</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* ─── Wellness Responses Card (right after BMI card) ─── */}
-            <View style={styles.wellnessCard}>
-              <View style={styles.wellnessCardHeader}>
-                <View style={styles.wellnessCardIconWrap}>
-                  <Text style={styles.wellnessCardIcon}>💭</Text>
-                </View>
-                <View style={styles.wellnessCardTextWrap}>
-                  <Text style={styles.wellnessCardTitle}>Wellness Responses</Text>
-                  <Text style={styles.wellnessCardSubtitle}>
+                <View style={styles.featureHeaderText}>
+                  <Text style={styles.featureTitle}>Wellness Responses</Text>
+                  <Text style={styles.featureSubtitle}>
                     {totalCount > 0
                       ? `${answeredCount} of ${totalCount} questions answered`
                       : 'No questions available'}
@@ -1365,48 +1372,52 @@ export default function ProfileSettings() {
                 </View>
               </View>
 
-             
               <TouchableOpacity
-                style={styles.wellnessCardButton}
+                style={[styles.featureButton, { backgroundColor: '#10B981' }]}
                 onPress={() => setShowWellnessModal(true)}
               >
-                <Text style={styles.wellnessCardButtonText}>View My Responses</Text>
-                <Text style={styles.wellnessCardButtonArrow}>→</Text>
+                <Text style={styles.featureButtonText}>View My Responses</Text>
+                <Text style={styles.featureButtonIcon}>→</Text>
               </TouchableOpacity>
             </View>
-            {/* ─── end wellness card ─── */}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Age</Text>
-              <TextInput
-                style={styles.textInput}
-                value={healthMetrics.age}
-                onChangeText={(value) => handleInputChange("healthMetrics", "age", value)}
-                keyboardType="numeric"
-                placeholder="25"
-                placeholderTextColor="#6B7280"
-              />
-            </View>
+            {/* Menstrual Cycle Tracker (Female only) */}
+            {healthMetrics.gender === "female" && (
+              <View style={[styles.featureCard, { marginTop: 16 }]}>
+                <View style={styles.featureCardHeader}>
+                  <View style={[styles.featureIconContainer, { backgroundColor: '#EC489920' }]}>
+                    <Text style={styles.featureIcon}>📅</Text>
+                  </View>
+                  <View style={styles.featureHeaderText}>
+                    <Text style={styles.featureTitle}>Menstrual Cycle Tracker</Text>
+                    <Text style={styles.featureSubtitle}>Monitor your menstrual health</Text>
+                  </View>
+                </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Gender</Text>
-              <CustomDropdown
-                options={GENDER_OPTIONS}
-                selectedValue={healthMetrics.gender}
-                onValueChange={(value) => handleInputChange("healthMetrics", "gender", value)}
-              />
-            </View>
+                <TouchableOpacity 
+                  style={[styles.featureButton, { backgroundColor: '#EC4899' }]}
+                  onPress={() => router.push("/dashboards/user/MenstrualCycleTracker")}
+                >
+                  <Text style={styles.featureButtonText}>Open Cycle Tracker</Text>
+                  <Text style={styles.featureButtonIcon}>→</Text>
+                </TouchableOpacity>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Fitness Goal</Text>
-              <CustomDropdown
-                options={FITNESS_GOAL_OPTIONS}
-                selectedValue={healthMetrics.fitnessGoal}
-                onValueChange={(value) => handleInputChange("healthMetrics", "fitnessGoal", value)}
-              />
-            </View>
+                <View style={styles.featureStatsPreview}>
+                  <View style={styles.featureStatItem}>
+                    <Text style={styles.featureStatLabel}>Next Period</Text>
+                    <Text style={[styles.featureStatValue, { color: '#EC4899' }]}>In 7 days</Text>
+                  </View>
+                  <View style={styles.featureStatDivider} />
+                  <View style={styles.featureStatItem}>
+                    <Text style={styles.featureStatLabel}>Cycle Status</Text>
+                    <Text style={[styles.featureStatValue, { color: '#EC4899' }]}>Regular</Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         </View>
+
 
         {/* Notification Settings */}
         <View style={styles.section}>
@@ -2083,6 +2094,100 @@ sectionHeaderIcon: {
   },
   bmiHeaderText: {
     flex: 1,
+  },
+  featureCard: {
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: '#374151',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  featureCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  featureIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#4F46E520',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  featureIcon: {
+    fontSize: 24,
+  },
+  featureHeaderText: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  featureSubtitle: {
+    fontSize: 13,
+    color: '#94A3B8',
+  },
+  featureButton: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  featureButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  featureButtonIcon: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  featureStatsPreview: {
+    flexDirection: 'row',
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    justifyContent: 'space-around',
+  },
+  featureStatItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  featureStatDivider: {
+    width: 1,
+    backgroundColor: '#374151',
+    marginHorizontal: 12,
+  },
+  featureStatLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  featureStatValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#4F46E5',
   },
   bmiTitle: {
     fontSize: 18,
