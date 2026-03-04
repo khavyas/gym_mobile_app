@@ -15,6 +15,7 @@ import { Linking, Image } from 'react-native';
 import { BookOpen, Clock, User as UserIcon } from 'lucide-react-native';
 import { getRandomBlogPosts, type BlogPost } from './blogPosts';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ClipboardList } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -636,6 +637,17 @@ useEffect(() => {
       </View>
       <Text style={styles.actionText}>Start Workout</Text>
     </TouchableOpacity>
+
+    <TouchableOpacity 
+      style={styles.actionButton}
+     onPress={() => router.push('/dashboards/user/WeeklyCheckinScreen')}
+    >
+      <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(167, 139, 250, 0.15)' }]}>
+        <ClipboardList size={24} color="#A78BFA" strokeWidth={2} />
+      </View>
+      <Text style={styles.actionText}>Weekly Check-In</Text>
+    </TouchableOpacity>
+
   </View>
 </View>
 
@@ -846,11 +858,10 @@ quickActionsTitle: {
   color: '#FFFFFF',
 },
 
-// Modify existing quickActions style:
 quickActions: {
   flexDirection: 'row',
-  gap: 12,
-  // Remove paddingHorizontal: 20,
+  gap: 8,        // reduced from 12 to fit 4 buttons
+  flexWrap: 'wrap',  // add this so they wrap if needed
 },
 
 // Modify existing actionButton style:
