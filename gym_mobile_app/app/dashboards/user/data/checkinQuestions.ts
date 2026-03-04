@@ -1,34 +1,36 @@
 // ─────────────────────────────────────────────────────────────
 //  HiWox Weekly Check-In — Question Config
-//  All 9 domains · 35 questions · matches DB field names exactly
+//  All 9 domains · questions match PDF data points exactly
 // ─────────────────────────────────────────────────────────────
 
 export type FieldType = 'scale' | 'number' | 'yesno' | 'dropdown';
 
 export interface CheckInQuestion {
-  field: string;           // matches DB column name exactly
-  label: string;           // shown to user
+  field: string;
+  label: string;
   type: FieldType;
-  min?: number;            // for scale / number
+  min?: number;
   max?: number;
-  unit?: string;           // e.g. 'kg', 'hrs', 'bpm'
-  lowLabel?: string;       // left label for scale (e.g. "Very Low")
-  highLabel?: string;      // right label for scale (e.g. "Excellent")
-  options?: string[];      // for dropdown type
+  unit?: string;
+  lowLabel?: string;
+  highLabel?: string;
+  options?: string[];
   optional?: boolean;
-  invertedScore?: boolean; // true = higher raw value is WORSE (negative metric)
+  invertedScore?: boolean;
 }
 
 export interface CheckInDomain {
   id: string;
   label: string;
   icon: string;
-  color: string;           // accent color for this domain
+  color: string;
   gradientColors: [string, string];
   questions: CheckInQuestion[];
 }
 
 export const CHECKIN_DOMAINS: CheckInDomain[] = [
+
+  // ── 1. PHYSICAL WELLNESS (8 data points) ─────────────────
   {
     id: 'physical',
     label: 'Physical',
@@ -45,6 +47,24 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         unit: 'kg',
       },
       {
+        field: 'physical_waist',
+        label: 'Waist circumference',
+        type: 'number',
+        min: 40,
+        max: 200,
+        unit: 'cm',
+        optional: true,
+      },
+      {
+        field: 'physical_bodyfat',
+        label: 'Body fat percentage (if known)',
+        type: 'number',
+        min: 1,
+        max: 70,
+        unit: '%',
+        optional: true,
+      },
+      {
         field: 'physical_steps',
         label: 'Average daily steps this week',
         type: 'number',
@@ -54,20 +74,20 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'physical_workouts',
-        label: 'Workout sessions completed',
+        label: 'Workout sessions completed this week',
         type: 'number',
         min: 0,
         max: 7,
         unit: 'sessions',
       },
       {
-        field: 'physical_energy',
-        label: 'Energy level this week',
-        type: 'scale',
-        min: 1,
-        max: 10,
-        lowLabel: 'Very Low',
-        highLabel: 'Excellent',
+        field: 'physical_strength',
+        label: 'Strength marker — how many pushups/squats can you do?',
+        type: 'number',
+        min: 0,
+        max: 200,
+        unit: 'reps',
+        optional: true,
       },
       {
         field: 'physical_rhr',
@@ -79,9 +99,19 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         optional: true,
         invertedScore: true,
       },
+      {
+        field: 'physical_energy',
+        label: 'Energy level this week',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Very Low',
+        highLabel: 'Excellent',
+      },
     ],
   },
 
+  // ── 2. NUTRITIONAL & METABOLIC WELLNESS (8 data points) ──
   {
     id: 'nutrition',
     label: 'Nutrition',
@@ -91,7 +121,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
     questions: [
       {
         field: 'nutrition_adherence',
-        label: 'How well did you follow your meal plan?',
+        label: 'Meal adherence — how well did you follow your meal plan?',
         type: 'scale',
         min: 1,
         max: 10,
@@ -100,7 +130,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'nutrition_sugar',
-        label: 'Times you consumed sugary food/drinks',
+        label: 'How many times did you consume sugary food/drinks?',
         type: 'number',
         min: 0,
         max: 21,
@@ -109,12 +139,21 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'nutrition_processed',
-        label: 'Times you ate processed/junk food',
+        label: 'How many times did you eat processed/junk food?',
         type: 'number',
         min: 0,
         max: 21,
         unit: 'times',
         invertedScore: true,
+      },
+      {
+        field: 'nutrition_protein',
+        label: 'How well did you meet your daily protein intake?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Not at all',
+        highLabel: 'Fully met',
       },
       {
         field: 'nutrition_water',
@@ -125,17 +164,37 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         unit: 'litres',
       },
       {
+        field: 'nutrition_glucose',
+        label: 'Fasting glucose level (if you track it)',
+        type: 'number',
+        min: 50,
+        max: 400,
+        unit: 'mg/dL',
+        optional: true,
+      },
+      {
         field: 'nutrition_digestion',
-        label: 'Digestion / gut comfort this week',
+        label: 'Digestive comfort / gut health this week',
         type: 'scale',
         min: 1,
         max: 10,
         lowLabel: 'Very Poor',
         highLabel: 'Excellent',
       },
+      {
+        field: 'nutrition_bloating',
+        label: 'How frequently did you experience bloating this week?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Never',
+        highLabel: 'Every day',
+        invertedScore: true,
+      },
     ],
   },
 
+  // ── 3. MENTAL & EMOTIONAL WELLNESS (8 data points) ───────
   {
     id: 'mental',
     label: 'Mental',
@@ -173,17 +232,28 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         invertedScore: true,
       },
       {
-        field: 'mental_motivation',
-        label: 'How motivated did you feel?',
+        field: 'mental_irritability',
+        label: 'How often did you feel irritable or short-tempered?',
         type: 'scale',
         min: 1,
         max: 10,
-        lowLabel: 'None',
-        highLabel: 'High',
+        lowLabel: 'Never',
+        highLabel: 'Constantly',
+        invertedScore: true,
+      },
+      {
+        field: 'mental_withdrawal',
+        label: 'Did you withdraw from social interactions this week?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Not at all',
+        highLabel: 'Completely',
+        invertedScore: true,
       },
       {
         field: 'mental_meditation',
-        label: 'Days you meditated / practiced mindfulness',
+        label: 'Days you meditated or practiced mindfulness',
         type: 'number',
         min: 0,
         max: 7,
@@ -191,7 +261,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'mental_burnout',
-        label: 'Burnout score',
+        label: 'Burnout score — how burnt out do you feel?',
         type: 'scale',
         min: 1,
         max: 10,
@@ -199,9 +269,19 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         highLabel: 'Severe',
         invertedScore: true,
       },
+      {
+        field: 'mental_motivation',
+        label: 'How motivated did you feel this week?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'None',
+        highLabel: 'High',
+      },
     ],
   },
 
+  // ── 4. SLEEP & RECOVERY WELLNESS (7 data points) ─────────
   {
     id: 'sleep',
     label: 'Sleep',
@@ -228,7 +308,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'sleep_consistency',
-        label: 'How consistent was your bedtime?',
+        label: 'How consistent was your bedtime this week?',
         type: 'scale',
         min: 1,
         max: 10,
@@ -236,19 +316,28 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         highLabel: 'Very Consistent',
       },
       {
+        field: 'sleep_awakenings',
+        label: 'How many times did you wake up during the night on average?',
+        type: 'number',
+        min: 0,
+        max: 15,
+        unit: 'times',
+        invertedScore: true,
+      },
+      {
+        field: 'sleep_screens',
+        label: 'Did you use screens within 1 hour of bedtime?',
+        type: 'yesno',
+        invertedScore: true,
+      },
+      {
         field: 'sleep_fatigue',
-        label: 'Morning fatigue level',
+        label: 'Morning fatigue — how rested did you feel waking up?',
         type: 'scale',
         min: 1,
         max: 10,
         lowLabel: 'Very Tired',
         highLabel: 'Fully Rested',
-      },
-      {
-        field: 'sleep_screens',
-        label: 'Did you use screens within 1 hr of bedtime?',
-        type: 'yesno',
-        invertedScore: true,
       },
       {
         field: 'sleep_caffeine',
@@ -259,6 +348,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
     ],
   },
 
+  // ── 5. SEXUAL & REPRODUCTIVE WELLNESS (7 data points) ────
   {
     id: 'reproductive',
     label: 'Reproductive',
@@ -277,17 +367,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'repro_hormonal',
-        label: 'Hormonal symptom intensity',
-        type: 'scale',
-        min: 1,
-        max: 10,
-        lowLabel: 'None',
-        highLabel: 'Severe',
-        invertedScore: true,
-      },
-      {
-        field: 'repro_pain',
-        label: 'Physical pain/discomfort in reproductive area',
+        label: 'Hormonal symptom intensity (mood swings, fatigue, etc.)',
         type: 'scale',
         min: 1,
         max: 10,
@@ -302,9 +382,44 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         options: ['Regular', 'Irregular', 'N/A'],
         optional: true,
       },
+      {
+        field: 'repro_ed',
+        label: 'Any concerns with erectile function this week?',
+        type: 'dropdown',
+        options: ['No issues', 'Mild concern', 'Significant concern', 'N/A'],
+        optional: true,
+      },
+      {
+        field: 'repro_cycle_fatigue',
+        label: 'Fatigue related to your cycle or hormonal state',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'None',
+        highLabel: 'Severe',
+        invertedScore: true,
+        optional: true,
+      },
+      {
+        field: 'repro_pain',
+        label: 'Physical pain or discomfort in reproductive area',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'None',
+        highLabel: 'Severe',
+        invertedScore: true,
+      },
+      {
+        field: 'repro_fertility',
+        label: 'Do you have any active fertility concerns this week?',
+        type: 'yesno',
+        optional: true,
+      },
     ],
   },
 
+  // ── 6. FINANCIAL WELLNESS (7 data points) ────────────────
   {
     id: 'financial',
     label: 'Financial',
@@ -313,13 +428,46 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
     gradientColors: ['#FBBF24', '#F59E0B'],
     questions: [
       {
-        field: 'finance_budget',
-        label: 'Did you stick to your budget this week?',
+        field: 'finance_income',
+        label: 'Approximate monthly income',
+        type: 'number',
+        min: 0,
+        max: 10000000,
+        unit: '₹',
+        optional: true,
+      },
+      {
+        field: 'finance_expenses',
+        label: 'Approximate monthly expenses',
+        type: 'number',
+        min: 0,
+        max: 10000000,
+        unit: '₹',
+        optional: true,
+      },
+      {
+        field: 'finance_saved',
+        label: 'Did you save any money this week?',
+        type: 'yesno',
+      },
+      {
+        field: 'finance_emergency_fund',
+        label: 'How many months of expenses do you have as an emergency fund?',
+        type: 'number',
+        min: 0,
+        max: 36,
+        unit: 'months',
+        optional: true,
+      },
+      {
+        field: 'finance_debt',
+        label: 'How concerned are you about your current debt level?',
         type: 'scale',
         min: 1,
         max: 10,
-        lowLabel: 'Not at all',
-        highLabel: 'Fully',
+        lowLabel: 'No concern',
+        highLabel: 'Very concerned',
+        invertedScore: true,
       },
       {
         field: 'finance_stress',
@@ -332,13 +480,18 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         invertedScore: true,
       },
       {
-        field: 'finance_saved',
-        label: 'Did you save any money this week?',
-        type: 'yesno',
+        field: 'finance_budget',
+        label: 'How well did you stick to your budget this week?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Not at all',
+        highLabel: 'Fully',
       },
     ],
   },
 
+  // ── 7. TECH & DIGITAL WELLNESS (7 data points) ───────────
   {
     id: 'tech',
     label: 'Tech & Digital',
@@ -348,7 +501,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
     questions: [
       {
         field: 'tech_screentime',
-        label: 'Average daily screen time',
+        label: 'Average daily total screen time',
         type: 'number',
         min: 0,
         max: 24,
@@ -366,7 +519,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'tech_latenight',
-        label: 'Days you used devices after 11pm',
+        label: 'Days you used devices late at night (after 11pm)',
         type: 'number',
         min: 0,
         max: 7,
@@ -374,13 +527,39 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         invertedScore: true,
       },
       {
+        field: 'tech_work_leisure_ratio',
+        label: 'How balanced was your screen time between work and leisure?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Unbalanced',
+        highLabel: 'Well balanced',
+      },
+      {
+        field: 'tech_notifications',
+        label: 'How disruptive were notifications to your focus and rest?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Not at all',
+        highLabel: 'Very disruptive',
+        invertedScore: true,
+      },
+      {
         field: 'tech_detox',
-        label: 'Did you take any digital detox time?',
+        label: 'Did you take any digital detox time this week?',
         type: 'yesno',
+      },
+      {
+        field: 'tech_bluelight',
+        label: 'Did you use blue light protection (glasses/filter) in the evening?',
+        type: 'yesno',
+        optional: true,
       },
     ],
   },
 
+  // ── 8. SOCIAL & RELATIONSHIP WELLNESS (7 data points) ────
   {
     id: 'social',
     label: 'Social',
@@ -390,15 +569,34 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
     questions: [
       {
         field: 'social_interactions',
-        label: 'Meaningful conversations / interactions this week',
+        label: 'Number of meaningful conversations or interactions this week',
         type: 'number',
         min: 0,
         max: 50,
         unit: 'times',
       },
       {
+        field: 'social_family_time',
+        label: 'Hours spent with family this week',
+        type: 'number',
+        min: 0,
+        max: 80,
+        unit: 'hrs',
+        optional: true,
+      },
+      {
+        field: 'social_conflict',
+        label: 'How often did you experience conflict in your relationships?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Never',
+        highLabel: 'Very often',
+        invertedScore: true,
+      },
+      {
         field: 'social_lonely',
-        label: 'Loneliness score',
+        label: 'Loneliness score this week',
         type: 'scale',
         min: 1,
         max: 10,
@@ -407,8 +605,13 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         invertedScore: true,
       },
       {
+        field: 'social_events',
+        label: 'Did you attend any social events or group activities?',
+        type: 'yesno',
+      },
+      {
         field: 'social_quality',
-        label: 'Quality of your close relationships this week',
+        label: 'Quality of communication in your close relationships',
         type: 'scale',
         min: 1,
         max: 10,
@@ -416,13 +619,18 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         highLabel: 'Excellent',
       },
       {
-        field: 'social_events',
-        label: 'Did you attend any social events or group activities?',
-        type: 'yesno',
+        field: 'social_support',
+        label: 'How strong is your support system right now?',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Very Weak',
+        highLabel: 'Very Strong',
       },
     ],
   },
 
+  // ── 9. OCCUPATIONAL & CORPORATE WELLNESS (8 data points) ─
   {
     id: 'occupational',
     label: 'Work',
@@ -432,7 +640,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
     questions: [
       {
         field: 'work_hours',
-        label: 'Average work hours per day',
+        label: 'Average work hours per day this week',
         type: 'number',
         min: 0,
         max: 24,
@@ -450,7 +658,7 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
       },
       {
         field: 'work_stress',
-        label: 'Work stress level',
+        label: 'Work stress level this week',
         type: 'scale',
         min: 1,
         max: 10,
@@ -459,17 +667,17 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         invertedScore: true,
       },
       {
-        field: 'work_balance',
-        label: 'Work-life balance rating',
+        field: 'work_productivity',
+        label: 'How productive did you feel this week?',
         type: 'scale',
         min: 1,
         max: 10,
-        lowLabel: 'Very Poor',
+        lowLabel: 'Very Low',
         highLabel: 'Excellent',
       },
       {
         field: 'work_breaks',
-        label: 'How often did you take proper breaks?',
+        label: 'How often did you take proper breaks during work?',
         type: 'scale',
         min: 1,
         max: 10,
@@ -477,19 +685,38 @@ export const CHECKIN_DOMAINS: CheckInDomain[] = [
         highLabel: 'Always',
       },
       {
+        field: 'work_burnout',
+        label: 'Burnout symptoms this week (exhaustion, detachment, reduced performance)',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'None',
+        highLabel: 'Severe',
+        invertedScore: true,
+      },
+      {
         field: 'work_discomfort',
-        label: 'Physical discomfort from work (posture, eye strain, etc.)?',
+        label: 'Physical discomfort from work (posture, eye strain, back pain)?',
         type: 'yesno',
         invertedScore: true,
+      },
+      {
+        field: 'work_balance',
+        label: 'Work-life balance rating this week',
+        type: 'scale',
+        min: 1,
+        max: 10,
+        lowLabel: 'Very Poor',
+        highLabel: 'Excellent',
       },
     ],
   },
 ];
 
-// ─── Flat map of all fields → useful for form state initialisation ───
+// ─── Flat map of all fields ───────────────────────────────────
 export const ALL_FIELDS = CHECKIN_DOMAINS.flatMap((d) => d.questions.map((q) => q.field));
 
-// ─── Total question count (excludes optional) ───
+// ─── Required question count ──────────────────────────────────
 export const REQUIRED_QUESTION_COUNT = CHECKIN_DOMAINS.flatMap((d) =>
   d.questions.filter((q) => !q.optional)
 ).length;
