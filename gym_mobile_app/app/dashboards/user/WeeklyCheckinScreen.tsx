@@ -608,10 +608,11 @@ export default function WeeklyCheckInScreen() {
       </ScrollView>
 
       <Modal
-  visible={showPreview}
-  animationType="slide"
-  transparent={true}
->
+        visible={showPreview}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowPreview(false)}
+      >
   <View style={previewStyles.overlay}>
     <View style={previewStyles.container}>
 
@@ -658,10 +659,16 @@ export default function WeeklyCheckInScreen() {
         <TouchableOpacity
           style={previewStyles.submitBtn}
           onPress={() => {
-            setShowPreview(false);
-
             console.log("Final Submit:", values);
 
+            setShowPreview(false);
+
+            // small delay ensures modal closes first
+            setTimeout(() => {
+              setSubmitted(true);
+              setValues(buildInitialState());
+              setActiveDomainIndex(0);
+            }, 200);
           }}
         >
           <Text style={previewStyles.submitText}>Confirm Submit</Text>
