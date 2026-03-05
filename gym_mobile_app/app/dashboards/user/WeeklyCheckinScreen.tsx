@@ -14,6 +14,7 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CHECKIN_DOMAINS, ALL_FIELDS, CheckInDomain } from './data/checkinQuestions';
@@ -480,11 +481,11 @@ const completionStyles = StyleSheet.create({
 //  WeeklyCheckInScreen — root export
 // ─────────────────────────────────────────────────────────────
 export default function WeeklyCheckInScreen() {
-  const [values, setValues] = useState<FormValues>(buildInitialState);
+  const [values, setValues] = useState<FormValues>(() => buildInitialState()); 
   const [activeDomainIndex, setActiveDomainIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-
+  const [showPreview, setShowPreview] = useState(false);
   const activeDomain = CHECKIN_DOMAINS[activeDomainIndex];
   const totalDomains = CHECKIN_DOMAINS.length;
   const progress = overallProgress(values);
@@ -519,10 +520,12 @@ export default function WeeklyCheckInScreen() {
   };
 
   const handleSubmit = () => {
-    // Validate at least one field per domain is answered
+
     const unanswered = CHECKIN_DOMAINS.filter((d) => {
       const required = d.questions.filter((q) => !q.optional);
-      return required.every((q) => values[q.field] === null || values[q.field] === undefined);
+      return required.every(
+        (q) => values[q.field] === null || values[q.field] === undefined
+      );
     });
 
     if (unanswered.length > 0) {
@@ -534,9 +537,8 @@ export default function WeeklyCheckInScreen() {
       return;
     }
 
-    // TODO: Call your API here — pass `values` to your backend
-    console.log('Submitting check-in:', values);
-    setSubmitted(true);
+    // OPEN PREVIEW MODAL
+    setShowPreview(true);
   };
 
   if (submitted) {
@@ -604,7 +606,74 @@ export default function WeeklyCheckInScreen() {
           isLast={activeDomainIndex === totalDomains - 1}
         />
       </ScrollView>
+
+      <Modal
+  visible={showPreview}
+  animationType="slide"
+  transparent={true}
+>
+  <View style={previewStyles.overlay}>
+    <View style={previewStyles.container}>
+
+      <Text style={previewStyles.title}>Review Your Check-In</Text>
+
+      <ScrollView style={{ maxHeight: 400 }}>
+
+        {CHECKIN_DOMAINS.map((domain) => (
+          <View key={domain.id} style={previewStyles.domainBlock}>
+
+            <Text style={[previewStyles.domainTitle,{color:domain.color}]}>
+              {domain.icon} {domain.label}
+            </Text>
+
+            {domain.questions.map((q) => (
+              <View key={q.field} style={previewStyles.answerRow}>
+                <Text style={previewStyles.question}>
+                  {q.label}
+                </Text>
+
+                <Text style={previewStyles.answer}>
+                  {values[q.field] !== null && values[q.field] !== undefined
+                    ? values[q.field].toString()
+                    : "Not answered"}
+                </Text>
+              </View>
+            ))}
+
+          </View>
+        ))}
+
+      </ScrollView>
+
+      {/* Buttons */}
+      <View style={previewStyles.buttonRow}>
+
+        <TouchableOpacity
+          style={previewStyles.editBtn}
+          onPress={() => setShowPreview(false)}
+        >
+          <Text style={previewStyles.editText}>Edit</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={previewStyles.submitBtn}
+          onPress={() => {
+            setShowPreview(false);
+
+            console.log("Final Submit:", values);
+
+          }}
+        >
+          <Text style={previewStyles.submitText}>Confirm Submit</Text>
+        </TouchableOpacity>
+
+      </View>
+
     </View>
+  </View>
+</Modal>
+
+    </View>    
   );
 };
 
@@ -661,4 +730,91 @@ const screenStyles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+});
+
+
+const previewStyles = StyleSheet.create({
+
+  overlay:{
+    flex:1,
+    backgroundColor:'rgba(0,0,0,0.6)',
+    justifyContent:'center',
+    alignItems:'center',
+    padding:20
+  },
+
+  container:{
+    width:'100%',
+    maxHeight:'85%',
+    backgroundColor:'#0D0D16',
+    borderRadius:20,
+    padding:20
+  },
+
+  title:{
+    fontSize:20,
+    fontWeight:'700',
+    color:'#FFF',
+    marginBottom:20,
+    textAlign:'center'
+  },
+
+  domainBlock:{
+    marginBottom:20
+  },
+
+  domainTitle:{
+    fontSize:16,
+    fontWeight:'700',
+    marginBottom:10
+  },
+
+  answerRow:{
+    marginBottom:8
+  },
+
+  question:{
+    fontSize:13,
+    color:'#9CA3AF'
+  },
+
+  answer:{
+    fontSize:14,
+    color:'#FFFFFF',
+    fontWeight:'600'
+  },
+
+  buttonRow:{
+    flexDirection:'row',
+    marginTop:20,
+    gap:10
+  },
+
+  editBtn:{
+    flex:1,
+    padding:14,
+    borderRadius:12,
+    borderWidth:1,
+    borderColor:'#444',
+    alignItems:'center'
+  },
+
+  editText:{
+    color:'#AAA',
+    fontWeight:'600'
+  },
+
+  submitBtn:{
+    flex:1,
+    padding:14,
+    borderRadius:12,
+    backgroundColor:'#667eea',
+    alignItems:'center'
+  },
+
+  submitText:{
+    color:'#FFF',
+    fontWeight:'700'
+  }
+
 });
